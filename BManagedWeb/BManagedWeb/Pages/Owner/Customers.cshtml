@@ -1,0 +1,61 @@
+@page
+@model BManagedWeb.Pages.Owner.CustomersModel
+@{
+    ViewData["Title"] = "Customers";
+}
+
+<div class="reveal mb-12 max-w-3xl">
+    <span class="pill rounded-full px-3 py-1 bg-black/5 border border-black/5">CRM</span>
+    <h1 class="display text-5xl md:text-7xl font-bold mt-4 leading-[0.95]">Customers</h1>
+    <p class="text-ink/50 mt-3">Everyone you bill. Right here.</p>
+</div>
+
+<form method="get" class="reveal flex gap-3 mb-8 max-w-xl">
+    <input asp-for="Q" placeholder="Search by name, email, contact…"
+           class="flex-1 bg-paper-100/60 border border-black/5 rounded-full px-5 py-3 outline-none focus:border-accent transition" />
+    <button class="group inline-flex items-center gap-2 bg-ink text-paper-50 rounded-full px-5 py-3 transition-all duration-500 ease-spring active:scale-[0.98]">
+        Search
+        <span class="w-6 h-6 rounded-full bg-white/15 flex items-center justify-center group-hover:translate-x-0.5 transition-all duration-500 ease-spring">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+        </span>
+    </button>
+</form>
+
+<form method="post" asp-page-handler="Add" class="reveal mb-12 bg-black/[0.04] ring-1 ring-black/5 rounded-shell p-1.5 max-w-3xl">
+    <div class="bg-paper-50 rounded-core p-6 shadow-inset grid md:grid-cols-3 gap-3">
+        <input asp-for="NewBusinessName" placeholder="Business name"
+               class="bg-paper-100/60 border border-black/5 rounded-2xl px-4 py-2.5 outline-none focus:border-accent transition" />
+        <input asp-for="NewEmail"        placeholder="Email"
+               class="bg-paper-100/60 border border-black/5 rounded-2xl px-4 py-2.5 outline-none focus:border-accent transition" />
+        <input asp-for="NewPhone"        placeholder="Phone"
+               class="bg-paper-100/60 border border-black/5 rounded-2xl px-4 py-2.5 outline-none focus:border-accent transition" />
+        <button class="md:col-span-3 group inline-flex items-center justify-center gap-2 bg-mint text-white rounded-full px-6 py-3 mt-1 active:scale-[0.98] transition">
+            Add customer
+            <span class="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center group-hover:translate-x-0.5 transition">→</span>
+        </button>
+    </div>
+</form>
+
+@if (!string.IsNullOrEmpty(Model.Message))
+{
+    <div class="reveal mb-6 px-4 py-2 rounded-full inline-block @(Model.IsSuccess ? "bg-mint/10 text-mint border border-mint/20" : "bg-rose/10 text-rose border border-rose/20")">@Model.Message</div>
+}
+
+<section class="reveal grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    @foreach (var c in Model.Customers)
+    {
+        <a href="#" class="group block bg-black/[0.03] ring-1 ring-black/5 rounded-shell p-1.5 hover:shadow-float transition-all duration-500 ease-spring">
+            <div class="bg-paper-50 rounded-core p-6 shadow-inset h-full">
+                <div class="pill text-ink/40">@c.PreferredCurrency</div>
+                <div class="display text-2xl font-semibold mt-2">@c.BusinessName</div>
+                <div class="text-sm text-ink/50 mt-1">@(c.ContactName ?? "—")</div>
+                <div class="text-xs text-ink/40 mt-4 truncate">@c.Email</div>
+                <div class="text-xs text-ink/40">@c.Phone</div>
+            </div>
+        </a>
+    }
+    @if (Model.Customers.Count == 0)
+    {
+        <div class="md:col-span-3 text-center py-20 text-ink/40">No customers yet — add your first above.</div>
+    }
+</section>

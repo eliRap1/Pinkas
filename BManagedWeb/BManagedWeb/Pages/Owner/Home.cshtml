@@ -1,0 +1,114 @@
+@page
+@model BManagedWeb.Pages.Owner.HomeModel
+@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<!-- Eyebrow + headline -->
+<div class="reveal mb-12">
+    <span class="pill rounded-full px-3 py-1 bg-black/5 border border-black/5">Owner</span>
+    <h1 class="display text-5xl md:text-7xl font-bold mt-4 leading-[0.95]">
+        Hi, @Model.Username.<br/>
+        <span class="text-ink/40">Here's your money,</span>
+        <span class="text-accent">in motion.</span>
+    </h1>
+</div>
+
+<!-- ASYMMETRICAL BENTO ===================================== -->
+<section class="grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-6">
+
+    <!-- Big card: Outstanding balance -->
+    <div class="reveal md:col-span-8 md:row-span-2 bg-black/[0.04] ring-1 ring-black/5 rounded-shell p-1.5 shadow-soft">
+        <div class="bg-paper-50 rounded-core p-8 md:p-10 shadow-inset h-full">
+            <div class="flex items-center justify-between mb-8">
+                <span class="pill text-ink/40">Outstanding</span>
+                <span class="text-xs text-ink/40">@Model.TodayLabel</span>
+            </div>
+            <div class="display text-7xl md:text-[8rem] font-bold leading-[0.85] tracking-tighter">
+                @Model.UnpaidTotalDisplay
+                <span class="text-ink/30 text-3xl align-top">@Model.Currency</span>
+            </div>
+            <div class="mt-10 flex flex-wrap gap-x-10 gap-y-4 text-sm">
+                <div><span class="block text-ink/40 pill">Unpaid</span><span class="display text-2xl font-semibold">@Model.UnpaidCount</span></div>
+                <div><span class="block text-ink/40 pill">Overdue</span><span class="display text-2xl font-semibold text-rose">@Model.OverdueCount</span></div>
+                <div><span class="block text-ink/40 pill">Active projects</span><span class="display text-2xl font-semibold">@Model.ActiveProjects</span></div>
+                <div><span class="block text-ink/40 pill">Customers</span><span class="display text-2xl font-semibold">@Model.CustomersCount</span></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- VAT due -->
+    <div class="reveal md:col-span-4 bg-ink ring-1 ring-black/5 rounded-shell p-1.5">
+        <div class="bg-ink-soft rounded-core p-8 text-paper-50 shadow-inset h-full">
+            <span class="pill text-paper-50/50">VAT due (this month)</span>
+            <div class="display text-5xl font-bold mt-3">@Model.VatDueDisplay <span class="text-base text-paper-50/50">@Model.Currency</span></div>
+            <div class="text-paper-50/50 text-xs mt-2">Set aside: @Model.TaxSetAsideDisplay @Model.Currency</div>
+        </div>
+    </div>
+
+    <!-- Quick action: New invoice -->
+    <div class="reveal md:col-span-4">
+        <a asp-page="/Owner/Invoices" class="group block bg-paper-100 ring-1 ring-black/5 rounded-shell p-1.5 hover:shadow-float transition-all duration-500 ease-spring">
+            <div class="bg-white rounded-core p-6 flex items-center justify-between">
+                <div>
+                    <span class="pill text-ink/40">Quick action</span>
+                    <div class="display text-2xl font-semibold mt-1">New invoice</div>
+                </div>
+                <span class="w-12 h-12 rounded-full bg-ink text-paper-50 flex items-center justify-center transition-all duration-500 ease-spring group-hover:translate-x-1 group-hover:-translate-y-px">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+                </span>
+            </div>
+        </a>
+    </div>
+
+    <!-- Recent invoices -->
+    <div class="reveal md:col-span-12 bg-black/[0.04] ring-1 ring-black/5 rounded-shell p-1.5 shadow-soft">
+        <div class="bg-paper-50 rounded-core p-8 shadow-inset">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="display text-2xl font-semibold">Recent invoices</h2>
+                <a asp-page="/Owner/Invoices" class="text-sm text-accent hover:underline">View all →</a>
+            </div>
+
+            @if (Model.RecentInvoices == null || Model.RecentInvoices.Count == 0)
+            {
+                <p class="text-ink/40 text-sm">No invoices yet — issue your first one to start tracking revenue.</p>
+            }
+            else
+            {
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    @foreach (var inv in Model.RecentInvoices)
+                    {
+                        var color = inv.Status switch { "Paid" => "mint", "Overdue" => "rose", _ => "amber" };
+                        <div class="flex items-center justify-between bg-paper-100 rounded-2xl px-5 py-4 border border-black/5">
+                            <div>
+                                <div class="text-xs text-ink/40">@inv.InvoiceNumber</div>
+                                <div class="font-medium">@inv.CustomerName</div>
+                            </div>
+                            <div class="text-right">
+                                <div class="display font-semibold">@inv.Total.ToString("N0") <span class="text-ink/40 text-xs">@inv.Currency</span></div>
+                                <div class="pill rounded-full px-2 py-0.5 mt-1 inline-block bg-@(color)/10 text-@(color) border border-@(color)/20">@inv.Status</div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+<script>
+  // Polling: refresh /Owner/Home?handler=Stats every 15 seconds for live counters.
+  setInterval(async () => {
+    try {
+      const r = await fetch('/Owner/Home?handler=Stats');
+      if (!r.ok) return;
+      const d = await r.json();
+      document.querySelectorAll('[data-stat]').forEach(el => {
+        const k = el.getAttribute('data-stat');
+        if (d[k] !== undefined) el.textContent = d[k];
+      });
+    } catch (e) {}
+  }, 15000);
+</script>
+}

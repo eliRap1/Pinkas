@@ -1,0 +1,79 @@
+@page
+@model BManagedWeb.Pages.Owner.ReportsModel
+@{
+    ViewData["Title"] = "Reports";
+}
+
+<div class="reveal mb-12 flex items-end justify-between flex-wrap gap-4">
+    <div>
+        <span class="pill rounded-full px-3 py-1 bg-black/5 border border-black/5">Reports</span>
+        <h1 class="display text-5xl md:text-7xl font-bold mt-4 leading-[0.95]">Numbers, on tap.</h1>
+    </div>
+    <form method="get" class="flex items-center gap-3 text-sm">
+        <select asp-for="Year" asp-items="Model.YearOptions" class="bg-paper-100 border border-black/5 rounded-full px-4 py-2"></select>
+        <select asp-for="Month" asp-items="Model.MonthOptions" class="bg-paper-100 border border-black/5 rounded-full px-4 py-2"></select>
+        <select asp-for="DisplayCurrency" class="bg-paper-100 border border-black/5 rounded-full px-4 py-2">
+            <option>ILS</option><option>USD</option>
+        </select>
+        <button class="bg-ink text-paper-50 rounded-full px-4 py-2">Apply</button>
+    </form>
+</div>
+
+<section class="grid md:grid-cols-12 gap-4 md:gap-6 mb-12">
+    <div class="reveal md:col-span-4 bg-black/[0.04] ring-1 ring-black/5 rounded-shell p-1.5">
+        <div class="bg-paper-50 rounded-core p-8 shadow-inset h-full">
+            <span class="pill text-ink/40">VAT collected</span>
+            <div class="display text-5xl font-bold mt-3">@Model.Vat.VatCollected.ToString("N0") <span class="text-base text-ink/40">@Model.DisplayCurrency</span></div>
+        </div>
+    </div>
+    <div class="reveal md:col-span-4 bg-black/[0.04] ring-1 ring-black/5 rounded-shell p-1.5">
+        <div class="bg-paper-50 rounded-core p-8 shadow-inset h-full">
+            <span class="pill text-ink/40">VAT paid</span>
+            <div class="display text-5xl font-bold mt-3">@Model.Vat.VatPaid.ToString("N0") <span class="text-base text-ink/40">@Model.DisplayCurrency</span></div>
+        </div>
+    </div>
+    <div class="reveal md:col-span-4 bg-ink rounded-shell p-1.5">
+        <div class="bg-ink-soft rounded-core p-8 text-paper-50 shadow-inset h-full">
+            <span class="pill text-paper-50/50">VAT due</span>
+            <div class="display text-5xl font-bold mt-3">@Model.Vat.VatDue.ToString("N0") <span class="text-base text-paper-50/50">@Model.DisplayCurrency</span></div>
+        </div>
+    </div>
+
+    <div class="reveal md:col-span-12 bg-black/[0.04] ring-1 ring-black/5 rounded-shell p-1.5">
+        <div class="bg-paper-50 rounded-core p-8 shadow-inset">
+            <h2 class="display text-2xl font-semibold mb-6">Top customers by revenue</h2>
+            <div class="grid md:grid-cols-2 gap-3">
+                @foreach (var r in Model.TopCustomers)
+                {
+                    <div class="flex items-center justify-between bg-paper-100 rounded-2xl px-5 py-4 border border-black/5">
+                        <div class="font-medium">@r.BusinessName</div>
+                        <div class="display font-semibold">@r.TotalInvoiced.ToString("N0") <span class="text-ink/40 text-xs">@r.DisplayCurrency</span></div>
+                    </div>
+                }
+                @if (Model.TopCustomers.Count == 0)
+                {
+                    <div class="text-ink/40 md:col-span-2 py-8 text-center">No revenue yet — issue an invoice to populate.</div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="reveal md:col-span-12 bg-black/[0.04] ring-1 ring-black/5 rounded-shell p-1.5">
+        <div class="bg-paper-50 rounded-core p-8 shadow-inset">
+            <h2 class="display text-2xl font-semibold mb-6">Expense breakdown</h2>
+            <div class="grid md:grid-cols-3 gap-3">
+                @foreach (var b in Model.ExpenseBreakdown)
+                {
+                    <div class="bg-paper-100 rounded-2xl px-5 py-4 border border-black/5">
+                        <div class="pill text-ink/40">@b.CategoryName @(b.IsVatDeductible ? "· VAT-deductible" : "")</div>
+                        <div class="display font-semibold mt-1">@b.Total.ToString("N0") <span class="text-ink/40 text-xs">@b.DisplayCurrency</span></div>
+                    </div>
+                }
+                @if (Model.ExpenseBreakdown.Count == 0)
+                {
+                    <div class="text-ink/40 md:col-span-3 py-8 text-center">No expenses logged for this period.</div>
+                }
+            </div>
+        </div>
+    </div>
+</section>

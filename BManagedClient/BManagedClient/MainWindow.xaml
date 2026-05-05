@@ -1,0 +1,10 @@
+<Window x:Class="BManagedClient.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="B-Managed" Height="720" Width="1100"
+        Background="{StaticResource Bg}"
+        WindowStartupLocation="CenterScreen">
+    <Grid>
+        <Frame x:Name="page" NavigationUIVisibility="Hidden"/>
+    </Grid>
+</Window>

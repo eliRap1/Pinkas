@@ -1,0 +1,55 @@
+<Page x:Class="BManagedClient.Customers"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      Title="Customers" Background="{StaticResource Bg}">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <Grid Grid.Row="0" Margin="0,0,0,12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <Button Grid.Column="0" Content="← Back" Click="Back_Click" Background="Transparent"
+                    Foreground="{StaticResource Cyan}" BorderBrush="{StaticResource Cyan}"
+                    Padding="12,6" Cursor="Hand"/>
+            <TextBlock Grid.Column="1" Text="Customers (CRM)" FontSize="24" FontWeight="Bold"
+                       Foreground="{StaticResource Cyan}" HorizontalAlignment="Center"/>
+        </Grid>
+
+        <Grid Grid.Row="1" Margin="0,0,0,12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <TextBox x:Name="searchBox" Background="{StaticResource Card}" Foreground="White"
+                     BorderBrush="{StaticResource Cyan}" Height="32" Padding="8"
+                     Grid.Column="0"/>
+            <Button Grid.Column="1" Content="🔍 Search" Click="Search_Click"
+                    Style="{StaticResource PrimaryButton}" Margin="8,0"/>
+            <Button Grid.Column="2" Content="➕ New" Click="Add_Click"
+                    Style="{StaticResource PrimaryButton}" Background="{StaticResource Green}"/>
+        </Grid>
+
+        <ListView Grid.Row="2" x:Name="customersList" Background="{StaticResource Card}"
+                  Foreground="White" BorderBrush="{StaticResource Cyan}" SelectionMode="Single">
+            <ListView.View>
+                <GridView>
+                    <GridViewColumn Header="Business"  DisplayMemberBinding="{Binding BusinessName}" Width="200"/>
+                    <GridViewColumn Header="Contact"   DisplayMemberBinding="{Binding ContactName}"  Width="160"/>
+                    <GridViewColumn Header="Email"     DisplayMemberBinding="{Binding Email}"        Width="220"/>
+                    <GridViewColumn Header="Phone"     DisplayMemberBinding="{Binding Phone}"        Width="140"/>
+                    <GridViewColumn Header="Currency"  DisplayMemberBinding="{Binding PreferredCurrency}" Width="80"/>
+                </GridView>
+            </ListView.View>
+        </ListView>
+
+        <TextBlock Grid.Row="3" x:Name="status" Foreground="#888" Margin="0,8,0,0"/>
+    </Grid>
+</Page>

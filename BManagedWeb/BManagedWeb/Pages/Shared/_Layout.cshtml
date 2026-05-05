@@ -1,0 +1,128 @@
+@{
+    var role     = Context.Session.GetString("Role") ?? "";
+    var username = Context.Session.GetString("Username") ?? "";
+    var isOwner    = role == "Owner";
+    var isEmployee = role == "Employee";
+    var isClient   = role == "Client";
+}
+<!DOCTYPE html>
+<html lang="en" class="bg-[#FAFAF7]">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>@(ViewData["Title"]) — B-Managed</title>
+
+<!-- Premium typography (Fontshare CDN) -->
+<link rel="preconnect" href="https://api.fontshare.com" />
+<link rel="stylesheet" href="https://api.fontshare.com/v2/css?f[]=clash-display@600,700&f[]=plus-jakarta-sans@400,500,600,700&display=swap" />
+
+<!-- Tailwind via CDN -->
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: {
+          sans:    ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
+          display: ['"Clash Display"', '"Plus Jakarta Sans"', 'sans-serif'],
+        },
+        colors: {
+          ink:     { DEFAULT: '#0B0B0F', soft: '#1A1A22' },
+          paper:   { 50: '#FAFAF7', 100: '#F2F2EE', 200: '#E5E5DF' },
+          accent:  { DEFAULT: '#3B5BFF', deep: '#1E36C7' },
+          mint:    { DEFAULT: '#10B981' },
+          amber:   { DEFAULT: '#F59E0B' },
+          rose:    { DEFAULT: '#EF4444' },
+        },
+        boxShadow: {
+          soft:   '0 1px 1px rgba(15,15,15,0.04), 0 8px 32px -8px rgba(15,15,15,0.08)',
+          float:  '0 16px 64px -16px rgba(15,15,15,0.12)',
+          inset:  'inset 0 1px 1px rgba(255,255,255,0.6)',
+        },
+        borderRadius: {
+          'shell': '2rem',
+          'core':  'calc(2rem - 0.375rem)',
+        },
+        transitionTimingFunction: {
+          spring: 'cubic-bezier(0.32, 0.72, 0, 1)',
+        },
+      },
+    },
+  };
+</script>
+
+<style>
+  body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  .display { font-family: 'Clash Display', 'Plus Jakarta Sans', sans-serif; letter-spacing: -0.02em; }
+  /* Subtle film-grain overlay */
+  .grain::after {
+    content: ''; position: fixed; inset: 0; z-index: 50; pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.4'/%3E%3C/svg%3E");
+    opacity: 0.035;
+  }
+  .reveal { opacity: 0; transform: translateY(16px); filter: blur(6px); transition: all 0.8s cubic-bezier(0.32,0.72,0,1); }
+  .reveal.in { opacity: 1; transform: translateY(0); filter: blur(0); }
+  .pill { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; font-weight: 500; }
+</style>
+</head>
+<body class="grain text-ink antialiased min-h-[100dvh]">
+
+  <!-- Floating glass nav (Fluid Island) -->
+  <header class="sticky top-0 z-40 pt-6 px-4">
+    <nav class="mx-auto w-max bg-white/70 backdrop-blur-xl border border-black/5 rounded-full shadow-soft px-2 py-2 flex items-center gap-1 text-sm">
+      <a asp-page="/Index" class="display text-base font-bold px-4">B-Managed</a>
+      @if (isOwner)
+      {
+        <a asp-page="/Owner/Home"      class="px-3 py-1.5 rounded-full hover:bg-black/5 transition">Dashboard</a>
+        <a asp-page="/Owner/Customers" class="px-3 py-1.5 rounded-full hover:bg-black/5 transition">Customers</a>
+        <a asp-page="/Owner/Projects"  class="px-3 py-1.5 rounded-full hover:bg-black/5 transition">Projects</a>
+        <a asp-page="/Owner/Invoices"  class="px-3 py-1.5 rounded-full hover:bg-black/5 transition">Invoices</a>
+        <a asp-page="/Owner/Expenses"  class="px-3 py-1.5 rounded-full hover:bg-black/5 transition">Expenses</a>
+        <a asp-page="/Owner/Reports"   class="px-3 py-1.5 rounded-full hover:bg-black/5 transition">Reports</a>
+      }
+      else if (isEmployee)
+      {
+        <a asp-page="/Employee/Home"     class="px-3 py-1.5 rounded-full hover:bg-black/5 transition">Dashboard</a>
+        <a asp-page="/Employee/Projects" class="px-3 py-1.5 rounded-full hover:bg-black/5 transition">Projects</a>
+        <a asp-page="/Employee/Expenses" class="px-3 py-1.5 rounded-full hover:bg-black/5 transition">Expenses</a>
+      }
+      else if (isClient)
+      {
+        <a asp-page="/Client/Portal" class="px-3 py-1.5 rounded-full hover:bg-black/5 transition">My Portal</a>
+      }
+
+      @if (!string.IsNullOrEmpty(username))
+      {
+        <span class="px-3 py-1.5 text-ink/60">@username</span>
+        <a asp-page="/Logout" class="group inline-flex items-center gap-2 bg-ink text-paper-50 rounded-full px-3 py-1.5 ml-1 hover:opacity-90 transition active:scale-[0.98]">
+          Logout
+          <span class="w-6 h-6 rounded-full bg-white/15 flex items-center justify-center transition-all duration-500 ease-spring group-hover:translate-x-0.5">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+          </span>
+        </a>
+      }
+      else
+      {
+        <a asp-page="/Login" class="bg-ink text-paper-50 rounded-full px-4 py-1.5 ml-1">Sign in</a>
+      }
+    </nav>
+  </header>
+
+  <main class="px-4 md:px-8 pt-16 pb-32 max-w-[1400px] mx-auto">
+    @RenderBody()
+  </main>
+
+  <footer class="px-8 py-12 text-center text-xs text-ink/40">
+    © @DateTime.Now.Year — B-Managed · built with WCF + ASP.NET Razor Pages
+  </footer>
+
+  <script>
+    // IntersectionObserver-based reveal — GPU-friendly.
+    const io = new IntersectionObserver((entries) => {
+      for (const e of entries) if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+    }, { threshold: 0.1 });
+    document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+  </script>
+  @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
