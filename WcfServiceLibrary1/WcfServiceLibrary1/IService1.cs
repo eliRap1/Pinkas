@@ -1,0 +1,126 @@
+using Model;
+using System;
+using System.Collections.Generic;
+using System.ServiceModel;
+
+namespace WcfServiceLibrary1
+{
+    /// <summary>
+    /// B-Managed service contract.  Operations are grouped by topic; each
+    /// group has its own banner so the WSDL stays readable.  Returning
+    /// concrete <see cref="Model"/> classes (not anonymous tuples) keeps
+    /// the contract strongly-typed for both WPF and Web clients.
+    /// </summary>
+    [ServiceContract]
+    public interface IService1
+    {
+        // ==================== AUTH & USERS ====================
+
+        /// <summary>Verify password against stored PBKDF2 hash.</summary>
+        [OperationContract] bool CheckUserPassword(string username, string password);
+
+        /// <summary>True if the username exists (any role).</summary>
+        [OperationContract] bool CheckUserExist(string username);
+
+        /// <summary>Get a single user row (any role).</summary>
+        [OperationContract] User GetUserById(int id);
+
+        /// <summary>Resolve username -&gt; id (any role).</summary>
+        [OperationContract] int GetUserId(string username);
+
+        /// <summary>Insert a new user. Owner role is allowed only for the seed admin.</summary>
+        [OperationContract] bool AddUser(string username, string password, string email,
+                                         string phone, string role, string preferredCurrency);
+
+        /// <summary>Replace an existing password (admin / self).</summary>
+        [OperationContract] void ResetPassword(int userId, string newPassword);
+
+        /// <summary>Promote / demote a user (Owner only).</summary>
+        [OperationContract] void UpdateUserRole(int userId, string newRole);
+
+        /// <summary>True iff the user has role = "Owner".</summary>
+        [OperationContract] bool IsOwner(string username);
+
+        /// <summary>List every user (Owner-only UIs).</summary>
+        [OperationContract] AllUsers GetAllUsers();
+
+        /// <summary>List employees only (assignment dropdowns).</summary>
+        [OperationContract] List<User> GetAllEmployees();
+
+        /// <summary>Update non-credential profile fields.</summary>
+        [OperationContract] void UpdateUserProfile(int userId, string email, string phone,
+                                                   string preferredCurrency);
+
+        // ==================== CUSTOMERS / CRM ====================
+
+        [OperationContract] int    AddCustomer(Customer c);
+        [OperationContract] void   UpdateCustomer(Customer c);
+        [OperationContract] void   DeleteCustomer(int id);
+        [OperationContract] Customer GetCustomerById(int id);
+        [OperationContract] List<Customer> GetCustomersForOwner(int ownerId);
+        [OperationContract] List<Customer> SearchCustomers(string keyword, int ownerId);
+
+        // ==================== PROJECTS ====================
+
+        [OperationContract] int  AddProject(Project p);
+        [OperationContract] void UpdateProject(Project p);
+        [OperationContract] void SetProjectStatus(int projectId, string status);
+        [OperationContract] void AssignEmployee(int projectId, int employeeId);
+        [OperationContract] List<Project> GetProjectsByCustomer(int customerId);
+        [OperationContract] List<Project> GetProjectsForEmployee(int employeeId);
+        [OperationContract] List<Project> GetProjectsByStatus(string status, int ownerId);
+        [OperationContract] Project GetProjectById(int id);
+
+        // ==================== INVOICES ====================
+
+        /// <summary>Creates a Draft invoice with auto-generated invoiceNumber.
+        /// Lines must be added separately via <see cref="AddInvoiceLine"/>.</summary>
+        [OperationContract] int  CreateInvoice(Invoice inv);
+        [OperationContract] int  AddInvoiceLine(InvoiceLine line);
+        [OperationContract] void UpdateInvoiceStatus(int invoiceId, string status);
+        [OperationContract] void MarkInvoicePaid(int invoiceId, DateTime paidDate);
+        [OperationContract] void RecalcInvoiceTotals(int invoiceId);
+        [OperationContract] Invoice GetInvoiceById(int id);
+        [OperationContract] List<InvoiceLine> GetInvoiceLines(int invoiceId);
+        [OperationContract] List<Invoice> GetInvoicesByCustomer(int customerId);
+        [OperationContract] List<Invoice> GetUnpaidInvoices(int ownerId);
+        [OperationContract] List<Invoice> GetOverdueInvoices(int ownerId);
+
+        /// <summary>Render invoice as a PDF byte array using QuestPDF.</summary>
+        [OperationContract] byte[] GenerateInvoicePdf(int invoiceId);
+
+        // ==================== EXPENSES ====================
+
+        [OperationContract] int  AddExpense(Expense e);
+        [OperationContract] void UpdateExpense(Expense e);
+        [OperationContract] void DeleteExpense(int id);
+        [OperationContract] List<Expense> GetExpensesByOwner(int ownerId);
+        [OperationContract] List<Expense> GetExpensesByCategory(int ownerId, int categoryId);
+        [OperationContract] List<Expense> GetExpensesByPeriod(int ownerId, DateTime from, DateTime to);
+        [OperationContract] List<ExpenseCategory> GetExpenseCategories();
+
+        // ==================== REPORTS / VAT ====================
+
+        [OperationContract] VatSummary GetVatSummary(int ownerId, int year, int month, string displayCurrency);
+        [OperationContract] decimal    GetMonthlyTaxSetAside(int ownerId, int year, int month, string displayCurrency);
+        [OperationContract] ProfitLoss GetProfitLoss(int ownerId, DateTime from, DateTime to, string displayCurrency);
+        [OperationContract] List<CustomerRevenueRow> GetTopCustomersByRevenue(int ownerId, string displayCurrency);
+        [OperationContract] List<ExpenseBreakdownRow> GetExpenseBreakdown(int ownerId, DateTime from, DateTime to, string displayCurrency);
+        [OperationContract] List<EmployeeRevenueRow>  GetEmployeeRevenueReport(int ownerId, string displayCurrency);
+
+        // ==================== CURRENCY ====================
+
+        [OperationContract] double GetExchangeRate(string from, string to, DateTime asOfDate);
+        [OperationContract] void   SetExchangeRate(string from, string to, double rate);
+        [OperationContract] string[] GetSupportedCurrencies();
+
+        // ==================== NOTIFICATIONS ====================
+
+        [OperationContract] int  SendNotification(Notification n);
+        [OperationContract] List<Notification> GetUserNotifications(int userId);
+        [OperationContract] int  GetUnreadNotificationCount(int userId);
+        [OperationContract] void MarkNotificationAsRead(int notificationId);
+        [OperationContract] void MarkAllNotificationsAsRead(int userId);
+        [OperationContract] void DeleteNotification(int notificationId);
+    }
+}

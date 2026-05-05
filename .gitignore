@@ -1,0 +1,34 @@
+# Build output
+bin/
+obj/
+*.user
+*.suo
+*.userprefs
+
+# Visual Studio
+.vs/
+*.vsidx
+*.lock
+
+# Rider/MonoDevelop
+.idea/
+*.sln.iml
+
+# Connected Services build artifacts
+**/Connected Services/*/Reference.svcmap.bak
+**/Connected Services/*/Reference.cs.bak
+
+# Office lock files
+~$*
+
+# Python helper artifacts
+__pycache__/
+*.pyc
+
+# Local user state
+.claude/settings.local.json
+
+# OS junk
+.DS_Store
+Thumbs.db
+desktop.ini

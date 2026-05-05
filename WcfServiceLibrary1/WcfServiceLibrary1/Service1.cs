@@ -1,0 +1,241 @@
+using Model;
+using Model.Helpers;
+using System;
+using System.Collections.Generic;
+using System.ServiceModel;
+using ViewDB;
+
+namespace WcfServiceLibrary1
+{
+    /// <summary>
+    /// Concrete implementation of <see cref="IService1"/>. Each method
+    /// delegates to a per-table ViewDB class. Errors are caught and
+    /// rewrapped as <see cref="FaultException"/> so the real cause
+    /// surfaces to clients (lesson learned from Driver-moodle).
+    /// </summary>
+    public class Service1 : IService1
+    {
+        private readonly UserDB         userDB     = new UserDB();
+        private readonly CustomerDB     custDB     = new CustomerDB();
+        private readonly ProjectDB      projDB     = new ProjectDB();
+        private readonly InvoiceDB      invDB      = new InvoiceDB();
+        private readonly InvoiceLineDB  lineDB     = new InvoiceLineDB();
+        private readonly ExpenseDB      expDB      = new ExpenseDB();
+        private readonly NotificationDB notifDB    = new NotificationDB();
+        private readonly ExchangeRateDB fxDB       = new ExchangeRateDB();
+        private readonly ReportsDB      reportsDB  = new ReportsDB();
+
+        // ===================================================================
+        // AUTH & USERS
+        // ===================================================================
+
+        public bool CheckUserPassword(string u, string p)
+            => userDB.VerifyPassword(u, p);
+
+        public bool CheckUserExist(string u)
+            => userDB.UserExists(u);
+
+        public User GetUserById(int id)
+            => userDB.GetById(id);
+
+        public int GetUserId(string username)
+            => userDB.GetIdByUsername(username);
+
+        public bool AddUser(string username, string password, string email,
+                            string phone, string role, string preferredCurrency)
+        {
+            if (!SecurityHelper.IsSafeString(username, 50)) return false;
+            if (string.IsNullOrEmpty(password) || password.Length < 4) return false;
+            if (userDB.UserExists(username)) return false;
+
+            var u = new User
+            {
+                Username = username,
+                PasswordHash = SecurityHelper.HashPassword(password),
+                Email = email,
+                Phone = phone,
+                Role = role ?? "Client",
+                IsActive = true,
+                CreatedAt = DateTime.Now,
+                PreferredCurrency = preferredCurrency ?? "ILS"
+            };
+            return userDB.Insert(u) > 0;
+        }
+
+        public void ResetPassword(int userId, string newPassword)
+        {
+            try { userDB.SetPassword(userId, SecurityHelper.HashPassword(newPassword)); }
+            catch (Exception ex) { throw new FaultException("ResetPassword failed: " + ex.Message); }
+        }
+
+        public void UpdateUserRole(int userId, string newRole)
+        {
+            try { userDB.UpdateRole(userId, newRole); }
+            catch (Exception ex) { throw new FaultException("UpdateUserRole failed: " + ex.Message); }
+        }
+
+        public bool IsOwner(string username) => userDB.IsRole(username, "Owner");
+
+        public AllUsers GetAllUsers() => userDB.GetAll();
+
+        public List<User> GetAllEmployees() => userDB.GetByRole("Employee");
+
+        public void UpdateUserProfile(int userId, string email, string phone, string preferredCurrency)
+            => userDB.UpdateProfile(userId, email, phone, preferredCurrency);
+
+        // ===================================================================
+        // CUSTOMERS / CRM
+        // ===================================================================
+
+        public int  AddCustomer(Customer c)             => custDB.Insert(c);
+        public void UpdateCustomer(Customer c)          => custDB.Update(c);
+        public void DeleteCustomer(int id)              => custDB.Delete(id);
+        public Customer GetCustomerById(int id)         => custDB.GetById(id);
+        public List<Customer> GetCustomersForOwner(int ownerId) => custDB.GetByOwner(ownerId);
+        public List<Customer> SearchCustomers(string keyword, int ownerId)
+            => custDB.Search(keyword, ownerId);
+
+        // ===================================================================
+        // PROJECTS
+        // ===================================================================
+
+        public int  AddProject(Project p)               => projDB.Insert(p);
+        public void UpdateProject(Project p)            => projDB.Update(p);
+        public void SetProjectStatus(int id, string s)  => projDB.SetStatus(id, s);
+        public void AssignEmployee(int id, int empId)   => projDB.AssignEmployee(id, empId);
+        public List<Project> GetProjectsByCustomer(int customerId) => projDB.GetByCustomer(customerId);
+        public List<Project> GetProjectsForEmployee(int empId)     => projDB.GetByEmployee(empId);
+        public List<Project> GetProjectsByStatus(string status, int ownerId)
+            => projDB.GetByStatus(status, ownerId);
+        public Project GetProjectById(int id)           => projDB.GetById(id);
+
+        // ===================================================================
+        // INVOICES
+        // ===================================================================
+
+        public int  CreateInvoice(Invoice inv)
+        {
+            if (string.IsNullOrEmpty(inv.InvoiceNumber))
+                inv.InvoiceNumber = invDB.NextInvoiceNumber();
+            return invDB.Insert(inv);
+        }
+
+        public int  AddInvoiceLine(InvoiceLine l)
+        {
+            l.LineTotal = (decimal)l.Quantity * l.UnitPrice;
+            int id = lineDB.Insert(l);
+            invDB.RecalcTotals(l.InvoiceId);
+            return id;
+        }
+
+        public void UpdateInvoiceStatus(int id, string s) => invDB.UpdateStatus(id, s);
+
+        public void MarkInvoicePaid(int id, DateTime paidDate)
+        {
+            try { invDB.MarkPaid(id, paidDate); }
+            catch (Exception ex) { throw new FaultException("MarkInvoicePaid failed: " + ex.Message); }
+        }
+
+        public void RecalcInvoiceTotals(int invoiceId) => invDB.RecalcTotals(invoiceId);
+        public Invoice GetInvoiceById(int id)              => invDB.GetById(id);
+        public List<InvoiceLine> GetInvoiceLines(int id)   => lineDB.GetByInvoice(id);
+        public List<Invoice> GetInvoicesByCustomer(int cid) => invDB.GetByCustomer(cid);
+        public List<Invoice> GetUnpaidInvoices(int ownerId) => invDB.GetUnpaidForOwner(ownerId);
+        public List<Invoice> GetOverdueInvoices(int ownerId)=> invDB.GetOverdueForOwner(ownerId);
+
+        public byte[] GenerateInvoicePdf(int invoiceId)
+        {
+            try
+            {
+                var inv = invDB.GetById(invoiceId);
+                var lines = lineDB.GetByInvoice(invoiceId);
+                var customer = custDB.GetById(inv.CustomerId);
+                return new BusinessLogic.InvoicePdfBuilder().Render(inv, lines, customer);
+            }
+            catch (Exception ex)
+            {
+                throw new FaultException("GenerateInvoicePdf failed: " + ex.Message);
+            }
+        }
+
+        // ===================================================================
+        // EXPENSES
+        // ===================================================================
+
+        public int  AddExpense(Expense e)              => expDB.Insert(e);
+        public void UpdateExpense(Expense e)           => expDB.Update(e);
+        public void DeleteExpense(int id)              => expDB.Delete(id);
+        public List<Expense> GetExpensesByOwner(int ownerId) => expDB.GetByOwner(ownerId);
+        public List<Expense> GetExpensesByCategory(int ownerId, int catId)
+            => expDB.GetByCategory(ownerId, catId);
+        public List<Expense> GetExpensesByPeriod(int ownerId, DateTime from, DateTime to)
+            => expDB.GetByPeriod(ownerId, from, to);
+        public List<ExpenseCategory> GetExpenseCategories() => expDB.GetCategories();
+
+        // ===================================================================
+        // REPORTS / VAT
+        // ===================================================================
+
+        public VatSummary GetVatSummary(int ownerId, int year, int month, string displayCurrency)
+            => reportsDB.VatSummary(ownerId, year, month, displayCurrency ?? "ILS");
+
+        public decimal GetMonthlyTaxSetAside(int ownerId, int year, int month, string displayCurrency)
+            => reportsDB.MonthlyTaxSetAside(ownerId, year, month, displayCurrency ?? "ILS");
+
+        public ProfitLoss GetProfitLoss(int ownerId, DateTime from, DateTime to, string displayCurrency)
+            => reportsDB.ProfitLoss(ownerId, from, to, displayCurrency ?? "ILS");
+
+        public List<CustomerRevenueRow> GetTopCustomersByRevenue(int ownerId, string displayCurrency)
+            => reportsDB.TopCustomersByRevenue(ownerId, displayCurrency ?? "ILS");
+
+        public List<ExpenseBreakdownRow> GetExpenseBreakdown(int ownerId, DateTime from, DateTime to, string displayCurrency)
+            => reportsDB.ExpenseBreakdown(ownerId, from, to, displayCurrency ?? "ILS");
+
+        public List<EmployeeRevenueRow> GetEmployeeRevenueReport(int ownerId, string displayCurrency)
+            => reportsDB.EmployeeRevenueReport(ownerId, displayCurrency ?? "ILS");
+
+        // ===================================================================
+        // CURRENCY
+        // ===================================================================
+
+        public double GetExchangeRate(string from, string to, DateTime asOfDate)
+            => fxDB.GetLatestRate(from, to, asOfDate);
+
+        public void SetExchangeRate(string from, string to, double rate)
+            => fxDB.Insert(new ExchangeRate { FromCurrency = from, ToCurrency = to, Rate = rate, EffectiveDate = DateTime.Now });
+
+        public string[] GetSupportedCurrencies() => new[] { "ILS", "USD" };
+
+        // ===================================================================
+        // NOTIFICATIONS
+        // ===================================================================
+
+        public int SendNotification(Notification n)
+        {
+            try { return notifDB.Insert(n); }
+            catch (Exception ex) { throw new FaultException("SendNotification failed: " + ex.Message); }
+        }
+
+        public List<Notification> GetUserNotifications(int userId) => notifDB.GetByUser(userId);
+
+        public int GetUnreadNotificationCount(int userId)          => notifDB.UnreadCount(userId);
+
+        public void MarkNotificationAsRead(int id)
+        {
+            try { notifDB.MarkAsRead(id); }
+            catch (Exception ex) { throw new FaultException("MarkAsRead failed: " + ex.Message); }
+        }
+
+        public void MarkAllNotificationsAsRead(int userId)
+        {
+            try { notifDB.MarkAllAsRead(userId); }
+            catch (Exception ex) { throw new FaultException("MarkAllAsRead failed: " + ex.Message); }
+        }
+
+        public void DeleteNotification(int id)
+        {
+            try { notifDB.Delete(id); }
+            catch (Exception ex) { throw new FaultException("DeleteNotification failed: " + ex.Message); }
+        }
+    }
+}
