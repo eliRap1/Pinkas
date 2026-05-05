@@ -18,9 +18,15 @@ from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml.ns import qn
 from docx.oxml import OxmlElement
 
-ROOT      = r"D:\USERS\Downloads\Driver-moodle"
-MD_PATH   = os.path.join(ROOT, "ספר_פרויקט_Driver_Moodle_FINAL_v2.md")
-DOCX_PATH = os.path.join(ROOT, "ספר_פרויקט_Driver_Moodle_FINAL_v3.docx")
+ROOT = r"D:\yudb"
+# Process both books: Hebrew master + English appendix.
+JOBS = [
+    (os.path.join(ROOT, "ספר_פרויקט_B_Managed_HE.md"),
+     os.path.join(ROOT, "ספר_פרויקט_B_Managed_HE.docx")),
+    (os.path.join(ROOT, "BManaged_ProjectBook_EN.md"),
+     os.path.join(ROOT, "BManaged_ProjectBook_EN.docx")),
+]
+MD_PATH, DOCX_PATH = JOBS[0]  # default; overwritten in build()
 
 CYAN   = RGBColor(0x00, 0x9F, 0xCC)
 ORANGE = RGBColor(0xC0, 0x70, 0x10)
@@ -285,8 +291,8 @@ def process_markdown(md_text, doc):
         i += 1
 
 
-def build():
-    with open(MD_PATH, "r", encoding="utf-8") as f:
+def build_one(md_path, docx_path):
+    with open(md_path, "r", encoding="utf-8") as f:
         md = f.read()
 
     doc = Document()
@@ -306,7 +312,13 @@ def build():
         section.right_margin  = Cm(2)
 
     process_markdown(md, doc)
-    doc.save(DOCX_PATH)
+    doc.save(docx_path)
+
+
+def build():
+    for md, dx in JOBS:
+        if os.path.exists(md):
+            build_one(md, dx)
 
 
 if __name__ == "__main__":
