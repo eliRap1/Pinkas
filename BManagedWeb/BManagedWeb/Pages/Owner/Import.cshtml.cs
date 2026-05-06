@@ -62,12 +62,27 @@ namespace BManagedWeb.Pages.Owner
             return Page();
         }
 
+        // Patur cannot deduct VAT on expenses, so VAT is 0; everyone else uses 18 %.
+        private bool IsOwnerPatur(int ownerId)
+        {
+            try
+            {
+                var u = _srv.GetUserById(ownerId);
+                return u != null && u.BusinessType == "Patur";
+            }
+            catch { return false; }
+        }
+
+        private static decimal VatFromGross(decimal gross, bool isPatur)
+            => isPatur ? 0m : Math.Round(gross * 18m / 118m, 2);
+
         public IActionResult OnPostCsv()
         {
             var role = HttpContext.Session.GetString("Role");
             if (role != "Owner") return RedirectToPage("/Login");
             int ownerId = HttpContext.Session.GetInt32("UserId") ?? 0;
             string cur  = HttpContext.Session.GetString("Currency") ?? "ILS";
+            bool isPatur = IsOwnerPatur(ownerId);
 
             Categories = (_srv.GetExpenseCategories() ?? new ExpenseCategory[0]).ToList();
             if (CsvFile == null || CsvFile.Length == 0)
@@ -102,7 +117,7 @@ namespace BManagedWeb.Pages.Owner
                             CategoryId  = catId,
                             Date        = date,
                             Amount      = amount,
-                            VatPaid     = Math.Round(amount * 17m / 117m, 2),
+                            VatPaid     = VatFromGross(amount, isPatur),
                             Vendor      = description.Length > 60 ? description.Substring(0, 60) : description,
                             Description = description,
                             Currency    = cur,
@@ -122,6 +137,7 @@ namespace BManagedWeb.Pages.Owner
             if (role != "Owner") return RedirectToPage("/Login");
             int ownerId = HttpContext.Session.GetInt32("UserId") ?? 0;
             string cur  = HttpContext.Session.GetString("Currency") ?? "ILS";
+            bool isPatur = IsOwnerPatur(ownerId);
 
             Categories = (_srv.GetExpenseCategories() ?? new ExpenseCategory[0]).ToList();
             if (string.IsNullOrWhiteSpace(ReceiptText))
@@ -158,7 +174,7 @@ namespace BManagedWeb.Pages.Owner
                     CategoryId  = catId,
                     Date        = DateTime.Today,
                     Amount      = total,
-                    VatPaid     = Math.Round(total * 17m / 117m, 2),
+                    VatPaid     = VatFromGross(total, isPatur),
                     Vendor      = string.IsNullOrEmpty(vendor) ? "(parsed receipt)" : vendor,
                     Description = ReceiptText.Length > 200 ? ReceiptText.Substring(0, 200) : ReceiptText,
                     Currency    = cur,

@@ -3,12 +3,12 @@ using System;
 namespace BusinessLogic
 {
     /// <summary>
-    /// Israel VAT defaults. 17% standard rate, with helper methods to
-    /// recompute VAT amount + gross from a subtotal.
+    /// Israel VAT defaults. 18% standard rate (raised from 17% in Jan 2025),
+    /// with helper methods to recompute VAT amount + gross from a subtotal.
     /// </summary>
     public static class VatCalculator
     {
-        public const double DefaultRate = 0.17;
+        public const double DefaultRate = 0.18;
 
         public static decimal VatOn(decimal subtotal, double rate = DefaultRate)
             => Math.Round(subtotal * (decimal)rate, 2);

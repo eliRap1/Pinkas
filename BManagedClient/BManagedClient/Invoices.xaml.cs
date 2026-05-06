@@ -63,6 +63,8 @@ namespace BManagedClient
         {
             if (newCustomer.SelectedValue == null) return;
             string cur = (newCurrency.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "ILS";
+            // Israeli VAT default 18 % (since Jan 2025). Osek Patur invoices issue at 0 %.
+            double vatRate = (LogIn.sign != null && LogIn.sign.IsPatur) ? 0.0 : 0.18;
             try
             {
                 int newId = ServiceGateway.Use(c => c.CreateInvoice(new Invoice
@@ -72,7 +74,7 @@ namespace BManagedClient
                     DueDate = DateTime.Today.AddDays(30),
                     Currency = cur,
                     Status = "Draft",
-                    VatRate = 0.17,
+                    VatRate = vatRate,
                 }));
                 RefreshInvoices();
                 _selected = ServiceGateway.Use(c => c.GetInvoiceById(newId));

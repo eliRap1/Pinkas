@@ -81,13 +81,15 @@ namespace BManagedWeb.Pages.Owner
             var role = HttpContext.Session.GetString("Role");
             if (role != "Owner") return RedirectToPage("/Login");
             if (NewCustomerId <= 0) return RedirectToPage();
-            // VAT-exempt business types (Patur / Zair) issue invoices without VAT.
+            // Osek Patur issues invoices without VAT. Murshe / Individual default
+            // to 18 % (raised from 17 % in Jan 2025). Osek Zair status does NOT
+            // change VAT — only income-tax base.
             int ownerId = HttpContext.Session.GetInt32("UserId") ?? 0;
-            double vatRate = 0.17;
+            double vatRate = 0.18;
             try
             {
                 var owner = _srv.GetUserById(ownerId);
-                if (owner != null && (owner.BusinessType == "Patur" || owner.BusinessType == "Zair"))
+                if (owner != null && owner.BusinessType == "Patur")
                     vatRate = 0;
             }
             catch { }

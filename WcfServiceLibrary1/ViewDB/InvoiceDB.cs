@@ -25,7 +25,7 @@ namespace ViewDB
             try { i.IssueDate  = DateTime.Parse(reader["issueDate"].ToString()); } catch { }
             try { i.DueDate    = DateTime.Parse(reader["dueDate"].ToString()); }   catch { }
             try { i.Subtotal   = Convert.ToDecimal(reader["subtotal"]); }  catch { }
-            try { i.VatRate    = Convert.ToDouble(reader["vatRate"]); }    catch { i.VatRate = 0.17; }
+            try { i.VatRate    = Convert.ToDouble(reader["vatRate"]); }    catch { i.VatRate = 0.18; }
             try { i.VatAmount  = Convert.ToDecimal(reader["vatAmount"]); } catch { }
             try { i.Total      = Convert.ToDecimal(reader["total"]); }     catch { }
             try { i.Currency   = reader["currency"].ToString(); }          catch { i.Currency = "ILS"; }
@@ -153,7 +153,7 @@ namespace ViewDB
                     if (r != null && r != DBNull.Value) subtotal = Convert.ToDecimal(r);
                 }
 
-                double rate = 0.17;
+                double rate = 0.18;
                 using (var cmd = new OleDbCommand(
                     "SELECT [vatRate] FROM [Invoices] WHERE [id]=?", conn))
                 {

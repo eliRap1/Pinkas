@@ -17,7 +17,7 @@ namespace Model
         [DataMember] public DateTime IssueDate { get; set; } = DateTime.Today;
         [DataMember] public DateTime DueDate { get; set; } = DateTime.Today.AddDays(30);
         [DataMember] public decimal Subtotal { get; set; }
-        [DataMember] public double VatRate { get; set; } = 0.17;  // Israel default 17%
+        [DataMember] public double VatRate { get; set; } = 0.18;  // Israel default 18% (since Jan 2025)
         [DataMember] public decimal VatAmount { get; set; }
         [DataMember] public decimal Total { get; set; }
         [DataMember] public string Currency { get; set; } = "ILS";

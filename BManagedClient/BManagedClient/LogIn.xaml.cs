@@ -39,6 +39,8 @@ namespace BManagedClient
                 sign.Role              = user.Role;
                 sign.PreferredCurrency = user.PreferredCurrency;
                 sign.IsActive          = user.IsActive;
+                sign.BusinessType      = string.IsNullOrEmpty(user.BusinessType) ? "Individual" : user.BusinessType;
+                sign.IsZair            = user.IsZair;
 
                 // If they signed in with the manager-issued temp password,
                 // jump straight to Settings so they can pick their own.

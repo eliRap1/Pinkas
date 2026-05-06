@@ -60,6 +60,8 @@ namespace WcfServiceLibrary1
         [OperationContract] void UpdateUserProfile(int userId, string email, string phone,
                                                    string preferredCurrency);
         [OperationContract] void SetBusinessType(int userId, string businessType);
+        /// <summary>Toggle Osek Zair income-tax status (independent of BusinessType).</summary>
+        [OperationContract] void SetIsZair(int userId, bool isZair);
 
         // ==================== CUSTOMERS / CRM ====================
 

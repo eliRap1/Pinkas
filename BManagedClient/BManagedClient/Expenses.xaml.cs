@@ -56,15 +56,19 @@ namespace BManagedClient
         private void Back_Click(object s, RoutedEventArgs e)
             => NavigationService?.Navigate(ClientSession.IsOwner ? (Page)new OwnerHome() : new EmployeeHome());
 
-        // Auto VAT: from a gross amount, derive the VAT portion at 17 % (Israeli standard).
-        // gross = net + vat = net + net*0.17 = net*1.17 → vat = gross * 17 / 117.
+        // Auto VAT: from a gross amount, derive the VAT portion at 18 % (Israeli
+        // standard since Jan 2025). gross = net + vat = net*1.18 → vat = gross*18/118.
+        // Osek Patur cannot deduct VAT on expenses, so VAT is forced to 0.
+        private decimal ComputeVatFromGross(decimal gross)
+        {
+            if (LogIn.sign != null && LogIn.sign.IsPatur) return 0m;
+            return Math.Round(gross * 18m / 118m, 2);
+        }
+
         private void AutoVat_Click(object s, RoutedEventArgs e)
         {
             if (decimal.TryParse(amountBox.Text, out decimal gross) && gross > 0)
-            {
-                decimal vat = Math.Round(gross * 17m / 117m, 2);
-                vatBox.Text = vat.ToString("0.##");
-            }
+                vatBox.Text = ComputeVatFromGross(gross).ToString("0.##");
         }
 
         // Live recalc: when the user types in Amount, refresh VAT only if they
@@ -75,7 +79,7 @@ namespace BManagedClient
             if (string.IsNullOrWhiteSpace(vatBox.Text) || vatBox.Text.Trim() == "0")
             {
                 if (decimal.TryParse(amountBox.Text, out decimal gross) && gross > 0)
-                    vatBox.Text = Math.Round(gross * 17m / 117m, 2).ToString("0.##");
+                    vatBox.Text = ComputeVatFromGross(gross).ToString("0.##");
             }
         }
     }

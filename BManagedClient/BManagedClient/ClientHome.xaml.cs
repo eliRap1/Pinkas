@@ -24,7 +24,7 @@ namespace BManagedClient
             outstandingCurrency.Text = LogIn.sign.PreferredCurrency ?? "ILS";
             Refresh();
 
-            pollTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(30) };
+            pollTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(15) };
             pollTimer.Tick += (s, e) => Refresh();
             pollTimer.Start();
             Unloaded += (s, e) => pollTimer.Stop();

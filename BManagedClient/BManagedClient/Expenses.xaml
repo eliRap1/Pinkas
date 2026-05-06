@@ -37,10 +37,10 @@
                     </TextBlock>
                     <TextBlock TextWrapping="Wrap" Style="{StaticResource Body}" Margin="0,4,0,0">
                         <Run FontWeight="SemiBold">VAT paid</Run>
-                        <Run> — only the VAT portion you can later deduct. Example: from 117 → VAT = 17.
+                        <Run> — only the VAT portion you can later deduct. Example: from 118 → VAT = 18.
                               Click </Run>
-                        <Run FontWeight="SemiBold">Auto VAT (17%)</Run>
-                        <Run> to fill it from the gross amount automatically. Editable for zero-rated or non-deductible categories.</Run>
+                        <Run FontWeight="SemiBold">Auto VAT (18%)</Run>
+                        <Run> to fill it from the gross amount automatically. Osek Patur cannot deduct VAT — VAT is forced to 0.</Run>
                     </TextBlock>
                 </StackPanel>
             </Border>
@@ -77,9 +77,9 @@
                     <TextBox Grid.Row="1" Grid.Column="3" x:Name="vatBox" Style="{StaticResource ModernTextBox}"
                              Margin="0,0,6,0" Text="0"
                              ToolTip="VAT portion only — the part you can deduct"/>
-                    <Button  Grid.Row="1" Grid.Column="4" Content="Auto VAT (17%)" Click="AutoVat_Click"
+                    <Button  Grid.Row="1" Grid.Column="4" Content="Auto VAT (18%)" Click="AutoVat_Click"
                              Style="{StaticResource SecondaryButton}" Margin="0,0,6,0"
-                             ToolTip="Fill VAT = Amount × 17 ÷ 117 (Israeli standard)"/>
+                             ToolTip="Fill VAT = Amount × 18 ÷ 118 (Israeli standard, since 2025). Forced 0 for Osek Patur."/>
                     <Button  Grid.Row="1" Grid.Column="5" Content="➕ Log expense" Click="Add_Click" Style="{StaticResource RoseButton}"/>
                 </Grid>
             </Border>

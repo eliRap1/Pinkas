@@ -104,6 +104,9 @@ namespace WcfServiceLibrary1
         public void SetBusinessType(int userId, string businessType)
             => userDB.SetBusinessType(userId, businessType);
 
+        public void SetIsZair(int userId, bool isZair)
+            => userDB.SetIsZair(userId, isZair);
+
         // ===================================================================
         // CUSTOMERS / CRM
         // ===================================================================

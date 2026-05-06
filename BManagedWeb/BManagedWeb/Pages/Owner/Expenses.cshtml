@@ -58,8 +58,8 @@
                    class="w-full bg-paper-100 border border-black/5 rounded-2xl px-4 py-2.5" />
             <button type="button" id="exp-autovat"
                     class="shrink-0 bg-ink text-paper-50 rounded-full px-3 py-1.5 text-xs"
-                    title="@L.T(HttpContext,"Auto = Amount × 17 ÷ 117 (Israeli VAT)","חישוב אוטומטי = סכום × 17 ÷ 117")">
-                Auto&nbsp;17%
+                    title="@L.T(HttpContext,"Auto = Amount × 18 ÷ 118 (Israeli VAT, since 2025)","חישוב אוטומטי = סכום × 18 ÷ 118")">
+                Auto&nbsp;18%
             </button>
         </div>
         <input asp-for="NewDescription" placeholder="@L.T(HttpContext,"Description","תיאור")" class="md:col-span-3 bg-paper-100 border border-black/5 rounded-2xl px-4 py-2.5" />
@@ -76,14 +76,14 @@
 
 @section Scripts {
 <script>
-  // Auto-VAT: gross × 17 ÷ 117 (Israeli standard rate, baked into gross).
+  // Auto-VAT: gross × 18 ÷ 118 (Israeli standard rate since Jan 2025).
   const amount = document.getElementById('exp-amount');
   const vat    = document.getElementById('exp-vat');
   const btn    = document.getElementById('exp-autovat');
   function calc() {
     const g = parseFloat(amount.value);
     if (!isFinite(g) || g <= 0) return;
-    vat.value = (g * 17 / 117).toFixed(2);
+    vat.value = (g * 18 / 118).toFixed(2);
   }
   if (btn) btn.addEventListener('click', calc);
   if (amount) amount.addEventListener('input', () => {

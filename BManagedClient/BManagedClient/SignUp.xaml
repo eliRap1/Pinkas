@@ -4,58 +4,103 @@
       xmlns:local="clr-namespace:BManagedClient"
       Title="Create account" Background="{StaticResource Bg}">
     <Grid>
-        <Grid HorizontalAlignment="Center" VerticalAlignment="Center" Width="460">
+        <Grid HorizontalAlignment="Center" VerticalAlignment="Center" Width="520">
             <Border Style="{StaticResource ShellCard}">
                 <Border Style="{StaticResource CoreCard}" Padding="36,28">
                     <StackPanel>
                         <Border Style="{StaticResource EyebrowPill}" HorizontalAlignment="Center">
                             <TextBlock Text="NEW HERE" Style="{StaticResource Eyebrow}"/>
                         </Border>
-                        <TextBlock Text="Create account" Style="{StaticResource DisplayLg}" FontSize="44"
+                        <TextBlock x:Name="titleText" Text="Create account" Style="{StaticResource DisplayLg}" FontSize="44"
                                    HorizontalAlignment="Center" Margin="0,14,0,4"/>
-                        <TextBlock Text="Self-register as a Client. Owner promotes later."
+                        <TextBlock x:Name="subtitleText" Text="Pick the role that fits you."
                                    Style="{StaticResource Body}" HorizontalAlignment="Center"
                                    Margin="0,0,0,22"/>
 
-                        <TextBlock Text="USERNAME" Style="{StaticResource InputLabel}"/>
-                        <TextBox x:Name="usernameBox" Style="{StaticResource ModernTextBox}" Margin="0,0,0,10">
-                            <TextBox.Text>
-                                <Binding Path="Username" UpdateSourceTrigger="PropertyChanged">
-                                    <Binding.ValidationRules><local:MinLenth/></Binding.ValidationRules>
-                                </Binding>
-                            </TextBox.Text>
-                        </TextBox>
+                        <!-- Step 1: role chooser -->
+                        <StackPanel x:Name="roleStep">
+                            <Border CornerRadius="18" Padding="18" Margin="0,0,0,12"
+                                    Background="{StaticResource Paper100}" BorderBrush="#11000000" BorderThickness="1">
+                                <StackPanel>
+                                    <TextBlock Text="OWNER — I run a business" FontWeight="Bold" FontSize="14"/>
+                                    <TextBlock TextWrapping="Wrap" Margin="0,4,0,10" Foreground="#80000000"
+                                               Text="You'll log customers, projects, invoices, expenses and VAT. Choose your VAT registration (Osek Patur or Murshe). Account starts inactive until an existing Owner approves it."/>
+                                    <Button Content="Continue as Owner" Click="ChooseOwner_Click"
+                                            Style="{StaticResource PrimaryButton}" Height="40"/>
+                                </StackPanel>
+                            </Border>
 
-                        <TextBlock Text="PASSWORD" Style="{StaticResource InputLabel}"/>
-                        <PasswordBox x:Name="passwordBox" Style="{StaticResource ModernPasswordBox}" Margin="0,0,0,10"/>
+                            <Border CornerRadius="18" Padding="18" Margin="0,0,0,12"
+                                    Background="{StaticResource Paper100}" BorderBrush="#11000000" BorderThickness="1">
+                                <StackPanel>
+                                    <TextBlock Text="EMPLOYEE — I work on assigned projects" FontWeight="Bold" FontSize="14"/>
+                                    <TextBlock TextWrapping="Wrap" Margin="0,4,0,10" Foreground="#80000000"
+                                               Text="You'll see projects assigned to you, log your own expenses, and read notifications. Account starts inactive until an Owner approves it."/>
+                                    <Button Content="Continue as Employee" Click="ChooseEmployee_Click"
+                                            Style="{StaticResource PrimaryButton}" Height="40"/>
+                                </StackPanel>
+                            </Border>
 
-                        <TextBlock Text="EMAIL" Style="{StaticResource InputLabel}"/>
-                        <TextBox x:Name="emailBox" Style="{StaticResource ModernTextBox}" Margin="0,0,0,10">
-                            <TextBox.Text>
-                                <Binding Path="Email" UpdateSourceTrigger="PropertyChanged">
-                                    <Binding.ValidationRules><local:EmailRule/></Binding.ValidationRules>
-                                </Binding>
-                            </TextBox.Text>
-                        </TextBox>
+                            <Button Content="← Back to login" Click="Back_Click" Style="{StaticResource GhostButton}"/>
+                        </StackPanel>
 
-                        <TextBlock Text="PHONE" Style="{StaticResource InputLabel}"/>
-                        <TextBox x:Name="phoneBox" Style="{StaticResource ModernTextBox}" Margin="0,0,0,10">
-                            <TextBox.Text>
-                                <Binding Path="Phone" UpdateSourceTrigger="PropertyChanged">
-                                    <Binding.ValidationRules><local:PhoneRule/></Binding.ValidationRules>
-                                </Binding>
-                            </TextBox.Text>
-                        </TextBox>
+                        <!-- Step 2: form -->
+                        <StackPanel x:Name="formStep" Visibility="Collapsed">
+                            <TextBlock Text="USERNAME" Style="{StaticResource InputLabel}"/>
+                            <TextBox x:Name="usernameBox" Style="{StaticResource ModernTextBox}" Margin="0,0,0,10">
+                                <TextBox.Text>
+                                    <Binding Path="Username" UpdateSourceTrigger="PropertyChanged">
+                                        <Binding.ValidationRules><local:MinLenth/></Binding.ValidationRules>
+                                    </Binding>
+                                </TextBox.Text>
+                            </TextBox>
 
-                        <TextBlock Text="PREFERRED CURRENCY" Style="{StaticResource InputLabel}"/>
-                        <ComboBox x:Name="curBox" Style="{StaticResource ModernCombo}" Margin="0,0,0,18">
-                            <ComboBoxItem Content="ILS" IsSelected="True"/>
-                            <ComboBoxItem Content="USD"/>
-                        </ComboBox>
+                            <TextBlock Text="PASSWORD" Style="{StaticResource InputLabel}"/>
+                            <PasswordBox x:Name="passwordBox" Style="{StaticResource ModernPasswordBox}" Margin="0,0,0,10"/>
 
-                        <Button Content="Create account" Click="Create_Click" Style="{StaticResource PrimaryButton}" Height="42"/>
-                        <Button Content="← Back to login" Click="Back_Click" Style="{StaticResource GhostButton}" Margin="0,10,0,0"/>
-                        <TextBlock x:Name="status" Foreground="{StaticResource Rose}" HorizontalAlignment="Center" Margin="0,12,0,0"/>
+                            <TextBlock Text="EMAIL" Style="{StaticResource InputLabel}"/>
+                            <TextBox x:Name="emailBox" Style="{StaticResource ModernTextBox}" Margin="0,0,0,10">
+                                <TextBox.Text>
+                                    <Binding Path="Email" UpdateSourceTrigger="PropertyChanged">
+                                        <Binding.ValidationRules><local:EmailRule/></Binding.ValidationRules>
+                                    </Binding>
+                                </TextBox.Text>
+                            </TextBox>
+
+                            <TextBlock Text="PHONE" Style="{StaticResource InputLabel}"/>
+                            <TextBox x:Name="phoneBox" Style="{StaticResource ModernTextBox}" Margin="0,0,0,10">
+                                <TextBox.Text>
+                                    <Binding Path="Phone" UpdateSourceTrigger="PropertyChanged">
+                                        <Binding.ValidationRules><local:PhoneRule/></Binding.ValidationRules>
+                                    </Binding>
+                                </TextBox.Text>
+                            </TextBox>
+
+                            <TextBlock Text="PREFERRED CURRENCY" Style="{StaticResource InputLabel}"/>
+                            <ComboBox x:Name="curBox" Style="{StaticResource ModernCombo}" Margin="0,0,0,10">
+                                <ComboBoxItem Content="ILS" IsSelected="True"/>
+                                <ComboBoxItem Content="USD"/>
+                            </ComboBox>
+
+                            <!-- Owner-only: VAT registration + Zair flag -->
+                            <StackPanel x:Name="ownerExtras" Visibility="Collapsed">
+                                <TextBlock Text="VAT REGISTRATION" Style="{StaticResource InputLabel}"/>
+                                <ComboBox x:Name="bizBox" Style="{StaticResource ModernCombo}" Margin="0,0,0,10"
+                                          SelectionChanged="Biz_Changed">
+                                    <ComboBoxItem Content="Osek Patur (≤120k ₪/yr, no VAT)" Tag="Patur" IsSelected="True"/>
+                                    <ComboBoxItem Content="Osek Murshe (regular 18% VAT)" Tag="Murshe"/>
+                                </ComboBox>
+
+                                <CheckBox x:Name="zairBox" Margin="0,0,0,12" FontWeight="SemiBold"
+                                          Content="Claim Osek Zair income-tax status (≤122,833 ₪/yr, 30% deemed-expenses)"/>
+                            </StackPanel>
+
+                            <Button x:Name="submitBtn" Content="Create account" Click="Create_Click"
+                                    Style="{StaticResource PrimaryButton}" Height="42"/>
+                            <Button Content="← Back" Click="ResetSteps_Click" Style="{StaticResource GhostButton}" Margin="0,10,0,0"/>
+                            <TextBlock x:Name="status" Foreground="{StaticResource Rose}" HorizontalAlignment="Center"
+                                       Margin="0,12,0,0" TextWrapping="Wrap"/>
+                        </StackPanel>
                     </StackPanel>
                 </Border>
             </Border>

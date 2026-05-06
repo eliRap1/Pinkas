@@ -1219,7 +1219,10 @@ namespace BManagedClient.BMsrv {
         
         [System.Runtime.Serialization.OptionalFieldAttribute()]
         private string BusinessTypeField;
-        
+
+        [System.Runtime.Serialization.OptionalFieldAttribute()]
+        private bool IsZairField;
+
         [System.Runtime.Serialization.OptionalFieldAttribute()]
         private System.DateTime CreatedAtField;
         
@@ -1256,7 +1259,20 @@ namespace BManagedClient.BMsrv {
                 }
             }
         }
-        
+
+        [System.Runtime.Serialization.DataMemberAttribute()]
+        public bool IsZair {
+            get {
+                return this.IsZairField;
+            }
+            set {
+                if ((this.IsZairField.Equals(value) != true)) {
+                    this.IsZairField = value;
+                    this.RaisePropertyChanged("IsZair");
+                }
+            }
+        }
+
         [System.Runtime.Serialization.DataMemberAttribute()]
         public System.DateTime CreatedAt {
             get {
@@ -2036,9 +2052,15 @@ namespace BManagedClient.BMsrv {
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IService1/SetBusinessType", ReplyAction="http://tempuri.org/IService1/SetBusinessTypeResponse")]
         void SetBusinessType(int userId, string businessType);
-        
+
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IService1/SetBusinessType", ReplyAction="http://tempuri.org/IService1/SetBusinessTypeResponse")]
         System.Threading.Tasks.Task SetBusinessTypeAsync(int userId, string businessType);
+
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IService1/SetIsZair", ReplyAction="http://tempuri.org/IService1/SetIsZairResponse")]
+        void SetIsZair(int userId, bool isZair);
+
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IService1/SetIsZair", ReplyAction="http://tempuri.org/IService1/SetIsZairResponse")]
+        System.Threading.Tasks.Task SetIsZairAsync(int userId, bool isZair);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IService1/AddCustomer", ReplyAction="http://tempuri.org/IService1/AddCustomerResponse")]
         int AddCustomer(BManagedClient.BMsrv.Customer c);
@@ -2555,7 +2577,15 @@ namespace BManagedClient.BMsrv {
         public void SetBusinessType(int userId, string businessType) {
             base.Channel.SetBusinessType(userId, businessType);
         }
-        
+
+        public void SetIsZair(int userId, bool isZair) {
+            base.Channel.SetIsZair(userId, isZair);
+        }
+
+        public System.Threading.Tasks.Task SetIsZairAsync(int userId, bool isZair) {
+            return base.Channel.SetIsZairAsync(userId, isZair);
+        }
+
         public System.Threading.Tasks.Task SetBusinessTypeAsync(int userId, string businessType) {
             return base.Channel.SetBusinessTypeAsync(userId, businessType);
         }

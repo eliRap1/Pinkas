@@ -35,18 +35,45 @@
                     </div>
                     <div>
                         <label class="pill text-ink/40 mb-2 block">@L.T(HttpContext,"Account type","סוג חשבון")</label>
-                        <select asp-for="BusinessType"
+                        <select asp-for="BusinessType" id="bizSelect"
                                 class="w-full bg-paper-100/60 border border-black/5 rounded-2xl px-4 py-3 outline-none focus:border-accent transition">
                             <option value="Individual">@L.T(HttpContext,"Individual / Client (no VAT filing)","יחיד / לקוח (ללא דיווח מע״מ)")</option>
-                            <option value="Patur">@L.T(HttpContext,"Osek Patur (VAT-exempt)","עוסק פטור")</option>
-                            <option value="Zair">@L.T(HttpContext,"Osek Zair (small new business)","עוסק זעיר")</option>
-                            <option value="Murshe">@L.T(HttpContext,"Osek Murshe (regular VAT)","עוסק מורשה")</option>
+                            <option value="Patur">@L.T(HttpContext,"Osek Patur (VAT-exempt, ≤120k ₪/yr)","עוסק פטור (ללא מע״מ, עד 120k ₪/שנה)")</option>
+                            <option value="Murshe">@L.T(HttpContext,"Osek Murshe (regular 18% VAT)","עוסק מורשה (מע״מ 18%)")</option>
                         </select>
                         <p class="text-xs text-ink/40 mt-2">
-                            @L.T(HttpContext,"Patur / Zair invoices are issued without 17% VAT. Murshe collects VAT on every sale.",
-                                              "עוסק פטור / זעיר מנפיקים חשבונית ללא 17% מע״מ. עוסק מורשה גובה מע״מ על כל עסקה.")
+                            @L.T(HttpContext,"Patur invoices issue without 18% VAT. Murshe collects VAT on every sale (Form 836/874).",
+                                              "עוסק פטור מנפיק חשבוניות ללא 18% מע״מ. עוסק מורשה גובה מע״מ על כל עסקה (טופס 836/874).")
                         </p>
                     </div>
+
+                    <div id="zairWrap" class="hidden">
+                        <label class="flex items-start gap-3 select-none cursor-pointer bg-paper-100/40 border border-black/5 rounded-2xl px-4 py-3">
+                            <input asp-for="IsZair" type="checkbox" class="mt-1 accent-ink"/>
+                            <span class="block">
+                                <span class="block font-semibold text-ink">@L.T(HttpContext,"Claim Osek Zair income-tax status","סטטוס עוסק זעיר במס הכנסה")</span>
+                                <span class="block text-xs text-ink/50 mt-1">
+                                    @L.T(HttpContext,"Available if annual revenue ≤ ~122,833 ₪. Income tax is computed on 70% of revenue (flat 30% deemed-expenses, no receipts). Independent of VAT type.",
+                                                      "זמין אם מחזור שנתי עד ~122,833 ₪. מס הכנסה מחושב על 70% מהמחזור (ניכוי הוצאות אוטומטי 30%, ללא קבלות). אינו משפיע על מעמד מע״מ.")
+                                </span>
+                            </span>
+                        </label>
+                    </div>
+
+                    <script>
+                        (function () {
+                            var sel = document.getElementById('bizSelect');
+                            var wrap = document.getElementById('zairWrap');
+                            if (!sel || !wrap) return;
+                            function sync() {
+                                var v = sel.value;
+                                if (v === 'Patur' || v === 'Murshe') wrap.classList.remove('hidden');
+                                else wrap.classList.add('hidden');
+                            }
+                            sel.addEventListener('change', sync);
+                            sync();
+                        })();
+                    </script>
                     <div>
                         <label class="pill text-ink/40 mb-2 block">@L.T(HttpContext,"Preferred currency","מטבע מועדף")</label>
                         <select asp-for="Currency"

@@ -33,13 +33,36 @@ namespace ViewDB
         }
 
         /// <summary>
-        /// Adds the businessType column if missing. Lets older .accdb files
-        /// upgrade automatically without a manual migration.
+        /// Adds optional Osek-related columns if missing. Lets older .accdb
+        /// files upgrade automatically without a manual migration.
         /// </summary>
         private void EnsureSchema()
         {
+            AddColumnIfMissing("[businessType] TEXT(30)");
+            AddColumnIfMissing("[isZair] BIT");
+            MigrateLegacyZair();
+        }
+
+        // 2026 reform: Osek Zair is no longer a BusinessType — it is a flag on top
+        // of Patur or Murshe. Old rows with businessType='Zair' are migrated to
+        // ('Patur', isZair=true) since legacy Zair behaved like Patur for VAT.
+        private void MigrateLegacyZair()
+        {
             using (var conn = GetConnection())
-            using (var cmd = new OleDbCommand("ALTER TABLE [Users] ADD COLUMN [businessType] TEXT(30)", conn))
+            using (var cmd = new OleDbCommand(
+                "UPDATE [Users] SET [businessType]='Patur', [isZair]=? WHERE [businessType]='Zair'", conn))
+            {
+                cmd.Parameters.Add(new OleDbParameter("@z", OleDbType.Boolean) { Value = true });
+                try { conn.Open(); cmd.ExecuteNonQuery(); }
+                catch (Exception ex)
+                { System.Diagnostics.Debug.WriteLine("MigrateLegacyZair: " + ex.Message); }
+            }
+        }
+
+        private void AddColumnIfMissing(string columnDef)
+        {
+            using (var conn = GetConnection())
+            using (var cmd = new OleDbCommand("ALTER TABLE [Users] ADD COLUMN " + columnDef, conn))
             {
                 try { conn.Open(); cmd.ExecuteNonQuery(); }
                 catch (OleDbException ex)
@@ -47,11 +70,11 @@ namespace ViewDB
                     if (!(ex.Message.IndexOf("already exists",       StringComparison.OrdinalIgnoreCase) >= 0 ||
                           ex.Message.IndexOf("duplicate column",     StringComparison.OrdinalIgnoreCase) >= 0 ||
                           ex.Message.IndexOf("already has a field",  StringComparison.OrdinalIgnoreCase) >= 0))
-                        System.Diagnostics.Debug.WriteLine("EnsureSchema(Users.businessType): " + ex.Message);
+                        System.Diagnostics.Debug.WriteLine("EnsureSchema(Users): " + ex.Message);
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Debug.WriteLine("EnsureSchema(Users.businessType): " + ex.Message);
+                    System.Diagnostics.Debug.WriteLine("EnsureSchema(Users): " + ex.Message);
                 }
             }
         }
@@ -74,6 +97,12 @@ namespace ViewDB
                 u.BusinessType = v == DBNull.Value ? "Individual" : v.ToString();
             }
             catch { u.BusinessType = "Individual"; }
+            try
+            {
+                var v = reader["isZair"];
+                u.IsZair = v != DBNull.Value && Convert.ToBoolean(v);
+            }
+            catch { u.IsZair = false; }
         }
 
         public void SetBusinessType(int userId, string businessType)
@@ -84,6 +113,19 @@ namespace ViewDB
             {
                 cmd.Parameters.Add(new OleDbParameter("@b",  OleDbType.VarWChar, 30) { Value = businessType ?? "Individual" });
                 cmd.Parameters.Add(new OleDbParameter("@id", OleDbType.Integer)      { Value = userId });
+                conn.Open();
+                cmd.ExecuteNonQuery();
+            }
+        }
+
+        public void SetIsZair(int userId, bool isZair)
+        {
+            using (var conn = GetConnection())
+            using (var cmd = new OleDbCommand(
+                "UPDATE [Users] SET [isZair]=? WHERE [id]=?", conn))
+            {
+                cmd.Parameters.Add(new OleDbParameter("@z",  OleDbType.Boolean) { Value = isZair });
+                cmd.Parameters.Add(new OleDbParameter("@id", OleDbType.Integer) { Value = userId });
                 conn.Open();
                 cmd.ExecuteNonQuery();
             }

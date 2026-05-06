@@ -27,6 +27,55 @@
     <div class="reveal mb-6 px-4 py-2 rounded-full inline-block bg-mint/10 text-mint border border-mint/20">@vatMsg</div>
 }
 
+@if (Model.PaturOverThreshold)
+{
+    <div class="reveal mb-6 px-5 py-4 rounded-2xl bg-amber/15 text-ink border border-amber/30 max-w-3xl">
+        ⚠️ @L.T(HttpContext,
+            $"Osek Patur revenue this year is {Model.YearPl.Income:N0} ₪ — over the {Model.PaturThreshold:N0} ₪ threshold. You must register as Osek Murshe with the VAT authority.",
+            $"מחזור עוסק פטור מתחילת השנה: {Model.YearPl.Income:N0} ₪ — מעל סף {Model.PaturThreshold:N0} ₪. חובה לעבור לעוסק מורשה ברשות המסים.")
+    </div>
+}
+
+@if (!string.IsNullOrEmpty(Model.ZairNote))
+{
+    <div class="reveal mb-6 px-5 py-4 rounded-2xl bg-mint/10 text-ink border border-mint/30 max-w-3xl">
+        ✅ @Model.ZairNote
+    </div>
+}
+
+@{
+    var canZair = Model.BusinessType == "Patur" || Model.BusinessType == "Murshe";
+}
+@if (canZair)
+{
+    <form method="post" asp-page-handler="ToggleZair" class="reveal mb-8 max-w-3xl bg-black/[0.04] ring-1 ring-black/5 rounded-shell p-1.5">
+        <div class="bg-paper-50 rounded-core p-5 shadow-inset flex items-center gap-4">
+            <input type="hidden" name="Year"  value="@Model.Year"/>
+            <input type="hidden" name="Month" value="@Model.Month"/>
+            <input type="hidden" name="DisplayCurrency" value="@Model.DisplayCurrency"/>
+            <div class="flex-1">
+                <div class="pill text-ink/40">@L.T(HttpContext,"Osek Zair status","סטטוס עוסק זעיר")</div>
+                <div class="text-sm mt-1">
+                    @L.T(HttpContext,"Income tax computed on 70% of revenue (flat 30% deemed-expenses). Available while annual revenue ≤ ~122,833 ₪.",
+                                      "מס הכנסה מחושב על 70% מהמחזור (ניכוי הוצאות אוטומטי 30%). זמין כל עוד מחזור שנתי עד ~122,833 ₪.")
+                </div>
+            </div>
+            @if (Model.IsZair)
+            {
+                <button name="wantZair" value="false" class="bg-rose/10 text-rose border border-rose/30 rounded-full px-4 py-2 text-sm">
+                    @L.T(HttpContext,"Disable Zair","בטל זעיר")
+                </button>
+            }
+            else
+            {
+                <button name="wantZair" value="true" class="bg-mint text-white rounded-full px-4 py-2 text-sm">
+                    @L.T(HttpContext,"Enable Zair","הפעל זעיר")
+                </button>
+            }
+        </div>
+    </form>
+}
+
 <!-- VAT explainer -->
 <details class="reveal max-w-3xl mb-8 bg-black/[0.04] ring-1 ring-black/5 rounded-shell p-1.5">
     <summary class="bg-paper-50 rounded-core p-5 shadow-inset cursor-pointer text-sm">
@@ -37,8 +86,8 @@
     <div class="bg-paper-50 rounded-core px-5 pb-5 -mt-1 text-sm text-ink/70 space-y-2">
         <p>
             <span class="font-semibold">@L.T(HttpContext,"VAT collected","מע״מ עסקאות")</span> —
-            @L.T(HttpContext,"the 17 % VAT charged on top of every invoice you issue.",
-                              "17% המע״מ שגביית מהלקוחות בכל חשבונית.")
+            @L.T(HttpContext,"the 18 % VAT charged on top of every invoice you issue.",
+                              "18% המע״מ שגביית מהלקוחות בכל חשבונית.")
         </p>
         <p>
             <span class="font-semibold">@L.T(HttpContext,"VAT paid","מע״מ תשומות")</span> —
@@ -75,14 +124,23 @@
         <div class="bg-ink-soft rounded-core p-8 text-paper-50 shadow-inset h-full flex flex-col">
             <span class="pill text-paper-50/50">@L.T(HttpContext,"VAT due","מע״מ לתשלום")</span>
             <div class="display text-5xl font-bold mt-3">@Model.Vat.VatDue.ToString("N0") <span class="text-base text-paper-50/50">@Model.DisplayCurrency</span></div>
-            <form method="post" asp-page-handler="PayVat" class="mt-auto pt-4">
-                <input type="hidden" name="Year"  value="@Model.Year"/>
-                <input type="hidden" name="Month" value="@Model.Month"/>
-                <input type="hidden" name="DisplayCurrency" value="@Model.DisplayCurrency"/>
-                <button class="bg-mint text-white rounded-full px-4 py-2 text-sm w-full">
-                    @L.T(HttpContext,"Mark as paid to Tax Authority","סמן ששולם לרשות המסים")
-                </button>
-            </form>
+            @if (Model.ShowMarkVatPaid)
+            {
+                <form method="post" asp-page-handler="PayVat" class="mt-auto pt-4">
+                    <input type="hidden" name="Year"  value="@Model.Year"/>
+                    <input type="hidden" name="Month" value="@Model.Month"/>
+                    <input type="hidden" name="DisplayCurrency" value="@Model.DisplayCurrency"/>
+                    <button class="bg-mint text-white rounded-full px-4 py-2 text-sm w-full">
+                        @L.T(HttpContext,"Mark as paid to Tax Authority","סמן ששולם לרשות המסים")
+                    </button>
+                </form>
+            }
+            else
+            {
+                <div class="mt-auto pt-4 text-xs text-paper-50/50">
+                    @L.T(HttpContext,"Mark-as-paid applies to Osek Murshe only.","סימון תשלום מע״מ רלוונטי לעוסק מורשה בלבד.")
+                </div>
+            }
         </div>
     </div>
 
@@ -160,7 +218,7 @@
 
             <!-- Bracket table -->
             <details class="mt-6 text-xs text-ink/60">
-                <summary class="cursor-pointer pill text-ink/40">@L.T(HttpContext,"Show 2025 income-tax brackets","הצג מדרגות מס 2025")</summary>
+                <summary class="cursor-pointer pill text-ink/40">@L.T(HttpContext,"Show 2026 income-tax brackets","הצג מדרגות מס 2026")</summary>
                 <table class="mt-3 w-full text-left">
                     <thead><tr class="text-ink/40">
                         <th class="py-1">@L.T(HttpContext,"From","מ-")</th>
@@ -177,8 +235,8 @@
                         <tr><td>721,560</td><td>—</td><td>50%</td></tr>
                     </tbody>
                 </table>
-                <p class="mt-2 text-ink/50">@L.T(HttpContext,"Approximate 2025 brackets for individuals (NIS). Real liability depends on credit points, deductions, and other adjustments — consult an accountant.",
-                                                 "מדרגות משוערות 2025 ליחיד (₪). חבות מס ממשית תלויה בנקודות זיכוי, ניכויים ועוד — היוועצו עם רו״ח.")</p>
+                <p class="mt-2 text-ink/50">@L.T(HttpContext,"Approximate 2026 brackets for individuals (NIS). Real liability depends on credit points, deductions, and other adjustments — consult an accountant.",
+                                                 "מדרגות משוערות 2026 ליחיד (₪). חבות מס ממשית תלויה בנקודות זיכוי, ניכויים ועוד — היוועצו עם רו״ח.")</p>
             </details>
         </div>
     </div>

@@ -17,6 +17,7 @@ namespace BManagedWeb.Pages
         [BindProperty] public string Phone { get; set; }
         [BindProperty] public string Currency { get; set; } = "ILS";
         [BindProperty] public string BusinessType { get; set; } = "Individual";
+        [BindProperty] public bool   IsZair { get; set; } = false;
         public string ErrorMessage { get; set; }
 
         public void OnGet() { }
@@ -34,9 +35,11 @@ namespace BManagedWeb.Pages
                 if (_srv.CheckUserExist(Username))
                 { ErrorMessage = "Username already taken."; return Page(); }
 
-                // Account-as-business types map to Owner role (פטור / זעיר / מורשה).
-                // Plain "Individual" stays as Client so existing seed/demo flow keeps working.
-                bool isBusiness = BusinessType == "Patur" || BusinessType == "Zair" || BusinessType == "Murshe";
+                // Patur / Murshe are VAT registrations, so the user runs a real
+                // business → Owner role. "Individual" stays as Client. (Osek Zair
+                // is no longer a separate option — it is a flag on top of Patur or
+                // Murshe, persisted via SetIsZair.)
+                bool isBusiness = BusinessType == "Patur" || BusinessType == "Murshe";
                 string role = isBusiness ? "Owner" : "Client";
                 bool ok = _srv.AddUser(Username, Password, Email, Phone, role, Currency ?? "ILS");
                 if (!ok) { ErrorMessage = "Server rejected the request."; return Page(); }
@@ -45,6 +48,7 @@ namespace BManagedWeb.Pages
                 {
                     int newId = _srv.GetUserId(Username);
                     _srv.SetBusinessType(newId, BusinessType ?? "Individual");
+                    if (isBusiness && IsZair) _srv.SetIsZair(newId, true);
                 }
                 catch { }
 

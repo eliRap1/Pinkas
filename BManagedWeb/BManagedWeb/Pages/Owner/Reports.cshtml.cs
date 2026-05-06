@@ -26,8 +26,14 @@ namespace BManagedWeb.Pages.Owner
         public decimal    YearTax   { get; set; }
         public decimal    YearNet   { get; set; }
         public string     BusinessType { get; set; } = "Individual";
+        public bool       IsZair    { get; set; }
+        public bool       ShowMarkVatPaid { get; set; }
+        public bool       PaturOverThreshold { get; set; }
+        public decimal    PaturThreshold { get; set; } = 120_000m;
+        public decimal    ZairThreshold  { get; set; } = 122_833m;
         public decimal    TaxableProfit { get; set; }
         public string     TaxNote    { get; set; }
+        public string     ZairNote   { get; set; }
 
         public IEnumerable<SelectListItem> YearOptions =>
             Enumerable.Range(DateTime.Today.Year - 4, 5)
@@ -59,33 +65,54 @@ namespace BManagedWeb.Pages.Owner
                 var yearEnd   = new DateTime(Year, 12, 31);
                 YearPl = _srv.GetProfitLoss(id, yearStart, yearEnd, DisplayCurrency) ?? new ProfitLoss();
 
-                // BusinessType-aware taxable profit:
-                //   Osek Zair / Patur: presumptive 30% of income treated as expenses for
-                //                       income-tax purposes (חישוב נורמטיבי). No VAT either way.
-                //   Osek Murshe / Individual: real expenses count.
+                // Israeli osek model (2026):
+                //   BusinessType drives VAT obligation:
+                //     "Patur"      — revenue ≤ ~120k ₪/yr, NO VAT collected, NO VAT deductible.
+                //     "Murshe"     — 18 % VAT both directions, filed on Form 836/874.
+                //     "Individual" — no VAT filing.
+                //
+                //   IsZair is a separate income-tax status (חישוב נורמטיבי) introduced
+                //   in 2024. It can apply to Patur OR Murshe whose annual revenue
+                //   ≤ ~122,833 ₪. When on, taxable profit = revenue × 70 % (flat 30 %
+                //   deemed-expenses, no receipts). Real expenses are ignored for
+                //   income-tax purposes while Zair is active.
                 try
                 {
                     var u = _srv.GetUserById(id);
-                    if (u != null && !string.IsNullOrEmpty(u.BusinessType)) BusinessType = u.BusinessType;
+                    if (u != null)
+                    {
+                        if (!string.IsNullOrEmpty(u.BusinessType)) BusinessType = u.BusinessType;
+                        IsZair = u.IsZair;
+                    }
                 }
                 catch { }
 
-                // Israeli tax reality (2025):
-                //   * VAT path is the only thing that differs between business types.
-                //   * Income tax always = (real income) − (real expenses), then progressive brackets.
-                //   * No 30 % presumptive deduction exists for Patur — that earlier rule was wrong.
-                //   * Zair / Patur do NOT collect VAT on sales and CANNOT deduct VAT on expenses,
-                //     so their gross figures already equal their net for income-tax purposes.
-                //   * Murshe collects + deducts VAT (filed separately on Form 836/874). Income
-                //     tax is on net-of-VAT amounts on both sides.
-                TaxableProfit = YearPl.Profit;
+                // Tax base
+                if (IsZair && YearPl.Income <= ZairThreshold)
+                    TaxableProfit = Math.Round(YearPl.Income * 0.70m, 2);   // 70 % of revenue
+                else
+                    TaxableProfit = YearPl.Profit;                          // real income − real expenses
+
+                // Patur revenue threshold warning (must re-register as Murshe if crossed)
+                PaturOverThreshold = BusinessType == "Patur" && YearPl.Income > PaturThreshold;
+
+                // Mark-VAT-paid only makes sense for Murshe — Patur / Individual have no
+                // periodic VAT settlement to record.
+                ShowMarkVatPaid = BusinessType == "Murshe";
+
                 TaxNote = BusinessType switch
                 {
-                    "Patur"  => "Osek Patur — revenue < ~120k ₪/year. Issues invoices without 17 % VAT and cannot deduct VAT on expenses. Income tax = real income − real expenses, taxed at the progressive brackets shown below.",
-                    "Zair"   => "Osek Zair — small business < ~120k ₪/year, similar to Patur for VAT (none either way). Income tax = real income − real expenses; some professions may opt into a simplified track separately.",
-                    "Murshe" => "Osek Murshe — collects 17 % VAT on sales (filed on Form 836/874) and deducts 17 % on qualifying expenses. Income tax computed on net-of-VAT amounts both ways.",
-                    _        => "Individual — no VAT filing. Income tax = income − expenses at the progressive brackets shown below.",
+                    "Patur"  => "Osek Patur — revenue ≤ ~120k ₪/year. Issues invoices without 18 % VAT and cannot deduct VAT on expenses.",
+                    "Murshe" => "Osek Murshe — collects 18 % VAT on sales (Form 836/874) and deducts 18 % on qualifying expenses. Income tax is computed on net-of-VAT amounts both ways.",
+                    _        => "Individual — no VAT filing.",
                 };
+
+                if (IsZair)
+                {
+                    ZairNote = YearPl.Income <= ZairThreshold
+                        ? $"Osek Zair active — income tax computed on 70 % of revenue (flat 30 % deemed-expenses). Threshold ~{ZairThreshold:N0} ₪/yr."
+                        : $"Osek Zair claimed but revenue {YearPl.Income:N0} ₪ exceeds the ~{ZairThreshold:N0} ₪ threshold — falling back to real income − real expenses.";
+                }
 
                 YearTax = ComputeIsraeliIncomeTax(TaxableProfit);
                 YearNet = YearPl.Profit - YearTax;
@@ -94,7 +121,8 @@ namespace BManagedWeb.Pages.Owner
             return Page();
         }
 
-        // Israeli individual income-tax brackets (annual). Approximated 2025 levels.
+        // Israeli individual income-tax brackets (annual). 2026 levels — frozen
+        // from 2025 (no inflation adjustment), 7 brackets.
         // Progressive: only the slice that falls inside each bracket is taxed at its rate.
         public static decimal ComputeIsraeliIncomeTax(decimal annualGross)
         {
@@ -144,6 +172,32 @@ namespace BManagedWeb.Pages.Owner
 
         private static string Esc(string v) => v == null ? "" : v.Replace(",", " ").Replace("\"", "'");
 
+        // Toggle Osek Zair income-tax status. Only meaningful for Patur or Murshe.
+        public IActionResult OnPostToggleZair(bool wantZair)
+        {
+            var role = HttpContext.Session.GetString("Role");
+            if (role != "Owner") return RedirectToPage("/Login");
+            int id = HttpContext.Session.GetInt32("UserId") ?? 0;
+            var cur = string.IsNullOrEmpty(DisplayCurrency) ? "ILS" : DisplayCurrency;
+            try
+            {
+                var u = _srv.GetUserById(id);
+                if (u != null && (u.BusinessType == "Patur" || u.BusinessType == "Murshe"))
+                {
+                    _srv.SetIsZair(id, wantZair);
+                    TempData["VatMsg"] = wantZair
+                        ? "Osek Zair status enabled."
+                        : "Osek Zair status disabled.";
+                }
+                else
+                {
+                    TempData["VatMsg"] = "Osek Zair requires Osek Patur or Osek Murshe.";
+                }
+            }
+            catch (Exception ex) { TempData["VatMsg"] = "Failed: " + ex.Message; }
+            return RedirectToPage(new { Year, Month, DisplayCurrency = cur });
+        }
+
         // Records the periodic VAT settlement as a single expense row tagged
         // 'VAT payment to Tax Authority'. This zeroes the VAT-due figure for
         // the next GetVatSummary call (since the new expense has VatPaid set).
@@ -153,6 +207,19 @@ namespace BManagedWeb.Pages.Owner
             if (role != "Owner") return RedirectToPage("/Login");
             int id = HttpContext.Session.GetInt32("UserId") ?? 0;
             var cur = string.IsNullOrEmpty(DisplayCurrency) ? "ILS" : DisplayCurrency;
+
+            // Only Murshe has a periodic VAT settlement to record.
+            try
+            {
+                var u = _srv.GetUserById(id);
+                if (u != null && u.BusinessType != "Murshe")
+                {
+                    TempData["VatMsg"] = "VAT settlement applies to Osek Murshe only.";
+                    return RedirectToPage(new { Year, Month, DisplayCurrency = cur });
+                }
+            }
+            catch { }
+
             try
             {
                 var vat = _srv.GetVatSummary(id, Year, Month, cur);

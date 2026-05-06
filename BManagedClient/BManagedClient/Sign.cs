@@ -18,8 +18,16 @@ namespace BManagedClient
         public string PreferredCurrency { get; set; } = "ILS"; // "ILS" / "USD"
         public bool IsActive { get; set; } = true;
 
+        // Israeli VAT classification: "Patur" / "Murshe" / "Individual".
+        public string BusinessType { get; set; } = "Individual";
+        // Osek Zair income-tax status flag (independent of BusinessType).
+        public bool   IsZair { get; set; } = false;
+
         public bool IsOwner    => Role == "Owner";
         public bool IsEmployee => Role == "Employee";
         public bool IsClient   => Role == "Client";
+
+        public bool IsPatur  => BusinessType == "Patur";
+        public bool IsMurshe => BusinessType == "Murshe";
     }
 }
