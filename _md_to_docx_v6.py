@@ -221,6 +221,22 @@ while i < len(lines):
         i += 1
         continue
 
+    # markdown image ![alt](file.png) → embed
+    img_match = re.match(r"^!\[[^\]]*\]\(([^)]+)\)\s*$", line.strip())
+    if img_match:
+        flush_code()
+        path = img_match.group(1)
+        full = path if "\\" in path or "/" in path else (r"D:\yudb\\" + path)
+        try:
+            p = doc.add_paragraph()
+            p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            r = p.add_run()
+            r.add_picture(full, width=Inches(6.5))
+        except Exception as ex:
+            add_para(f"[image not found: {path}]")
+        i += 1
+        continue
+
     text = line.strip()
     text = re.sub(r"`([^`]+)`", r"\1", text)
     text = re.sub(r"\*\*([^*]+)\*\*", r"\1", text)

@@ -37,7 +37,7 @@
 18. רב-מטבעיות (ILS + USD) + ExchangeRates
 19. תיקוני באגים שבוצעו
 20. מפות ניווט (WPF / Web flow PNG) + ירושה + Async
-21. בדיקות (smoke tests + UIA)
+21. מפת הפרויקט (Project Map) — תמונות זרימה
 22. סיכום ורפלקציה
 23. נספחים — צילומי מסך, רשימת קבצים, ביבליוגרפיה
 
@@ -1709,79 +1709,47 @@ async function refreshBadge() {
 
 ---
 
-# 21. בדיקות
+# 21. מפת הפרויקט (Project Map)
 
-## 21.1 Smoke test צד-Web (curl + python)
+הפרק הזה מציג את שלוש תמונות הזרימה של המערכת. הן נוצרות אוטומטית מ-`_make_flows.py` (PIL בלבד) כדי שהן יישארו תקפות ככל שהארכיטקטורה משתנה.
 
-`_smoke.py` מבצעת login → walk all 8 Owner pages → verify content matches expected needles. תוצאה:
+## 21.1 ארכיטקטורת המערכת — `arch-flow.png`
 
-```
-OK   login page reachable
-OK   antiforgery token present
-OK   /Owner/Home — matched 2/2 needles
-OK   /Owner/Customers — matched 1/1 needles
-OK   /Owner/Projects — matched 1/1 needles
-OK   /Owner/Invoices — matched 1/1 needles
-OK   /Owner/Expenses — matched 2/2 needles
-OK   /Owner/Reports — matched 2/2 needles
-OK   /Owner/Users — matched 1/1 needles
-OK   /Notifications — matched 1/1 needles
-OK   /Notifications?handler=Count returns int — got 0
-OK   Sparkline JSON has labels+data — len=6
-OK   Stats JSON has unpaid counter
-OK   /Owner/Customers?handler=Csv — header: Id,BusinessName,...
-OK   /Owner/Expenses?handler=Csv — header: Id,Date,Category,...
-OK   Assignees JSON — keys=['assigned', 'available']
-OK   ForgotPassword page
-```
+תמונה זו מציגה את ערמת השכבות מקצה לקצה:
 
-## 21.2 Smoke test צד-WCF (SOAP envelope)
+* שני לקוחות בקצה העליון: **BManagedClient (WPF)** עם 15 דפים, פרוקסי svcutil-generated `BMsrv`, ו-DispatcherTimer לפולינג. **BManagedWeb (Razor)** עם 18 דפים, פרוקסי hand-written `bsrv`, ו-`setInterval` לפולינג.
+* **WCF Service1** במרכז — BasicHttpBinding על פורט 8733, חושף ~50 OperationContract.
+* **BusinessLogic** — PdfSharp + CurrencyConverter + VatCalculator + InvoiceNumberer.
+* **ViewDB** — שכבת BaseDB גנרית + 10 DBים ספציפיים לטבלה.
+* **ProjectAssignmentDB** — שכבת multi-assign עם EnsureSchema אוטומטי.
+* **BManaged.accdb** בתחתית — 13 טבלאות, נזרע עם admin/dana/acme + ILS↔USD.
 
-```bash
-curl -X POST http://localhost:8733/.../Service1/ \
-  -H 'Content-Type: text/xml' \
-  -H 'SOAPAction: "http://tempuri.org/IService1/CheckUserExist"' \
-  --data @soap_request.xml
+חצים מסומנים: WCF SOAP בין הלקוחות לשרת, OleDb (parameterized) בין ה-DB לקובץ ה-Access.
 
-# Response:
-# <s:Envelope ...><s:Body>
-#   <CheckUserExistResponse xmlns="http://tempuri.org/">
-#     <CheckUserExistResult>true</CheckUserExistResult>
-#   </CheckUserExistResponse>
-# </s:Body></s:Envelope>
-```
+![arch-flow](arch-flow.png)
 
-## 21.3 בדיקה צד-WPF (UI Automation)
+## 21.2 זרימה ב-WPF — `wpf-flow.png`
 
-```powershell
-Add-Type -AssemblyName UIAutomationClient
-$root = [Windows.Automation.AutomationElement]::RootElement
-$cond = New-Object Windows.Automation.PropertyCondition(...)
-$win  = $root.FindFirst([Windows.Automation.TreeScope]::Children, $cond)
-# מעבר על העץ ובדיקה שכל הקונטרולים שצריכים נמצאים
-```
+מסך LogIn מנתב לאחת משלוש דשבורדים (OwnerHome, EmployeeHome, ClientHome) לפי שדה Role של המשתמש. כל דשבורד הוא רכזת לכ-8 דפי משנה. מצוין במפורש:
 
-עץ ה-UI מאשר שכל הדפים מציגים את הקונטרולים הצפויים: LogIn (USERNAME, PASSWORD, Sign in button), OwnerHome (4 stat cards, 6 quick actions, notification bell with badge), וכו׳.
+* **OwnerHome** מנתב ל: Customers, Projects, Invoices, Expenses, Reports, ManageUsers, Settings, Notifications. DispatcherTimer רץ כל 15 שניות לרענון סטטיסטיקות + תג התראות.
+* **EmployeeHome** מנתב ל: EmployeeProjects (פאנל פירוט), Expenses (משלו בלבד), Settings, Notifications.
+* **ClientHome** מנתב ל: Settings, Logout. Polling כל 30 שניות.
+* **SignUp** ו-**ForgotPassword** נגישים מ-LogIn ישירות (ללא צורך באימות).
+* **קישור צולב מיוחד**: לחיצה כפולה על התראה מסוג `ResetRequest` בעמוד Notifications מנתבת ישירות ל-ManageUsers (חוסכת לבעלים אינטרקציה ידנית).
 
-## 21.4 בדיקות שלביות (manual)
+![wpf-flow](wpf-flow.png)
 
-| תרחיש | תוצאה |
-|---------|---------|
-| כניסה כ-admin/admin1234 | OK — מועבר ל-OwnerHome |
-| כניסה כ-dana/admin1234 | OK — מועבר ל-EmployeeHome |
-| כניסה כ-acme/admin1234 (אחרי אישור) | OK — מועבר ל-Client Portal |
-| כניסה עם סיסמה שגויה | OK — שגיאה מוצגת |
-| הוספת לקוח חדש | OK — מופיע ברשימה |
-| יצירת פרויקט חדש | OK — מופיע ב-Projects |
-| הקצאת 3 עובדים לפרויקט | OK — כולם מופיעים ברשימה |
-| יצירת חשבונית + 2 שורות | OK — חישוב מע״מ אוטומטי |
-| הורדת PDF של חשבונית | OK — נפתח ב-Acrobat |
-| דיווח הוצאה + Auto-VAT | OK — מע״מ ממולא 17/117 |
-| העלאת קבלה (PDF, 1.2 MB) | OK — נשמרת ב-`/Receipts` |
-| Forgot password → Owner notif → Reset → reset1234 → Settings | OK — תהליך שלם |
-| Mark VAT paid | OK — הוצאה נרשמת לרשות המסים |
-| ייצוא CSV — Customers, Expenses, Reports | OK |
-| Polling badge מתעדכן | OK — תג אדום עם מספר התראות |
+## 21.3 זרימה ב-Web — `web-flow.png`
+
+המבנה דומה ל-WPF אבל ללא Frame: ה-Razor page כל פעם הוא הדף השלם, וה-Session שומרת את ה-Role. כל דף בודק `Session["Role"]` ב-`OnGet` ומעביר ל-Login אם לא תואם.
+
+* **Owner spokes** עם 6 דפים: Customers (modal + CSV), Projects (multi-assign modal), Invoices (PDF), Expenses (Auto-VAT + העלאת קבלה + CSV), Reports (VAT pay button + Chart.js), Users.
+* **Employee spokes**: Projects + Expenses.
+* **Client spokes**: InvoiceView.
+* **כללי**: `/Notifications` עם תג חי שמתעדכן כל 30 שניות, `/Lang?target=he` למתג שפה.
+
+![web-flow](web-flow.png)
 
 ---
 
@@ -1832,7 +1800,8 @@ $win  = $root.FindFirst([Windows.Automation.TreeScope]::Children, $cond)
 * `BManagedWeb/Helpers/L.cs` — i18n helper
 * `BManagedWeb/Connected Services/bsrv/Reference.cs` — proxy hand-written sync
 * `_init_db.ps1` — זרע נתונים דמו
-* `_smoke.py`, `_smoke_roles.py` — בדיקות smoke
+* `_make_flows.py` — מחדש את שלוש תמונות הזרימה (arch / wpf / web)
+* `_md_to_docx_v6.py` — בונה את הספר ל-DOCX עם RTL מלא
 
 ## 23.2 ביבליוגרפיה
 

@@ -1,14 +1,12 @@
-"""Generates wpf-flow.png, web-flow.png, arch-flow.png using PIL only.
+"""Regenerate flow PNGs reflecting current architecture (port 8733, 15 WPF pages,
+18 web pages, multi-assign, ForgotPassword, EmployeeProjects).
 
-Soft Structuralism palette: paper #FAFAF7, ink #0B0B0F, accent #3B5BFF,
-mint #10B981, amber #F59E0B, rose #EF4444. Plus Jakarta Sans falls back
-to system sans-serif on Pillow's default."""
-
-import os
+Soft Structuralism palette."""
+import os, math
 from PIL import Image, ImageDraw, ImageFont
 
 OUT = r"D:\yudb"
-W, H = 1600, 900
+W, H = 1700, 1000
 PAPER = (250, 250, 247)
 INK = (11, 11, 15)
 INK_SOFT = (110, 110, 130)
@@ -21,8 +19,8 @@ GREY = (180, 180, 180)
 
 def font(size, bold=False):
     paths = [
-        r"C:\Windows\Fonts\arialbd.ttf" if bold else r"C:\Windows\Fonts\arial.ttf",
         r"C:\Windows\Fonts\segoeuib.ttf" if bold else r"C:\Windows\Fonts\segoeui.ttf",
+        r"C:\Windows\Fonts\arialbd.ttf"  if bold else r"C:\Windows\Fonts\arial.ttf",
     ]
     for p in paths:
         if os.path.exists(p):
@@ -35,108 +33,141 @@ def card(draw, x, y, w, h, label, color=ACCENT, sub=""):
     r = 18
     draw.rounded_rectangle((x, y, x + w, y + h), r, fill=PAPER, outline=color, width=2)
     draw.rounded_rectangle((x + 4, y + 4, x + w - 4, y + h - 4), r - 4, outline=(230, 230, 230), width=1)
-    f1 = font(20, bold=True)
-    f2 = font(13)
-    draw.text((x + 16, y + 14), label, font=f1, fill=INK)
+    draw.text((x + 16, y + 14), label, font=font(20, bold=True), fill=INK)
     if sub:
-        draw.text((x + 16, y + 42), sub, font=f2, fill=INK_SOFT)
+        draw.text((x + 16, y + 42), sub, font=font(13), fill=INK_SOFT)
 
 
 def arrow(draw, x1, y1, x2, y2, color=ACCENT, label=""):
     draw.line((x1, y1, x2, y2), fill=color, width=2)
-    # arrowhead
-    import math
     ang = math.atan2(y2 - y1, x2 - x1)
-    L = 10
+    L = 11
     p1 = (x2 - L * math.cos(ang - math.pi / 7), y2 - L * math.sin(ang - math.pi / 7))
     p2 = (x2 - L * math.cos(ang + math.pi / 7), y2 - L * math.sin(ang + math.pi / 7))
     draw.polygon((x2, y2, p1[0], p1[1], p2[0], p2[1]), fill=color)
     if label:
-        mx, my = (x1 + x2) // 2, (y1 + y2) // 2 - 8
         f = font(11)
+        mx, my = (x1 + x2) // 2, (y1 + y2) // 2 - 8
         bbox = draw.textbbox((mx, my), label, font=f)
         draw.rectangle((bbox[0] - 4, bbox[1] - 2, bbox[2] + 4, bbox[3] + 2), fill=PAPER)
         draw.text((mx, my), label, font=f, fill=INK_SOFT)
 
 
 def title(draw, t, sub):
-    f1 = font(36, bold=True)
-    f2 = font(16)
-    draw.text((40, 30), t, font=f1, fill=INK)
-    draw.text((40, 76), sub, font=f2, fill=INK_SOFT)
+    draw.text((40, 30), t, font=font(36, bold=True), fill=INK)
+    draw.text((40, 76), sub, font=font(16), fill=INK_SOFT)
 
 
 # ============================ ARCH ===========================
-img = Image.new("RGB", (W, H), PAPER)
-d = ImageDraw.Draw(img)
-title(d, "B-Managed — Architecture", "WCF service · Access (.accdb) · 2 clients · multi-currency")
-card(d, 600, 200, 400, 100, "WCF Service1",       ACCENT, "BasicHttpBinding · localhost:8744")
-card(d, 100, 200, 380, 100, "BManagedClient (WPF)", MINT, "owner / employee / client roles")
-card(d, 1120, 200, 380, 100, "BManagedWeb (Razor)", MINT, "Razor Pages · Tailwind · agency UI")
-card(d, 600, 420, 400, 100, "ViewDB layer", ACCENT, "BaseDB · parameterized OleDb · INNER JOIN reports")
-card(d, 600, 580, 400, 100, "BusinessLogic", AMBER, "VAT calc · invoice numberer · PDF builder")
-card(d, 600, 740, 400, 100, "BManaged.accdb", ROSE, "10 tables · seeded admin · ILS↔USD rates")
+img = Image.new("RGB", (W, H), PAPER); d = ImageDraw.Draw(img)
+title(d, "B-Managed — Architecture",
+      "WCF on :8733 · Access (.accdb) · 2 clients · multi-currency · 13 tables")
 
-arrow(d, 290, 250, 600, 250, MINT, "WCF SOAP")
-arrow(d, 1300, 250, 1000, 250, MINT, "WCF SOAP")
-arrow(d, 800, 300, 800, 420, ACCENT, "Service1 → ViewDB")
-arrow(d, 800, 520, 800, 580, AMBER, "report ops")
-arrow(d, 800, 680, 800, 740, ROSE, "OleDb")
+card(d, 100,  200, 400, 100, "BManagedClient (WPF)", MINT,
+     "15 pages · DispatcherTimer · BMsrv proxy")
+card(d, 1200, 200, 400, 100, "BManagedWeb (Razor)", MINT,
+     "18 pages · setInterval · bsrv proxy")
+
+card(d, 650,  200, 400, 100, "WCF Service1",            ACCENT,
+     "BasicHttpBinding · ~50 ops · :8733")
+card(d, 650,  370, 400,  90, "BusinessLogic",           AMBER,
+     "PdfSharp · CurrencyConverter · VatCalc")
+card(d, 650,  500, 400, 110, "ViewDB",                  ACCENT,
+     "BaseDB · UserDB · CustomerDB · ProjectDB · InvoiceDB · ExpenseDB")
+card(d, 650,  650, 400,  90, "ProjectAssignmentDB",     AMBER,
+     "auto EnsureSchema · many-to-many")
+card(d, 650,  780, 400, 100, "BManaged.accdb",          ROSE,
+     "13 tables · seeded admin/dana/acme · ILS↔USD")
+
+arrow(d, 500,  250,  650, 250, MINT, "WCF SOAP")
+arrow(d, 1200, 250, 1050, 250, MINT, "WCF SOAP")
+arrow(d, 850,  300,  850, 370, ACCENT, "Service1 → BL")
+arrow(d, 850,  460,  850, 500, AMBER, "BL → DB")
+arrow(d, 850,  610,  850, 650, ACCENT, "ViewDB → assignments")
+arrow(d, 850,  740,  850, 780, ROSE, "OleDb (parameterised)")
 img.save(os.path.join(OUT, "arch-flow.png"))
 
 # ============================ WPF ===========================
-img = Image.new("RGB", (W, H), PAPER)
-d = ImageDraw.Draw(img)
-title(d, "B-Managed WPF — Page navigation", "frame-based; role guard at every page")
-card(d, 700, 130, 240, 70, "LogIn", ACCENT, "PBKDF2 + role detect")
+img = Image.new("RGB", (W, H), PAPER); d = ImageDraw.Draw(img)
+title(d, "B-Managed WPF — page navigation",
+      "Frame-based · role guard at every page · DispatcherTimer polling")
 
-card(d, 220, 280, 300, 70, "OwnerHome", MINT, "DispatcherTimer 15s")
-card(d, 660, 280, 300, 70, "EmployeeHome", AMBER, "assigned projects")
-card(d, 1080, 280, 300, 70, "ClientHome", ROSE, "minimal landing")
+card(d, 750,  130, 240, 70, "LogIn", ACCENT, "PBKDF2 verify")
+card(d, 360,  240, 240, 60, "SignUp", AMBER, "")
+card(d, 1140, 240, 240, 60, "ForgotPassword", AMBER, "notifies all Owners")
+arrow(d, 870, 200, 480, 240, AMBER, "/SignUp")
+arrow(d, 870, 200, 1260, 240, AMBER, "/Forgot")
 
-# Owner spokes
-spokes = [
-    (40,  430, "Customers"),    (260, 430, "Projects"),
-    (480, 430, "Invoices"),     (700, 430, "Expenses"),
-    (920, 430, "Reports"),      (1140, 430, "Settings"),
-    (1360, 430, "Notifications"),
-]
-for x, y, lbl in spokes:
-    card(d, x, y, 200, 60, lbl, ACCENT)
-    arrow(d, 370, 350, x + 100, y, ACCENT)
+card(d, 200, 360, 280, 70, "OwnerHome", MINT, "DispatcherTimer 15s + badge")
+card(d, 700, 360, 280, 70, "EmployeeHome", AMBER, "DispatcherTimer 15s")
+card(d, 1200, 360, 280, 70, "ClientHome", ROSE, "DispatcherTimer 30s")
 
-arrow(d, 820, 200, 370, 280, MINT, "Owner")
-arrow(d, 820, 200, 810, 280, AMBER, "Employee")
-arrow(d, 820, 200, 1230, 280, ROSE, "Client")
+arrow(d, 870, 200, 340, 360, MINT, "Owner")
+arrow(d, 870, 200, 840, 360, AMBER, "Employee")
+arrow(d, 870, 200, 1340, 360, ROSE, "Client")
+
+# Owner spokes (8 pages)
+y = 530
+labels = ["Customers", "Projects", "Invoices", "Expenses",
+          "Reports", "ManageUsers", "Settings", "Notifications"]
+for i, lbl in enumerate(labels):
+    x = 40 + i * 205
+    card(d, x, y, 195, 60, lbl, ACCENT)
+    arrow(d, 340, 430, x + 90, y, ACCENT)
+
+# Employee spokes
+card(d, 700, 530, 280, 60, "EmployeeProjects", AMBER, "detail panel")
+card(d, 700, 610, 280, 60, "Expenses (own)",  AMBER, "")
+card(d, 700, 690, 280, 60, "Settings",        AMBER, "change password")
+card(d, 700, 770, 280, 60, "Notifications",   AMBER, "")
+arrow(d, 840, 430, 840, 530, AMBER)
+
+# Client spokes
+card(d, 1200, 530, 280, 60, "Settings",       ROSE)
+card(d, 1200, 610, 280, 60, "Logout",         ROSE)
+arrow(d, 1340, 430, 1340, 530, ROSE)
+
+# Cross-link: notification dbl-click jumps to ManageUsers
+arrow(d, 1480, 590, 1100, 590, INK_SOFT, "ResetRequest dbl-click")
 img.save(os.path.join(OUT, "wpf-flow.png"))
 
 # ============================ WEB ===========================
-img = Image.new("RGB", (W, H), PAPER)
-d = ImageDraw.Draw(img)
-title(d, "B-Managed Web — Razor Pages", "session-based role guard · setInterval polling")
-card(d, 700, 130, 240, 70, "/Login", ACCENT, "session role")
+img = Image.new("RGB", (W, H), PAPER); d = ImageDraw.Draw(img)
+title(d, "B-Managed Web — Razor Pages",
+      "Session-based role guard · setInterval polling · L.T(en, he) i18n")
 
-card(d, 220, 280, 300, 70, "Owner/Home", MINT, "asymmetrical bento")
-card(d, 660, 280, 300, 70, "Employee/Home", AMBER, "")
-card(d, 1080, 280, 300, 70, "Client/Portal", ROSE, "")
+card(d, 750,  130, 240, 70, "/Login", ACCENT, "session role")
+card(d, 360,  240, 240, 60, "/SignUp", AMBER, "")
+card(d, 1140, 240, 240, 60, "/ForgotPassword", AMBER, "")
 
-own = [(40, 430, "Customers"), (260, 430, "Projects"), (480, 430, "Invoices"),
-       (700, 430, "Expenses"), (920, 430, "Reports")]
-for x, y, lbl in own:
-    card(d, x, y, 200, 60, "Owner/" + lbl, ACCENT)
-    arrow(d, 370, 350, x + 100, y, ACCENT)
+arrow(d, 870, 200, 480, 240, AMBER)
+arrow(d, 870, 200, 1260, 240, AMBER)
 
-card(d, 1140, 430, 220, 60, "Employee/Projects", AMBER)
-card(d, 1140, 510, 220, 60, "Employee/Expenses", AMBER)
-arrow(d, 810, 350, 1250, 450, AMBER)
-arrow(d, 810, 350, 1250, 530, AMBER)
+card(d, 200, 360, 280, 70, "/Owner/Home", MINT, "sparkline + bento")
+card(d, 700, 360, 280, 70, "/Employee/Home", AMBER)
+card(d, 1200, 360, 280, 70, "/Client/Portal", ROSE)
 
-card(d, 1140, 620, 220, 60, "Client/InvoiceView", ROSE)
-arrow(d, 1230, 350, 1250, 620, ROSE)
+arrow(d, 870, 200, 340, 360, MINT)
+arrow(d, 870, 200, 840, 360, AMBER)
+arrow(d, 870, 200, 1340, 360, ROSE)
 
-arrow(d, 820, 200, 370, 280, MINT, "Owner")
-arrow(d, 820, 200, 810, 280, AMBER, "Employee")
-arrow(d, 820, 200, 1230, 280, ROSE, "Client")
+owner = [("Customers", "modal + CSV"), ("Projects", "multi-assign"),
+         ("Invoices", "PDF"), ("Expenses", "Auto-VAT + receipt + CSV"),
+         ("Reports", "VAT pay + charts"), ("Users", "approve / reset")]
+for i, (lbl, sub) in enumerate(owner):
+    x = 40 + i * 270
+    card(d, x, 530, 260, 70, "/Owner/" + lbl, ACCENT, sub)
+    arrow(d, 340, 430, x + 130, 530, ACCENT)
+
+card(d, 700, 660, 280, 60, "/Employee/Projects", AMBER)
+card(d, 700, 740, 280, 60, "/Employee/Expenses", AMBER)
+arrow(d, 840, 430, 840, 660, AMBER)
+
+card(d, 1200, 660, 280, 60, "/Client/InvoiceView", ROSE)
+arrow(d, 1340, 430, 1340, 660, ROSE)
+
+card(d, 1200, 740, 280, 60, "/Notifications", ACCENT, "badge polling")
+card(d, 1200, 820, 280, 60, "/Lang?target=he", AMBER, "i18n toggle")
 img.save(os.path.join(OUT, "web-flow.png"))
 
-print("done")
+print("regenerated arch-flow.png, wpf-flow.png, web-flow.png")
