@@ -22,24 +22,111 @@
     <a asp-page-handler="Csv" class="bg-mint text-white rounded-full px-5 py-3 transition active:scale-[0.98]">@L.T(HttpContext,"CSV","CSV")</a>
 </form>
 
-<form method="post" asp-page-handler="Add" class="reveal mb-12 bg-black/[0.04] ring-1 ring-black/5 rounded-shell p-1.5 max-w-3xl">
-    <div class="bg-paper-50 rounded-core p-6 shadow-inset grid md:grid-cols-3 gap-3">
-        <input asp-for="NewBusinessName" placeholder="@L.T(HttpContext,"Business name","שם עסק")"
-               class="bg-paper-100/60 border border-black/5 rounded-2xl px-4 py-2.5 outline-none focus:border-accent transition" />
-        <input asp-for="NewContactName"  placeholder="@L.T(HttpContext,"Contact name","איש קשר")"
-               class="bg-paper-100/60 border border-black/5 rounded-2xl px-4 py-2.5 outline-none focus:border-accent transition" />
-        <input asp-for="NewTaxId"        placeholder="@L.T(HttpContext,"Tax ID","ח.פ / ע.מ")"
-               class="bg-paper-100/60 border border-black/5 rounded-2xl px-4 py-2.5 outline-none focus:border-accent transition" />
-        <input asp-for="NewEmail"        placeholder="@L.T(HttpContext,"Email","אימייל")"
-               class="bg-paper-100/60 border border-black/5 rounded-2xl px-4 py-2.5 outline-none focus:border-accent transition" />
-        <input asp-for="NewPhone"        placeholder="@L.T(HttpContext,"Phone","טלפון")"
-               class="bg-paper-100/60 border border-black/5 rounded-2xl px-4 py-2.5 outline-none focus:border-accent transition" />
-        <button class="md:col-span-3 group inline-flex items-center justify-center gap-2 bg-mint text-white rounded-full px-6 py-3 mt-1 active:scale-[0.98] transition">
-            @L.T(HttpContext,"Add customer","הוסף לקוח")
-            <span class="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center group-hover:translate-x-0.5 transition">→</span>
-        </button>
+<form id="custForm" method="post" asp-page-handler="Add" class="reveal mb-12 bg-black/[0.04] ring-1 ring-black/5 rounded-shell p-1.5 max-w-3xl">
+    <div class="bg-paper-50 rounded-core p-6 shadow-inset">
+        <div class="grid md:grid-cols-3 gap-3">
+            <div>
+                <input asp-for="NewBusinessName" required minlength="2" data-cv="biz"
+                       placeholder="@L.T(HttpContext,"Business name *","שם עסק *")"
+                       class="cust-field w-full bg-paper-100/60 border border-black/5 rounded-2xl px-4 py-2.5 outline-none focus:border-accent transition" />
+                <p data-cerr="biz" class="text-xs text-rose mt-1 hidden"></p>
+            </div>
+            <div>
+                <input asp-for="NewContactName" data-cv="contact"
+                       placeholder="@L.T(HttpContext,"Contact name","איש קשר")"
+                       class="cust-field w-full bg-paper-100/60 border border-black/5 rounded-2xl px-4 py-2.5 outline-none focus:border-accent transition" />
+            </div>
+            <div>
+                <input asp-for="NewTaxId" data-cv="tax"
+                       placeholder="@L.T(HttpContext,"Tax ID (ח.פ / ע.מ)","ח.פ / ע.מ")"
+                       class="cust-field w-full bg-paper-100/60 border border-black/5 rounded-2xl px-4 py-2.5 outline-none focus:border-accent transition" />
+                <p data-cerr="tax" class="text-xs text-rose mt-1 hidden"></p>
+            </div>
+            <div>
+                <input asp-for="NewEmail" type="email" data-cv="email"
+                       placeholder="@L.T(HttpContext,"Email","אימייל")"
+                       class="cust-field w-full bg-paper-100/60 border border-black/5 rounded-2xl px-4 py-2.5 outline-none focus:border-accent transition" />
+                <p data-cerr="email" class="text-xs text-rose mt-1 hidden"></p>
+            </div>
+            <div>
+                <input asp-for="NewPhone" type="tel" pattern="\+?\d{7,15}" data-cv="phone"
+                       placeholder="@L.T(HttpContext,"Phone","טלפון")"
+                       class="cust-field w-full bg-paper-100/60 border border-black/5 rounded-2xl px-4 py-2.5 outline-none focus:border-accent transition" />
+                <p data-cerr="phone" class="text-xs text-rose mt-1 hidden"></p>
+            </div>
+            <button class="md:col-span-1 group inline-flex items-center justify-center gap-2 bg-mint text-white rounded-full px-6 py-3 mt-1 active:scale-[0.98] transition">
+                @L.T(HttpContext,"Add customer","הוסף לקוח")
+                <span class="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center group-hover:translate-x-0.5 transition">→</span>
+            </button>
+        </div>
+        <p class="text-xs text-ink/40 mt-3">
+            @L.T(HttpContext,"Business name is required. Email + phone are validated when provided.",
+                              "שם עסק חובה. אימייל וטלפון נבדקים אם הוזנו.")
+        </p>
     </div>
 </form>
+
+@{
+    var cvBiz   = L.T(HttpContext,"Business name is required (2+ chars).","שם עסק חובה (2+ תווים).");
+    var cvEmail = L.T(HttpContext,"Email looks invalid.","אימייל לא תקין.");
+    var cvPhone = L.T(HttpContext,"7–15 digits, optional + country code.","7–15 ספרות, אופציונלי + קידומת מדינה.");
+    var cvTax   = L.T(HttpContext,"Tax ID: 4–20 digits / dashes.","ע.מ: 4–20 ספרות / מקפים.");
+}
+<div id="cv-i18n"
+     data-cv-biz="@cvBiz"
+     data-cv-email="@cvEmail"
+     data-cv-phone="@cvPhone"
+     data-cv-tax="@cvTax"
+     class="hidden"></div>
+
+<script>
+(function () {
+    var T = document.getElementById('cv-i18n');
+    var rules = {
+        biz:   { test: function (v) { return v.trim().length >= 2; }, msg: T.getAttribute('data-cv-biz') },
+        email: { rx: /^[\w.\-]+@@[\w\-]+\.[\w\-.]+$/,                  msg: T.getAttribute('data-cv-email') },
+        phone: { rx: /^\+?\d{7,15}$/,                                  msg: T.getAttribute('data-cv-phone') },
+        tax:   { rx: /^[\d\-\/]{4,20}$/,                               msg: T.getAttribute('data-cv-tax') }
+    };
+    function showCErr(name, msg) {
+        var el = document.querySelector('[data-cerr="' + name + '"]');
+        if (!el) return;
+        if (msg) { el.textContent = msg; el.classList.remove('hidden'); }
+        else     { el.textContent = ''; el.classList.add('hidden'); }
+    }
+    function checkC(input, force) {
+        var name = input.getAttribute('data-cv');
+        if (!name) return true;
+        var v = input.value || '';
+        var r = rules[name];
+        if (!r) return true;
+        var required = (name === 'biz');
+        if (!v && !required && !force) { showCErr(name, ''); input.classList.remove('border-rose'); input.classList.remove('bg-rose/5'); return true; }
+        if (!v && !required) { showCErr(name, ''); input.classList.remove('border-rose'); input.classList.remove('bg-rose/5'); return true; }
+        var ok = r.rx ? r.rx.test(v) : (r.test ? r.test(v) : true);
+        if (!ok) {
+            showCErr(name, r.msg);
+            input.classList.add('border-rose'); input.classList.add('bg-rose/5');
+        } else {
+            showCErr(name, '');
+            input.classList.remove('border-rose'); input.classList.remove('bg-rose/5');
+        }
+        return ok;
+    }
+    document.querySelectorAll('.cust-field').forEach(function (el) {
+        el.addEventListener('input', function () { checkC(el, false); });
+        el.addEventListener('blur',  function () { checkC(el, true); });
+    });
+    var f = document.getElementById('custForm');
+    if (f) f.addEventListener('submit', function (e) {
+        var bad = false;
+        document.querySelectorAll('.cust-field').forEach(function (el) {
+            if (!checkC(el, true)) bad = true;
+        });
+        if (bad) e.preventDefault();
+    });
+})();
+</script>
 
 @if (!string.IsNullOrEmpty(Model.Message))
 {

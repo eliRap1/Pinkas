@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -11,14 +12,12 @@ namespace BManagedWeb.Pages
     {
         private readonly Service1Client _srv = new Service1Client();
 
-        // Username: 4-20 chars, letters/digits/underscores/dots only.
         private static readonly Regex UsernameRx = new Regex(@"^[A-Za-z0-9_.]{4,20}$");
         private static readonly Regex EmailRx    = new Regex(@"^[\w\.\-]+@[\w\-]+\.[\w\-\.]+$");
         private static readonly Regex PhoneRx    = new Regex(@"^\+?\d{7,15}$");
-        // Password: 8+ chars with at least one letter and one digit.
         private static readonly Regex PasswordRx = new Regex(@"^(?=.*[A-Za-z])(?=.*\d).{8,}$");
 
-        // Two-step picker: empty until the user clicks 'Owner' or 'Employee'.
+        // 'Owner' or 'Employee' — empty until the user picks a card.
         [BindProperty] public string SelectedRole { get; set; } = "";
 
         [BindProperty] public string Username { get; set; }
@@ -28,29 +27,28 @@ namespace BManagedWeb.Pages
         [BindProperty] public string Currency { get; set; } = "ILS";
 
         // Owner-only
+        [BindProperty] public string BusinessName { get; set; }
         [BindProperty] public string BusinessType { get; set; } = "Patur";
         [BindProperty] public bool   IsZair { get; set; } = false;
 
-        // Employee-only — which Owner / company the new employee belongs to.
+        // Employee-only — invite code (no public company list).
+        [BindProperty] public string InviteCode { get; set; }
+        // Kept on the model for backwards-compat with admin tooling, but the
+        // signup form does not surface a public list anymore.
         [BindProperty] public int    OwnerId { get; set; } = 0;
 
         public string ErrorMessage { get; set; }
         public List<User> AvailableOwners { get; set; } = new();
 
-        private void LoadOwners()
-        {
-            try { AvailableOwners = (_srv.GetActiveOwners() ?? new User[0]).ToList(); }
-            catch { AvailableOwners = new List<User>(); }
-        }
+        // Display-only — when the Owner-side signup completes, we surface the
+        // freshly generated invite code so the new Owner can share it with
+        // their employees.
+        public string GeneratedInviteCode { get; set; }
 
-        public void OnGet() { LoadOwners(); }
+        public void OnGet() { }
 
         public IActionResult OnPost()
         {
-            LoadOwners();
-
-            // If the user posted without picking a role yet, just bounce back —
-            // the JS hides the form, but server-side guard is cheap insurance.
             if (SelectedRole != "Owner" && SelectedRole != "Employee")
             { ErrorMessage = "Pick a role first."; return Page(); }
 
@@ -58,13 +56,29 @@ namespace BManagedWeb.Pages
             { ErrorMessage = "Username must be 4–20 letters / digits / _ / ."; return Page(); }
             if (string.IsNullOrEmpty(Password) || !PasswordRx.IsMatch(Password))
             { ErrorMessage = "Password must be 8+ chars and include at least one letter and one digit."; return Page(); }
-            if (string.Equals(Password, Username, System.StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(Password, Username, StringComparison.OrdinalIgnoreCase))
             { ErrorMessage = "Password cannot be the same as username."; return Page(); }
             if (!EmailRx.IsMatch(Email ?? "")) { ErrorMessage = "Email looks invalid (e.g. name@example.com)."; return Page(); }
             if (!PhoneRx.IsMatch(Phone ?? "")) { ErrorMessage = "Phone must be 7–15 digits, optionally + country code."; return Page(); }
 
-            if (SelectedRole == "Employee" && OwnerId <= 0)
-            { ErrorMessage = "Please pick the company you work for."; return Page(); }
+            // Resolve Employee invite code BEFORE creating the user — no point
+            // creating an orphaned employee row.
+            int? resolvedOwnerId = null;
+            if (SelectedRole == "Employee")
+            {
+                var code = (InviteCode ?? "").Trim().ToUpperInvariant();
+                if (string.IsNullOrEmpty(code))
+                { ErrorMessage = "Please enter the company invite code."; return Page(); }
+                try
+                {
+                    var owner = _srv.GetOwnerByInviteCode(code);
+                    if (owner == null)
+                    { ErrorMessage = "Invite code not recognised. Ask the business owner to share the code from their settings."; return Page(); }
+                    resolvedOwnerId = owner.Id;
+                }
+                catch (Exception ex)
+                { ErrorMessage = "Invite-code lookup failed: " + ex.Message; return Page(); }
+            }
 
             try
             {
@@ -78,22 +92,49 @@ namespace BManagedWeb.Pages
 
                 if (SelectedRole == "Owner")
                 {
-                    // Persist Patur / Murshe + Zair flag. BusinessType validation:
-                    // only the two real values are allowed for Owner.
                     var bt = (BusinessType == "Murshe") ? "Murshe" : "Patur";
                     try { _srv.SetBusinessType(newId, bt); } catch { }
                     if (IsZair)
                     { try { _srv.SetIsZair(newId, true); } catch { } }
+                    if (!string.IsNullOrWhiteSpace(BusinessName))
+                    { try { _srv.SetBusinessName(newId, BusinessName.Trim()); } catch { } }
+
+                    // Auto-generate a fresh invite code so the new Owner can
+                    // share it with employees right away.
+                    var code = NewInviteCode(BusinessName ?? Username);
+                    try { _srv.SetInviteCode(newId, code); GeneratedInviteCode = code; } catch { }
                 }
                 else // Employee
                 {
-                    try { _srv.SetOwnerId(newId, OwnerId); } catch { }
+                    if (resolvedOwnerId.HasValue)
+                    { try { _srv.SetOwnerId(newId, resolvedOwnerId.Value); } catch { } }
                 }
 
+                if (SelectedRole == "Owner" && !string.IsNullOrEmpty(GeneratedInviteCode))
+                {
+                    TempData["NewOwnerCode"] = GeneratedInviteCode;
+                }
                 return RedirectToPage("/Login");
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             { ErrorMessage = "Error: " + ex.Message; return Page(); }
+        }
+
+        // Format: PREFIX-XXXX where PREFIX is 4 alpha-numeric chars from the
+        // business name and XXXX is 4 random alpha-numerics. 9 chars total
+        // including the dash. Easy to read / type.
+        private static string NewInviteCode(string seed)
+        {
+            string prefix = new string((seed ?? "")
+                .ToUpperInvariant()
+                .Where(char.IsLetterOrDigit)
+                .Take(4)
+                .ToArray());
+            if (prefix.Length < 2) prefix = "BMNG";
+            const string alpha = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"; // skip ambiguous I/O/0/1
+            var rnd = new Random();
+            var tail = new string(Enumerable.Range(0, 4).Select(_ => alpha[rnd.Next(alpha.Length)]).ToArray());
+            return prefix + "-" + tail;
         }
     }
 }

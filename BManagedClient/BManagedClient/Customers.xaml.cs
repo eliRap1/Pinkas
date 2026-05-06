@@ -83,12 +83,18 @@ namespace BManagedClient
             string addr    = addressBox.Text?.Trim() ?? "";
             string cur     = (curBox.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "ILS";
 
-            if (string.IsNullOrEmpty(biz))
-            { status.Text = "Business name is required."; return; }
-            if (!string.IsNullOrEmpty(email) && !EmailRx.IsMatch(email))
-            { status.Text = "Email looks invalid."; return; }
-            if (!string.IsNullOrEmpty(phone) && !PhoneRx.IsMatch(phone))
-            { status.Text = "Phone looks invalid."; return; }
+            // Per-field red-border feedback. Reset on every save attempt.
+            var rose = (System.Windows.Media.Brush)System.Windows.Application.Current.Resources["Rose"];
+            var soft = System.Windows.Media.Brushes.Transparent;
+            bizBox.BorderBrush = soft; emailBox.BorderBrush = soft; phoneBox.BorderBrush = soft;
+            bool bad = false; string firstErr = null;
+            void Bad(System.Windows.Controls.TextBox b, string msg)
+            { b.BorderBrush = rose; b.BorderThickness = new Thickness(1.5); bad = true; if (firstErr == null) firstErr = msg; }
+
+            if (string.IsNullOrEmpty(biz))                              Bad(bizBox,   "Business name is required.");
+            if (!string.IsNullOrEmpty(email) && !EmailRx.IsMatch(email)) Bad(emailBox, "Email looks invalid (e.g. name@example.com).");
+            if (!string.IsNullOrEmpty(phone) && !PhoneRx.IsMatch(phone)) Bad(phoneBox, "Phone must be 7–15 digits, optional + country code.");
+            if (bad) { status.Text = firstErr; return; }
 
             var c = new Customer
             {

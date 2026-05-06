@@ -82,8 +82,12 @@
                                 <ComboBoxItem Content="USD"/>
                             </ComboBox>
 
-                            <!-- Owner-only: VAT registration + Zair flag -->
+                            <!-- Owner-only: business name, VAT registration, Zair flag -->
                             <StackPanel x:Name="ownerExtras" Visibility="Collapsed">
+                                <TextBlock Text="BUSINESS / STUDIO NAME" Style="{StaticResource InputLabel}"/>
+                                <TextBox x:Name="bizNameBox" Style="{StaticResource ModernTextBox}" Margin="0,0,0,10"
+                                         ToolTip="Shown across the system instead of your username."/>
+
                                 <TextBlock Text="VAT REGISTRATION" Style="{StaticResource InputLabel}"/>
                                 <ComboBox x:Name="bizBox" Style="{StaticResource ModernCombo}" Margin="0,0,0,10"
                                           SelectionChanged="Biz_Changed">
@@ -95,13 +99,14 @@
                                           Content="Claim Osek Zair income-tax status (≤122,833 ₪/yr, 30% deemed-expenses)"/>
                             </StackPanel>
 
-                            <!-- Employee-only: pick the company / owner -->
+                            <!-- Employee-only: company invite code (no public list) -->
                             <StackPanel x:Name="employeeExtras" Visibility="Collapsed">
-                                <TextBlock Text="WHICH COMPANY DO YOU WORK FOR?" Style="{StaticResource InputLabel}"/>
-                                <ComboBox x:Name="ownerBox" Style="{StaticResource ModernCombo}" Margin="0,0,0,8"
-                                          DisplayMemberPath="Username" SelectedValuePath="Id"/>
+                                <TextBlock Text="COMPANY INVITE CODE" Style="{StaticResource InputLabel}"/>
+                                <TextBox x:Name="inviteBox" Style="{StaticResource ModernTextBox}" Margin="0,0,0,8"
+                                         CharacterCasing="Upper" MaxLength="16"
+                                         ToolTip="Ask the Owner of the company you're joining for their invite code."/>
                                 <TextBlock Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,0,0,10"
-                                           Text="The Owner you select will receive your sign-up request and approve your account before you can sign in."/>
+                                           Text="We don't show a public list of companies for privacy reasons. Use the invite code from your Owner's settings."/>
                             </StackPanel>
 
                             <Button x:Name="submitBtn" Content="Create account" Click="Create_Click"

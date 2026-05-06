@@ -41,6 +41,8 @@ namespace ViewDB
             AddColumnIfMissing("[businessType] TEXT(30)");
             AddColumnIfMissing("[isZair] BIT");
             AddColumnIfMissing("[ownerId] LONG");
+            AddColumnIfMissing("[businessName] TEXT(120)");
+            AddColumnIfMissing("[inviteCode] TEXT(16)");
             MigrateLegacyZair();
         }
 
@@ -110,6 +112,18 @@ namespace ViewDB
                 u.OwnerId = v == DBNull.Value ? (int?)null : Convert.ToInt32(v);
             }
             catch { u.OwnerId = null; }
+            try
+            {
+                var v = reader["businessName"];
+                u.BusinessName = v == DBNull.Value ? null : v.ToString();
+            }
+            catch { u.BusinessName = null; }
+            try
+            {
+                var v = reader["inviteCode"];
+                u.InviteCode = v == DBNull.Value ? null : v.ToString();
+            }
+            catch { u.InviteCode = null; }
         }
 
         public void SetBusinessType(int userId, string businessType)
@@ -152,10 +166,48 @@ namespace ViewDB
         }
 
         // Owners that an employee/client can pick at signup. Filters to
-        // active Owner accounts only.
+        // active Owner accounts only. Used internally and as a fallback —
+        // primary employee onboarding path is by invite code.
         public List<User> GetActiveOwners()
             => Select("SELECT * FROM [Users] WHERE [role]='Owner' AND [isActive]=? ORDER BY [username]",
                 new OleDbParameter("@a", true)).OfType<User>().ToList();
+
+        public void SetBusinessName(int userId, string businessName)
+        {
+            using (var conn = GetConnection())
+            using (var cmd = new OleDbCommand(
+                "UPDATE [Users] SET [businessName]=? WHERE [id]=?", conn))
+            {
+                cmd.Parameters.Add(new OleDbParameter("@b",  OleDbType.VarWChar, 120) { Value = (object)businessName ?? DBNull.Value });
+                cmd.Parameters.Add(new OleDbParameter("@id", OleDbType.Integer)       { Value = userId });
+                conn.Open();
+                cmd.ExecuteNonQuery();
+            }
+        }
+
+        public string SetInviteCode(int userId, string inviteCode)
+        {
+            using (var conn = GetConnection())
+            using (var cmd = new OleDbCommand(
+                "UPDATE [Users] SET [inviteCode]=? WHERE [id]=?", conn))
+            {
+                cmd.Parameters.Add(new OleDbParameter("@c",  OleDbType.VarWChar, 16) { Value = (object)inviteCode ?? DBNull.Value });
+                cmd.Parameters.Add(new OleDbParameter("@id", OleDbType.Integer)      { Value = userId });
+                conn.Open();
+                cmd.ExecuteNonQuery();
+            }
+            return inviteCode;
+        }
+
+        // Resolve invite code -> Owner. Used by Employee signup so the user
+        // doesn't see (or pick from) a list of every company on the platform.
+        public User GetOwnerByInviteCode(string code)
+        {
+            if (string.IsNullOrWhiteSpace(code) || code.Length > 16) return null;
+            return Select("SELECT * FROM [Users] WHERE [role]='Owner' AND [inviteCode]=? AND [isActive]=?",
+                new OleDbParameter("@c", code.Trim()),
+                new OleDbParameter("@a", true)).OfType<User>().FirstOrDefault();
+        }
 
         public bool UserExists(string username)
         {

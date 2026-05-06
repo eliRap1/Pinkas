@@ -1673,6 +1673,24 @@ namespace BManagedClient.BMsrv {
             set { if (this.OwnerIdField.Equals(value) != true) { this.OwnerIdField = value; this.RaisePropertyChanged("OwnerId"); } }
         }
 
+        [System.Runtime.Serialization.OptionalFieldAttribute()]
+        private string BusinessNameField;
+
+        [System.Runtime.Serialization.DataMemberAttribute()]
+        public string BusinessName {
+            get { return this.BusinessNameField; }
+            set { if (object.ReferenceEquals(this.BusinessNameField, value) != true) { this.BusinessNameField = value; this.RaisePropertyChanged("BusinessName"); } }
+        }
+
+        [System.Runtime.Serialization.OptionalFieldAttribute()]
+        private string InviteCodeField;
+
+        [System.Runtime.Serialization.DataMemberAttribute()]
+        public string InviteCode {
+            get { return this.InviteCodeField; }
+            set { if (object.ReferenceEquals(this.InviteCodeField, value) != true) { this.InviteCodeField = value; this.RaisePropertyChanged("InviteCode"); } }
+        }
+
         [System.Runtime.Serialization.DataMemberAttribute()]
         public string PasswordHash {
             get {
@@ -2887,6 +2905,15 @@ namespace BManagedClient.BMsrv {
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IService1/GetActiveOwners", ReplyAction="http://tempuri.org/IService1/GetActiveOwnersResponse")]
         BManagedClient.BMsrv.User[] GetActiveOwners();
 
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IService1/SetBusinessName", ReplyAction="http://tempuri.org/IService1/SetBusinessNameResponse")]
+        void SetBusinessName(int userId, string businessName);
+
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IService1/SetInviteCode", ReplyAction="http://tempuri.org/IService1/SetInviteCodeResponse")]
+        string SetInviteCode(int userId, string inviteCode);
+
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IService1/GetOwnerByInviteCode", ReplyAction="http://tempuri.org/IService1/GetOwnerByInviteCodeResponse")]
+        BManagedClient.BMsrv.User GetOwnerByInviteCode(string code);
+
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IService1/AddCustomer", ReplyAction="http://tempuri.org/IService1/AddCustomerResponse")]
         int AddCustomer(BManagedClient.BMsrv.Customer c);
         
@@ -3471,6 +3498,9 @@ namespace BManagedClient.BMsrv {
 
         public void SetOwnerId(int userId, int ownerId) { base.Channel.SetOwnerId(userId, ownerId); }
         public BManagedClient.BMsrv.User[] GetActiveOwners() { return base.Channel.GetActiveOwners(); }
+        public void SetBusinessName(int userId, string businessName) { base.Channel.SetBusinessName(userId, businessName); }
+        public string SetInviteCode(int userId, string inviteCode) { return base.Channel.SetInviteCode(userId, inviteCode); }
+        public BManagedClient.BMsrv.User GetOwnerByInviteCode(string code) { return base.Channel.GetOwnerByInviteCode(code); }
         
         public int AddCustomer(BManagedClient.BMsrv.Customer c) {
             return base.Channel.AddCustomer(c);

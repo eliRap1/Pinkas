@@ -41,10 +41,23 @@ namespace Model
 
         /// <summary>
         /// Multi-tenant link: when Role == "Employee" or "Client", this is the
-        /// Owner-user-id they belong to (chosen at signup). Null/0 for Owner
-        /// rows themselves. Drives which company's projects the employee
-        /// can be assigned to and which Owner approves the account.
+        /// Owner-user-id they belong to (chosen at signup via invite code).
+        /// Null/0 for Owner rows themselves.
         /// </summary>
         [DataMember] public int? OwnerId { get; set; }
+
+        /// <summary>
+        /// Owner-only display name shown across the system instead of the
+        /// raw username (e.g. "Acme Studio" rather than "admin"). Optional —
+        /// falls back to Username when blank.
+        /// </summary>
+        [DataMember] public string BusinessName { get; set; }
+
+        /// <summary>
+        /// Owner-only short invite code used by Employees / Clients to join
+        /// the company at signup. Auto-generated on Owner creation; rotatable
+        /// from Settings. Treated as a shared secret — not a user-visible PII.
+        /// </summary>
+        [DataMember] public string InviteCode { get; set; }
     }
 }

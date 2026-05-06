@@ -64,8 +64,14 @@ namespace WcfServiceLibrary1
         [OperationContract] void SetIsZair(int userId, bool isZair);
         /// <summary>Link an Employee/Client to its Owner ('the company they belong to').</summary>
         [OperationContract] void SetOwnerId(int userId, int ownerId);
-        /// <summary>List active Owners — for the company-picker dropdown on signup.</summary>
+        /// <summary>List active Owners — kept for admin tooling. Employees use invite codes.</summary>
         [OperationContract] List<User> GetActiveOwners();
+        /// <summary>Update the Owner's display business name (e.g. "Acme Studio").</summary>
+        [OperationContract] void SetBusinessName(int userId, string businessName);
+        /// <summary>Rotate the Owner's invite code; returns the new value.</summary>
+        [OperationContract] string SetInviteCode(int userId, string inviteCode);
+        /// <summary>Resolve invite code -> Owner. Used by Employee signup so the user does NOT see every company on the platform.</summary>
+        [OperationContract] User GetOwnerByInviteCode(string code);
 
         // ==================== CUSTOMERS / CRM ====================
 

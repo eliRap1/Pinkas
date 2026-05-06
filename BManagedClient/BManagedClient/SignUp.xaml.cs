@@ -1,5 +1,6 @@
 using BManagedClient.BMsrv;
 using System;
+using System.Linq;
 using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
@@ -34,19 +35,7 @@ namespace BManagedClient
             titleText.Text = role == "Owner" ? "Owner sign-up" : "Employee sign-up";
             subtitleText.Text = role == "Owner"
                 ? "Run the business — you'll log invoices, expenses, and VAT."
-                : "Pick the company you work for. Owner approves before activation.";
-
-            if (role == "Employee" && ownerBox.ItemsSource == null)
-            {
-                try
-                {
-                    var owners = ServiceGateway.Use(c => c.GetActiveOwners());
-                    ownerBox.ItemsSource = owners;
-                    if (owners != null && owners.Length > 0) ownerBox.SelectedIndex = 0;
-                    else status.Text = "No active Owner accounts. Ask the business owner to sign up first.";
-                }
-                catch (Exception ex) { status.Text = "Failed to load companies: " + ex.Message; }
-            }
+                : "Enter the invite code from your company's Owner.";
         }
 
         private void ResetSteps_Click(object s, RoutedEventArgs e)
@@ -75,27 +64,53 @@ namespace BManagedClient
             string ph = phoneBox.Text?.Trim() ?? "";
             string cur = (curBox.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "ILS";
 
+            // Per-field red borders so the user sees exactly which field is wrong.
+            var rose = (System.Windows.Media.Brush)System.Windows.Application.Current.Resources["Rose"];
+            var soft = System.Windows.Media.Brushes.Transparent;
+            usernameBox.BorderBrush = soft; emailBox.BorderBrush = soft; phoneBox.BorderBrush = soft;
+            passwordBox.BorderBrush = soft;
+            bool bad = false; string firstErr = null;
+            void BadTb(System.Windows.Controls.TextBox b, string msg)
+            { b.BorderBrush = rose; b.BorderThickness = new Thickness(1.5); bad = true; if (firstErr == null) firstErr = msg; }
+            void BadPb(System.Windows.Controls.PasswordBox b, string msg)
+            { b.BorderBrush = rose; b.BorderThickness = new Thickness(1.5); bad = true; if (firstErr == null) firstErr = msg; }
+
             if (!UsernameRx.IsMatch(u))
-            { status.Text = "Username must be 4–20 letters / digits / _ / ."; return; }
+                BadTb(usernameBox, "Username must be 4–20 letters / digits / _ / .");
             if (!PasswordRx.IsMatch(p))
-            { status.Text = "Password: 8+ chars, must include a letter and a digit."; return; }
-            if (string.Equals(u, p, StringComparison.OrdinalIgnoreCase))
-            { status.Text = "Password cannot match the username."; return; }
-            if (!EmailRx.IsMatch(em)) { status.Text = "Email looks invalid (e.g. name@example.com)."; return; }
-            if (!PhoneRx.IsMatch(ph)) { status.Text = "Phone must be 7–15 digits, optionally + country code."; return; }
+                BadPb(passwordBox, "Password: 8+ chars, must include a letter and a digit.");
+            else if (string.Equals(u, p, StringComparison.OrdinalIgnoreCase))
+                BadPb(passwordBox, "Password cannot match the username.");
+            if (!EmailRx.IsMatch(em))
+                BadTb(emailBox, "Email looks invalid (e.g. name@example.com).");
+            if (!PhoneRx.IsMatch(ph))
+                BadTb(phoneBox, "Phone must be 7–15 digits, optionally + country code.");
+            if (bad) { status.Text = firstErr; return; }
 
             string bizType = "Individual";
+            string bizName = null;
             bool isZair = false;
             int? employeeOwnerId = null;
             if (_selectedRole == "Owner")
             {
                 bizType = (bizBox.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "Patur";
                 isZair = zairBox.IsChecked == true;
+                bizName = (bizNameBox.Text ?? "").Trim();
             }
             else if (_selectedRole == "Employee")
             {
-                if (ownerBox.SelectedValue is int oid && oid > 0) employeeOwnerId = oid;
-                else { status.Text = "Pick the company you work for."; return; }
+                string code = (inviteBox.Text ?? "").Trim().ToUpperInvariant();
+                if (string.IsNullOrEmpty(code))
+                { status.Text = "Enter the invite code from your company's Owner."; return; }
+                try
+                {
+                    var owner = ServiceGateway.Use(c => c.GetOwnerByInviteCode(code));
+                    if (owner == null)
+                    { status.Text = "Invite code not recognised. Ask your Owner to share it."; return; }
+                    employeeOwnerId = owner.Id;
+                }
+                catch (Exception ex)
+                { status.Text = "Lookup failed: " + ex.Message; return; }
             }
 
             try
@@ -106,29 +121,56 @@ namespace BManagedClient
                 bool ok = ServiceGateway.Use(c => c.AddUser(u, p, em, ph, _selectedRole, cur));
                 if (!ok) { status.Text = "Server rejected the request."; return; }
 
+                string newInviteCode = null;
                 if (_selectedRole == "Owner")
                 {
                     try
                     {
-                        int newId = ServiceGateway.Use(c => c.GetUserId(u));
-                        ServiceGateway.Use(c => c.SetBusinessType(newId, bizType));
-                        if (isZair) ServiceGateway.Use(c => c.SetIsZair(newId, true));
+                        // Batch the post-create configuration ops on a single
+                        // shared channel so we don't reopen WCF 4 times.
+                        ServiceGateway.Use(c =>
+                        {
+                            int newId = c.GetUserId(u);
+                            c.SetBusinessType(newId, bizType);
+                            if (isZair) c.SetIsZair(newId, true);
+                            if (!string.IsNullOrWhiteSpace(bizName))
+                                c.SetBusinessName(newId, bizName);
+                            // Auto-generate an invite code so the new Owner can
+                            // share it with their employees right away.
+                            string seed = string.IsNullOrWhiteSpace(bizName) ? u : bizName;
+                            newInviteCode = NewInviteCode(seed);
+                            c.SetInviteCode(newId, newInviteCode);
+                        });
                     }
-                    catch { /* business-type set is best-effort; account exists either way */ }
+                    catch { /* best-effort; account exists either way */ }
                 }
                 else if (_selectedRole == "Employee" && employeeOwnerId.HasValue)
                 {
                     try
                     {
-                        int newId = ServiceGateway.Use(c => c.GetUserId(u));
-                        ServiceGateway.Use(c => c.SetOwnerId(newId, employeeOwnerId.Value));
+                        ServiceGateway.Use(c =>
+                        {
+                            int newId = c.GetUserId(u);
+                            c.SetOwnerId(newId, employeeOwnerId.Value);
+                        });
                     }
                     catch { /* link is best-effort; Owner can fix in Manage Users */ }
                 }
 
-                string msg = _selectedRole == "Owner"
-                    ? "Owner account created. You can sign in now."
-                    : "Employee account created. An existing Owner must approve the account before you can sign in.";
+                string msg;
+                if (_selectedRole == "Owner")
+                {
+                    msg = "Owner account created. You can sign in now.";
+                    if (!string.IsNullOrEmpty(newInviteCode))
+                        msg += "\n\nYour company invite code is: " + newInviteCode +
+                               "\nShare it with employees who need to join your company.";
+                }
+                else
+                {
+                    msg = "Employee account created. The Owner of " +
+                          ((employeeOwnerId.HasValue ? "the company" : "the system")) +
+                          " must approve your account before you can sign in.";
+                }
                 MessageBox.Show(msg, "Welcome", MessageBoxButton.OK, MessageBoxImage.Information);
                 NavigationService?.Navigate(new LogIn());
             }
@@ -137,5 +179,21 @@ namespace BManagedClient
 
         private void Back_Click(object s, RoutedEventArgs e)
             => NavigationService?.Navigate(new LogIn());
+
+        // Format: PREFIX-XXXX (4 chars from business name + 4 random alpha-numerics).
+        private static string NewInviteCode(string seed)
+        {
+            string prefix = new string((seed ?? "")
+                .ToUpperInvariant()
+                .Where(char.IsLetterOrDigit)
+                .Take(4)
+                .ToArray());
+            if (prefix.Length < 2) prefix = "BMNG";
+            const string alpha = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+            var rnd = new Random();
+            var tail = new string(System.Linq.Enumerable.Range(0, 4)
+                .Select(_ => alpha[rnd.Next(alpha.Length)]).ToArray());
+            return prefix + "-" + tail;
+        }
     }
 }

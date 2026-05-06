@@ -18,6 +18,17 @@
         <!-- Double-bezel card -->
         <div class="bg-black/[0.04] ring-1 ring-black/5 rounded-shell p-1.5 shadow-float">
             <div class="bg-paper-50 rounded-core shadow-inset p-8">
+                @if (TempData["NewOwnerCode"] is string newCode && !string.IsNullOrEmpty(newCode))
+                {
+                    <div class="mb-5 px-4 py-3 rounded-2xl bg-mint/10 text-mint border border-mint/20 text-sm">
+                        ✅ @L.T(HttpContext,"Owner account created. Your company invite code is:","חשבון בעלים נוצר. קוד הצטרפות לחברה שלך:")
+                        <div class="font-mono text-lg tracking-widest mt-1">@newCode</div>
+                        <div class="text-xs text-ink/60 mt-1">
+                            @L.T(HttpContext,"Share this with employees who join your company. Rotate it from Settings any time.",
+                                              "שתף עם עובדים שיצטרפו לחברה. ניתן להחליף מההגדרות בכל עת.")
+                        </div>
+                    </div>
+                }
                 <form id="loginForm" method="post" class="space-y-5">
                     <div>
                         <label class="pill text-ink/40 mb-2 block">@L.T(HttpContext,"Username","שם משתמש")</label>

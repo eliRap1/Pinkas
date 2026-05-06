@@ -114,6 +114,15 @@ namespace WcfServiceLibrary1
         public List<User> GetActiveOwners()
             => userDB.GetActiveOwners();
 
+        public void SetBusinessName(int userId, string businessName)
+            => userDB.SetBusinessName(userId, businessName);
+
+        public string SetInviteCode(int userId, string inviteCode)
+            => userDB.SetInviteCode(userId, inviteCode);
+
+        public User GetOwnerByInviteCode(string code)
+            => userDB.GetOwnerByInviteCode(code);
+
         // ===================================================================
         // CUSTOMERS / CRM
         // ===================================================================

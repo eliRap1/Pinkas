@@ -32,6 +32,8 @@ namespace BManagedWeb.bsrv
         [DataMember] public string BusinessType { get; set; }
         [DataMember] public bool IsZair { get; set; }
         [DataMember] public int? OwnerId { get; set; }
+        [DataMember] public string BusinessName { get; set; }
+        [DataMember] public string InviteCode { get; set; }
     }
 
     [DataContract(Namespace = "http://schemas.datacontract.org/2004/07/Model")]
@@ -307,6 +309,9 @@ namespace BManagedWeb.bsrv
         [OperationContract] void SetIsZair(int userId, bool isZair);
         [OperationContract] void SetOwnerId(int userId, int ownerId);
         [OperationContract] User[] GetActiveOwners();
+        [OperationContract] void SetBusinessName(int userId, string businessName);
+        [OperationContract] string SetInviteCode(int userId, string inviteCode);
+        [OperationContract] User GetOwnerByInviteCode(string code);
         [OperationContract] List<User> GetPendingUsers();
         [OperationContract] void SetUserActive(int userId, bool isActive);
         [OperationContract] void DeleteUser(int userId);
@@ -438,6 +443,9 @@ namespace BManagedWeb.bsrv
         public void SetIsZair(int id, bool z) => Channel.SetIsZair(id, z);
         public void SetOwnerId(int id, int oid) => Channel.SetOwnerId(id, oid);
         public User[] GetActiveOwners() => Channel.GetActiveOwners();
+        public void SetBusinessName(int id, string name) => Channel.SetBusinessName(id, name);
+        public string SetInviteCode(int id, string code) => Channel.SetInviteCode(id, code);
+        public User GetOwnerByInviteCode(string code) => Channel.GetOwnerByInviteCode(code);
         public List<User> GetPendingUsers() => Channel.GetPendingUsers();
         public void SetUserActive(int id, bool a) => Channel.SetUserActive(id, a);
         public void DeleteUser(int id) => Channel.DeleteUser(id);
