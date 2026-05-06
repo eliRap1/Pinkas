@@ -20,6 +20,23 @@
     <div class="reveal mb-6 px-4 py-2 rounded-full inline-block @(Model.IsSuccess ? "bg-mint/10 text-mint border border-mint/20" : "bg-rose/10 text-rose border border-rose/20")">@Model.Message</div>
 }
 
+<!-- Cheat-sheet card explaining the two amount fields -->
+<div class="reveal mb-6 max-w-3xl bg-black/[0.04] ring-1 ring-black/5 rounded-shell p-1.5">
+    <div class="bg-paper-50 rounded-core p-5 shadow-inset text-sm text-ink/70">
+        <div class="pill text-ink/40 mb-2">@L.T(HttpContext,"How to log an expense","איך לרשום הוצאה")</div>
+        <p class="mb-1">
+            <span class="font-semibold">@L.T(HttpContext,"Amount (gross)","סכום (ברוטו)")</span> —
+            @L.T(HttpContext,"total you paid, VAT included. e.g. a 117 ₪ supplier bill → enter 117.",
+                              "סך ששולם, כולל מע״מ. דוגמה: חשבונית של 117 ₪ → הזן 117.")
+        </p>
+        <p>
+            <span class="font-semibold">@L.T(HttpContext,"VAT paid","מע״מ ששולם")</span> —
+            @L.T(HttpContext,"only the VAT portion you can later deduct. From 117 → VAT = 17. Click Auto-VAT to fill it from the gross amount automatically.",
+                              "רק מרכיב המע״מ שניתן לקזז. מתוך 117 → מע״מ = 17. לחיצה על Auto-VAT תמלא אוטומטית מהברוטו.")
+        </p>
+    </div>
+</div>
+
 <form method="post" asp-page-handler="Add" enctype="multipart/form-data" class="reveal mb-12 bg-black/[0.04] ring-1 ring-black/5 rounded-shell p-1.5 max-w-4xl">
     <div class="bg-paper-50 rounded-core p-6 shadow-inset grid md:grid-cols-4 gap-3">
         <select asp-for="NewCategoryId" class="bg-paper-100 border border-black/5 rounded-2xl px-4 py-2.5">
@@ -28,8 +45,23 @@
             { <option value="@c.Id">@c.Name</option> }
         </select>
         <input asp-for="NewVendor" placeholder="@L.T(HttpContext,"Vendor","ספק")" class="bg-paper-100 border border-black/5 rounded-2xl px-4 py-2.5" />
-        <input asp-for="NewAmount" type="number" step="0.01" placeholder="@L.T(HttpContext,"Amount","סכום")" class="bg-paper-100 border border-black/5 rounded-2xl px-4 py-2.5" />
-        <input asp-for="NewVat" type="number" step="0.01" placeholder="@L.T(HttpContext,"VAT paid","מע״מ ששולם")" class="bg-paper-100 border border-black/5 rounded-2xl px-4 py-2.5" />
+        <div class="relative">
+            <input asp-for="NewAmount" id="exp-amount" type="number" step="0.01"
+                   placeholder="@L.T(HttpContext,"Amount (gross, incl. VAT)","סכום ברוטו (כולל מע״מ)")"
+                   title="@L.T(HttpContext,"Total paid to supplier, VAT included","סך ששולם לספק כולל מע״מ")"
+                   class="w-full bg-paper-100 border border-black/5 rounded-2xl px-4 py-2.5" />
+        </div>
+        <div class="relative flex items-center gap-1">
+            <input asp-for="NewVat" id="exp-vat" type="number" step="0.01"
+                   placeholder="@L.T(HttpContext,"VAT (deductible)","מע״מ (לקיזוז)")"
+                   title="@L.T(HttpContext,"Only the VAT portion of the gross amount","רק מרכיב המע״מ מתוך הברוטו")"
+                   class="w-full bg-paper-100 border border-black/5 rounded-2xl px-4 py-2.5" />
+            <button type="button" id="exp-autovat"
+                    class="shrink-0 bg-ink text-paper-50 rounded-full px-3 py-1.5 text-xs"
+                    title="@L.T(HttpContext,"Auto = Amount × 17 ÷ 117 (Israeli VAT)","חישוב אוטומטי = סכום × 17 ÷ 117")">
+                Auto&nbsp;17%
+            </button>
+        </div>
         <input asp-for="NewDescription" placeholder="@L.T(HttpContext,"Description","תיאור")" class="md:col-span-3 bg-paper-100 border border-black/5 rounded-2xl px-4 py-2.5" />
         <select asp-for="NewCurrency" class="bg-paper-100 border border-black/5 rounded-2xl px-4 py-2.5">
             <option>ILS</option><option>USD</option>
@@ -41,6 +73,25 @@
         <button class="md:col-span-4 bg-rose text-white rounded-full px-6 py-3 mt-1 active:scale-[0.98]">@L.T(HttpContext,"Log expense","דווח הוצאה")</button>
     </div>
 </form>
+
+@section Scripts {
+<script>
+  // Auto-VAT: gross × 17 ÷ 117 (Israeli standard rate, baked into gross).
+  // Also live-fills VAT while the user is typing the amount, but only if VAT is still empty/0.
+  const amount = document.getElementById('exp-amount');
+  const vat    = document.getElementById('exp-vat');
+  const btn    = document.getElementById('exp-autovat');
+  function calc() {
+    const g = parseFloat(amount.value);
+    if (!isFinite(g) || g <= 0) return;
+    vat.value = (g * 17 / 117).toFixed(2);
+  }
+  if (btn) btn.addEventListener('click', calc);
+  if (amount) amount.addEventListener('input', () => {
+    if (!vat.value || parseFloat(vat.value) === 0) calc();
+  });
+</script>
+}
 
 <section class="reveal bg-black/[0.04] ring-1 ring-black/5 rounded-shell p-1.5">
     <div class="bg-paper-50 rounded-core p-6 shadow-inset">

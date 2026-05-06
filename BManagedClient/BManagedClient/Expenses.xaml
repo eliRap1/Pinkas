@@ -6,9 +6,11 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
+        <!-- Header -->
         <Grid Grid.Row="0" Margin="0,0,0,20">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
@@ -24,36 +26,75 @@
                     VerticalAlignment="Top"/>
         </Grid>
 
-        <Border Grid.Row="1" Style="{StaticResource ShellCard}">
-            <Border Style="{StaticResource CoreCard}" Padding="14">
+        <!-- Cheat sheet card explaining the two amounts -->
+        <Border Grid.Row="1" Style="{StaticResource ShellCard}" Margin="0,0,0,12">
+            <Border Style="{StaticResource CoreCard}" Padding="18,14">
+                <StackPanel>
+                    <TextBlock Text="HOW TO LOG AN EXPENSE" Style="{StaticResource Eyebrow}" Margin="0,0,0,8"/>
+                    <TextBlock TextWrapping="Wrap" Style="{StaticResource Body}">
+                        <Run FontWeight="SemiBold">Amount (gross)</Run>
+                        <Run> — total you paid, VAT included. Example: a 117 ₪ supplier bill → enter 117.</Run>
+                    </TextBlock>
+                    <TextBlock TextWrapping="Wrap" Style="{StaticResource Body}" Margin="0,4,0,0">
+                        <Run FontWeight="SemiBold">VAT paid</Run>
+                        <Run> — only the VAT portion you can later deduct. Example: from 117 → VAT = 17.
+                              Click </Run>
+                        <Run FontWeight="SemiBold">Auto VAT (17%)</Run>
+                        <Run> to fill it from the gross amount automatically. Editable for zero-rated or non-deductible categories.</Run>
+                    </TextBlock>
+                </StackPanel>
+            </Border>
+        </Border>
+
+        <!-- Add expense form -->
+        <Border Grid.Row="2" Style="{StaticResource ShellCard}">
+            <Border Style="{StaticResource CoreCard}" Padding="18">
                 <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="180"/>
+                        <ColumnDefinition Width="200"/>
                         <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="120"/>
-                        <ColumnDefinition Width="120"/>
+                        <ColumnDefinition Width="160"/>
+                        <ColumnDefinition Width="160"/>
+                        <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
-                    <ComboBox x:Name="catCombo" Grid.Column="0" Style="{StaticResource ModernCombo}"
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0" Grid.Column="0" Text="CATEGORY"      Style="{StaticResource InputLabel}" Margin="0,0,6,4"/>
+                    <TextBlock Grid.Row="0" Grid.Column="1" Text="VENDOR"        Style="{StaticResource InputLabel}" Margin="0,0,6,4"/>
+                    <TextBlock Grid.Row="0" Grid.Column="2" Text="AMOUNT (GROSS)" Style="{StaticResource InputLabel}" Margin="0,0,6,4"/>
+                    <TextBlock Grid.Row="0" Grid.Column="3" Text="VAT PAID"      Style="{StaticResource InputLabel}" Margin="0,0,6,4"/>
+
+                    <ComboBox Grid.Row="1" Grid.Column="0" x:Name="catCombo" Style="{StaticResource ModernCombo}"
                               DisplayMemberPath="Name" SelectedValuePath="Id" Margin="0,0,6,0"/>
-                    <TextBox x:Name="vendorBox" Grid.Column="1" Style="{StaticResource ModernTextBox}" Margin="0,0,6,0"/>
-                    <TextBox x:Name="amountBox" Grid.Column="2" Style="{StaticResource ModernTextBox}" Margin="0,0,6,0" Text="0"/>
-                    <TextBox x:Name="vatBox"    Grid.Column="3" Style="{StaticResource ModernTextBox}" Margin="0,0,6,0" Text="0"/>
-                    <Button Grid.Column="4" Content="➕ Log expense" Click="Add_Click" Style="{StaticResource RoseButton}"/>
+                    <TextBox Grid.Row="1" Grid.Column="1" x:Name="vendorBox" Style="{StaticResource ModernTextBox}" Margin="0,0,6,0"/>
+                    <TextBox Grid.Row="1" Grid.Column="2" x:Name="amountBox" Style="{StaticResource ModernTextBox}"
+                             Margin="0,0,6,0" Text="0" TextChanged="Amount_Changed"
+                             ToolTip="Total you paid the supplier, VAT included"/>
+                    <TextBox Grid.Row="1" Grid.Column="3" x:Name="vatBox" Style="{StaticResource ModernTextBox}"
+                             Margin="0,0,6,0" Text="0"
+                             ToolTip="VAT portion only — the part you can deduct"/>
+                    <Button  Grid.Row="1" Grid.Column="4" Content="Auto VAT (17%)" Click="AutoVat_Click"
+                             Style="{StaticResource SecondaryButton}" Margin="0,0,6,0"
+                             ToolTip="Fill VAT = Amount × 17 ÷ 117 (Israeli standard)"/>
+                    <Button  Grid.Row="1" Grid.Column="5" Content="➕ Log expense" Click="Add_Click" Style="{StaticResource RoseButton}"/>
                 </Grid>
             </Border>
         </Border>
 
-        <Border Grid.Row="2" Style="{StaticResource ShellCard}">
+        <Border Grid.Row="3" Style="{StaticResource ShellCard}" Margin="0,12,0,0">
             <Border Style="{StaticResource CoreCard}" Padding="6">
                 <ListView x:Name="expList" Background="Transparent" BorderThickness="0">
                     <ListView.View>
                         <GridView>
-                            <GridViewColumn Header="Date"     DisplayMemberBinding="{Binding Date, StringFormat=dd/MM/yyyy}" Width="120"/>
-                            <GridViewColumn Header="Vendor"   DisplayMemberBinding="{Binding Vendor}"    Width="240"/>
-                            <GridViewColumn Header="Amount"   DisplayMemberBinding="{Binding Amount, StringFormat=N2}"  Width="110"/>
-                            <GridViewColumn Header="VAT"      DisplayMemberBinding="{Binding VatPaid, StringFormat=N2}" Width="90"/>
-                            <GridViewColumn Header="Currency" DisplayMemberBinding="{Binding Currency}" Width="80"/>
+                            <GridViewColumn Header="Date"         DisplayMemberBinding="{Binding Date, StringFormat=dd/MM/yyyy}" Width="120"/>
+                            <GridViewColumn Header="Vendor"       DisplayMemberBinding="{Binding Vendor}"    Width="240"/>
+                            <GridViewColumn Header="Amount gross" DisplayMemberBinding="{Binding Amount, StringFormat=N2}"  Width="120"/>
+                            <GridViewColumn Header="VAT paid"     DisplayMemberBinding="{Binding VatPaid, StringFormat=N2}" Width="100"/>
+                            <GridViewColumn Header="Currency"     DisplayMemberBinding="{Binding Currency}" Width="80"/>
                         </GridView>
                     </ListView.View>
                 </ListView>
