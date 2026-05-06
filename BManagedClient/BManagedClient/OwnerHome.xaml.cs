@@ -50,6 +50,17 @@ namespace BManagedClient
 
                 var projs = ServiceGateway.Use(c => c.GetProjectsByStatus("Active", LogIn.sign.Id));
                 activeProjects.Text = (projs?.Length ?? 0).ToString();
+
+                int unread = ServiceGateway.Use(c => c.GetUnreadNotificationCount(LogIn.sign.Id));
+                if (unread > 0)
+                {
+                    notifBadgeText.Text = unread > 99 ? "99+" : unread.ToString();
+                    notifBadge.Visibility = Visibility.Visible;
+                }
+                else
+                {
+                    notifBadge.Visibility = Visibility.Collapsed;
+                }
             }
             catch (Exception ex) { System.Diagnostics.Debug.WriteLine("RefreshStats: " + ex.Message); }
         }

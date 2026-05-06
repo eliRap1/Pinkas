@@ -38,8 +38,13 @@
                         <Button Content="Sign in" Style="{StaticResource PrimaryButton}"
                                 Click="signIn_Click" Height="42"/>
 
-                        <Button Content="Create new account" Click="signUp_Click"
-                                Style="{StaticResource GhostButton}" Margin="0,12,0,0"/>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,12,0,0">
+                            <Button Content="Create account" Click="signUp_Click"
+                                    Style="{StaticResource GhostButton}"/>
+                            <TextBlock Text=" · " Style="{StaticResource Caption}" VerticalAlignment="Center"/>
+                            <Button Content="Forgot password" Click="forgot_Click"
+                                    Style="{StaticResource GhostButton}"/>
+                        </StackPanel>
 
                         <TextBlock x:Name="error" Foreground="{StaticResource Rose}"
                                    HorizontalAlignment="Center" Margin="0,12,0,0"

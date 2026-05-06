@@ -35,8 +35,11 @@
                     <ComboBoxItem Content="ILS" IsSelected="True"/>
                     <ComboBoxItem Content="USD"/>
                 </ComboBox>
-                <Button Grid.Column="4" Content="← Back" Click="Back_Click" Style="{StaticResource SecondaryButton}"
-                        VerticalAlignment="Top"/>
+                <StackPanel Grid.Column="4" Orientation="Horizontal" VerticalAlignment="Top">
+                    <Button Content="📤 Export CSV" Click="ExportCsv_Click"
+                            Style="{StaticResource MintButton}" Margin="0,0,8,0"/>
+                    <Button Content="← Back" Click="Back_Click" Style="{StaticResource SecondaryButton}"/>
+                </StackPanel>
             </Grid>
 
             <!-- VAT cards -->

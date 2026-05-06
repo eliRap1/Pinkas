@@ -59,5 +59,8 @@ namespace BManagedClient
 
         private void signUp_Click(object sender, RoutedEventArgs e)
             => NavigationService?.Navigate(new SignUp());
+
+        private void forgot_Click(object sender, RoutedEventArgs e)
+            => NavigationService?.Navigate(new ForgotPassword());
     }
 }
