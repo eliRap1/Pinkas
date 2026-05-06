@@ -1,0 +1,120 @@
+@page "{id:int?}"
+@model BManagedWeb.Pages.Owner.InvoicesModel
+@{ ViewData["Title"] = Model.Selected != null ? $"Invoice {Model.Selected.InvoiceNumber}" : "Invoices"; }
+
+@if (Model.Selected == null)
+{
+    <div class="reveal mb-12">
+        <span class="pill rounded-full px-3 py-1 bg-black/5 border border-black/5">Billing</span>
+        <h1 class="display text-5xl md:text-7xl font-bold mt-4 leading-[0.95]">Invoices.</h1>
+    </div>
+
+    <form method="post" asp-page-handler="Create" class="reveal mb-12 bg-black/[0.04] ring-1 ring-black/5 rounded-shell p-1.5 max-w-3xl">
+        <div class="bg-paper-50 rounded-core p-6 shadow-inset grid md:grid-cols-3 gap-3">
+            <select asp-for="NewCustomerId" class="bg-paper-100 border border-black/5 rounded-2xl px-4 py-2.5">
+                <option value="0">Customer…</option>
+                @foreach (var c in Model.Customers)
+                { <option value="@c.Id">@c.BusinessName</option> }
+            </select>
+            <input asp-for="NewDueDate" type="date" class="bg-paper-100 border border-black/5 rounded-2xl px-4 py-2.5" />
+            <select asp-for="NewCurrency" class="bg-paper-100 border border-black/5 rounded-2xl px-4 py-2.5">
+                <option>ILS</option><option>USD</option>
+            </select>
+            <button class="md:col-span-3 bg-ink text-paper-50 rounded-full px-6 py-3 mt-1 active:scale-[0.98]">Create draft invoice</button>
+        </div>
+    </form>
+
+    <section class="reveal grid grid-cols-1 md:grid-cols-2 gap-3">
+        @foreach (var pair in Model.AllInvoices)
+        {
+            var inv = pair.Item1; var custName = pair.Item2;
+            var color = inv.Status switch { "Paid" => "mint", "Overdue" => "rose", _ => "amber" };
+            <a asp-page="/Owner/Invoices" asp-route-id="@inv.Id" class="block bg-black/[0.04] ring-1 ring-black/5 rounded-shell p-1.5 hover:shadow-float transition-all duration-500 ease-spring">
+                <div class="bg-paper-50 rounded-core p-5 shadow-inset flex justify-between items-center">
+                    <div>
+                        <div class="pill text-ink/40">@inv.InvoiceNumber</div>
+                        <div class="font-medium">@custName</div>
+                        <div class="text-xs text-ink/40">Due @inv.DueDate.ToString("dd MMM yyyy")</div>
+                    </div>
+                    <div class="text-right">
+                        <div class="display font-semibold">@inv.Total.ToString("N0") <span class="text-ink/40 text-xs">@inv.Currency</span></div>
+                        <div class="pill rounded-full px-2 py-0.5 mt-1 inline-block bg-@(color)/10 text-@(color) border border-@(color)/20">@inv.Status</div>
+                    </div>
+                </div>
+            </a>
+        }
+        @if (Model.AllInvoices.Count == 0)
+        { <div class="md:col-span-2 text-center py-20 text-ink/40">No invoices yet.</div> }
+    </section>
+}
+else
+{
+    <div class="reveal mb-8">
+        <a asp-page="/Owner/Invoices" class="pill text-ink/40">← Back</a>
+        <h1 class="display text-4xl md:text-6xl font-bold mt-4">@Model.Selected.InvoiceNumber</h1>
+    </div>
+
+    <section class="grid md:grid-cols-12 gap-4 md:gap-6 reveal">
+        <div class="md:col-span-7 bg-black/[0.04] ring-1 ring-black/5 rounded-shell p-1.5">
+            <div class="bg-paper-50 rounded-core p-6 shadow-inset">
+                <h2 class="display text-2xl font-semibold mb-4">Line items</h2>
+
+                <table class="w-full text-sm">
+                    <thead><tr class="text-ink/40 pill">
+                        <th class="text-left py-2">Description</th>
+                        <th class="text-right">Qty</th>
+                        <th class="text-right">Unit</th>
+                        <th class="text-right">Total</th>
+                    </tr></thead>
+                    <tbody>
+                    @foreach (var l in Model.Lines)
+                    {
+                        <tr class="border-t border-black/5">
+                            <td class="py-2">@l.Description</td>
+                            <td class="text-right">@l.Quantity</td>
+                            <td class="text-right">@l.UnitPrice.ToString("N2")</td>
+                            <td class="text-right font-medium">@l.LineTotal.ToString("N2")</td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+
+                <form method="post" asp-page-handler="AddLine" asp-route-id="@Model.Selected.Id" class="mt-4 grid grid-cols-4 gap-2">
+                    <input asp-for="LineDescription" placeholder="Description" class="col-span-2 bg-paper-100 border border-black/5 rounded-xl px-3 py-2 text-sm"/>
+                    <input asp-for="LineQuantity" type="number" step="0.01" placeholder="Qty" class="bg-paper-100 border border-black/5 rounded-xl px-3 py-2 text-sm"/>
+                    <input asp-for="LineUnitPrice" type="number" step="0.01" placeholder="Unit" class="bg-paper-100 border border-black/5 rounded-xl px-3 py-2 text-sm"/>
+                    <button class="col-span-4 bg-mint text-white rounded-full px-4 py-2 text-sm">+ Add line</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="md:col-span-5 space-y-4">
+            <div class="bg-ink rounded-shell p-1.5">
+                <div class="bg-ink-soft rounded-core p-6 text-paper-50 shadow-inset">
+                    <div class="flex justify-between text-sm"><span>Subtotal</span><span>@Model.Selected.Subtotal.ToString("N2") @Model.Selected.Currency</span></div>
+                    <div class="flex justify-between text-sm mt-1"><span>VAT (@(Model.Selected.VatRate.ToString("P0")))</span><span>@Model.Selected.VatAmount.ToString("N2")</span></div>
+                    <div class="flex justify-between display font-bold mt-3 text-2xl"><span>Total</span><span>@Model.Selected.Total.ToString("N2") @Model.Selected.Currency</span></div>
+                </div>
+            </div>
+
+            <div class="bg-paper-100 ring-1 ring-black/5 rounded-shell p-1.5">
+                <div class="bg-paper-50 rounded-core p-6 shadow-inset space-y-2 text-sm">
+                    <div class="flex justify-between"><span class="text-ink/40">Status</span><span class="font-semibold">@Model.Selected.Status</span></div>
+                    <div class="flex justify-between"><span class="text-ink/40">Issued</span><span>@Model.Selected.IssueDate.ToString("dd MMM yyyy")</span></div>
+                    <div class="flex justify-between"><span class="text-ink/40">Due</span><span>@Model.Selected.DueDate.ToString("dd MMM yyyy")</span></div>
+                </div>
+            </div>
+
+            <div class="flex flex-wrap gap-2">
+                <form method="post" asp-page-handler="MarkSent" asp-route-id="@Model.Selected.Id">
+                    <button class="bg-amber text-white rounded-full px-4 py-2 text-sm">Mark Sent</button>
+                </form>
+                <form method="post" asp-page-handler="MarkPaid" asp-route-id="@Model.Selected.Id">
+                    <button class="bg-mint text-white rounded-full px-4 py-2 text-sm">Mark Paid</button>
+                </form>
+                <a asp-page="/Owner/Invoices" asp-page-handler="Pdf" asp-route-id="@Model.Selected.Id"
+                   class="bg-ink text-paper-50 rounded-full px-4 py-2 text-sm">Download PDF</a>
+            </div>
+        </div>
+    </section>
+}

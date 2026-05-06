@@ -32,6 +32,7 @@
   <ItemGroup>
     <Compile Include="IService1.cs" />
     <Compile Include="Service1.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

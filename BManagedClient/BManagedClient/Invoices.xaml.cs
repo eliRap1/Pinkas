@@ -1,0 +1,136 @@
+using BManagedClient.bsrv;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Windows;
+using System.Windows.Controls;
+
+namespace BManagedClient
+{
+    public partial class Invoices : Page
+    {
+        private List<Customer> _customers = new();
+        private Invoice _selected;
+
+        public Invoices()
+        {
+            InitializeComponent();
+            if (!ClientSession.IsOwner) { NavigationService?.Navigate(new LogIn()); return; }
+            LoadCustomers();
+            RefreshInvoices();
+        }
+
+        private void LoadCustomers()
+        {
+            var arr = ServiceGateway.Use(c => c.GetCustomersForOwner(LogIn.sign.Id));
+            _customers = (arr ?? new Customer[0]).ToList();
+            newCustomer.ItemsSource = _customers;
+            if (_customers.Count > 0) newCustomer.SelectedIndex = 0;
+        }
+
+        private void RefreshInvoices()
+        {
+            var list = new List<Invoice>();
+            foreach (var c in _customers)
+            {
+                var x = ServiceGateway.Use(s => s.GetInvoicesByCustomer(c.Id));
+                if (x != null) list.AddRange(x);
+            }
+            invoiceList.ItemsSource = list.OrderByDescending(i => i.IssueDate).ToList();
+        }
+
+        private void Inv_Selected(object s, SelectionChangedEventArgs e)
+        {
+            if (invoiceList.SelectedItem is Invoice inv)
+            {
+                _selected = inv;
+                LoadLines();
+            }
+        }
+
+        private void LoadLines()
+        {
+            if (_selected == null) return;
+            var lines = ServiceGateway.Use(s => s.GetInvoiceLines(_selected.Id)) ?? new InvoiceLine[0];
+            lineList.ItemsSource = lines;
+            // refresh totals
+            _selected = ServiceGateway.Use(s => s.GetInvoiceById(_selected.Id));
+            totalsText.Text = $"Subtotal {_selected.Subtotal:N2}  ·  VAT {_selected.VatAmount:N2}  ·  Total {_selected.Total:N2} {_selected.Currency}";
+        }
+
+        private void Create_Click(object s, RoutedEventArgs e)
+        {
+            if (newCustomer.SelectedValue == null) return;
+            string cur = (newCurrency.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "ILS";
+            try
+            {
+                int newId = ServiceGateway.Use(c => c.CreateInvoice(new Invoice
+                {
+                    CustomerId = (int)newCustomer.SelectedValue,
+                    IssueDate = DateTime.Today,
+                    DueDate = DateTime.Today.AddDays(30),
+                    Currency = cur,
+                    Status = "Draft",
+                    VatRate = 0.17,
+                }));
+                RefreshInvoices();
+                _selected = ServiceGateway.Use(c => c.GetInvoiceById(newId));
+                LoadLines();
+            }
+            catch (Exception ex) { MessageBox.Show("Create failed: " + ex.Message); }
+        }
+
+        private void AddLine_Click(object s, RoutedEventArgs e)
+        {
+            if (_selected == null) { MessageBox.Show("Pick or create an invoice first."); return; }
+            double.TryParse(lineQty.Text, out double q);
+            decimal.TryParse(lineUnit.Text, out decimal up);
+            try
+            {
+                ServiceGateway.Use(c => c.AddInvoiceLine(new InvoiceLine
+                {
+                    InvoiceId = _selected.Id,
+                    Description = lineDesc.Text ?? "",
+                    Quantity = q == 0 ? 1.0 : q,
+                    UnitPrice = up,
+                    LineTotal = (decimal)(q == 0 ? 1.0 : q) * up,
+                    Currency = _selected.Currency
+                }));
+                lineDesc.Text = ""; lineQty.Text = "1"; lineUnit.Text = "0";
+                LoadLines();
+            }
+            catch (Exception ex) { MessageBox.Show("Add failed: " + ex.Message); }
+        }
+
+        private void Sent_Click(object s, RoutedEventArgs e)
+        {
+            if (_selected == null) return;
+            ServiceGateway.Use(c => c.UpdateInvoiceStatus(_selected.Id, "Sent"));
+            LoadLines();
+        }
+
+        private void Paid_Click(object s, RoutedEventArgs e)
+        {
+            if (_selected == null) return;
+            ServiceGateway.Use(c => c.MarkInvoicePaid(_selected.Id, DateTime.Today));
+            LoadLines();
+            RefreshInvoices();
+        }
+
+        private void Pdf_Click(object s, RoutedEventArgs e)
+        {
+            if (_selected == null) return;
+            try
+            {
+                var bytes = ServiceGateway.Use(c => c.GenerateInvoicePdf(_selected.Id));
+                var path = Path.Combine(Path.GetTempPath(), $"INV-{_selected.Id}.pdf");
+                File.WriteAllBytes(path, bytes);
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(path) { UseShellExecute = true });
+            }
+            catch (Exception ex) { MessageBox.Show("PDF failed: " + ex.Message); }
+        }
+
+        private void Back_Click(object s, RoutedEventArgs e) => NavigationService?.Navigate(new OwnerHome());
+    }
+}

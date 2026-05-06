@@ -45,6 +45,12 @@
     <Page Include="EmployeeHome.xaml">     <Generator>MSBuild:Compile</Generator><SubType>Designer</SubType></Page>
     <Page Include="ClientHome.xaml">       <Generator>MSBuild:Compile</Generator><SubType>Designer</SubType></Page>
     <Page Include="Customers.xaml">        <Generator>MSBuild:Compile</Generator><SubType>Designer</SubType></Page>
+    <Page Include="Projects.xaml">         <Generator>MSBuild:Compile</Generator><SubType>Designer</SubType></Page>
+    <Page Include="Invoices.xaml">         <Generator>MSBuild:Compile</Generator><SubType>Designer</SubType></Page>
+    <Page Include="Expenses.xaml">         <Generator>MSBuild:Compile</Generator><SubType>Designer</SubType></Page>
+    <Page Include="Reports.xaml">          <Generator>MSBuild:Compile</Generator><SubType>Designer</SubType></Page>
+    <Page Include="Settings.xaml">         <Generator>MSBuild:Compile</Generator><SubType>Designer</SubType></Page>
+    <Page Include="Notifications.xaml">    <Generator>MSBuild:Compile</Generator><SubType>Designer</SubType></Page>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="App.xaml.cs">          <DependentUpon>App.xaml</DependentUpon><SubType>Code</SubType></Compile>
@@ -54,6 +60,13 @@
     <Compile Include="EmployeeHome.xaml.cs"> <DependentUpon>EmployeeHome.xaml</DependentUpon><SubType>Code</SubType></Compile>
     <Compile Include="ClientHome.xaml.cs">   <DependentUpon>ClientHome.xaml</DependentUpon><SubType>Code</SubType></Compile>
     <Compile Include="Customers.xaml.cs">    <DependentUpon>Customers.xaml</DependentUpon><SubType>Code</SubType></Compile>
+    <Compile Include="Projects.xaml.cs">     <DependentUpon>Projects.xaml</DependentUpon><SubType>Code</SubType></Compile>
+    <Compile Include="Invoices.xaml.cs">     <DependentUpon>Invoices.xaml</DependentUpon><SubType>Code</SubType></Compile>
+    <Compile Include="Expenses.xaml.cs">     <DependentUpon>Expenses.xaml</DependentUpon><SubType>Code</SubType></Compile>
+    <Compile Include="Reports.xaml.cs">      <DependentUpon>Reports.xaml</DependentUpon><SubType>Code</SubType></Compile>
+    <Compile Include="Settings.xaml.cs">     <DependentUpon>Settings.xaml</DependentUpon><SubType>Code</SubType></Compile>
+    <Compile Include="Notifications.xaml.cs"><DependentUpon>Notifications.xaml</DependentUpon><SubType>Code</SubType></Compile>
+    <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ClientSession.cs" />
     <Compile Include="ImgConventer.cs" />
     <Compile Include="Sign.cs" />

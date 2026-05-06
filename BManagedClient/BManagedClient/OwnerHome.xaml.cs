@@ -54,13 +54,13 @@ namespace BManagedClient
             catch (Exception ex) { System.Diagnostics.Debug.WriteLine("RefreshStats: " + ex.Message); }
         }
 
-        private void Customers_Click(object s, RoutedEventArgs e)     => page.Navigate(new Customers());
-        private void Projects_Click(object s, RoutedEventArgs e)      => MessageBox.Show("Projects screen — TODO");
-        private void Invoices_Click(object s, RoutedEventArgs e)      => MessageBox.Show("Invoices screen — TODO");
-        private void Expenses_Click(object s, RoutedEventArgs e)      => MessageBox.Show("Expenses screen — TODO");
-        private void Reports_Click(object s, RoutedEventArgs e)       => MessageBox.Show("Reports screen — TODO");
-        private void Settings_Click(object s, RoutedEventArgs e)      => MessageBox.Show("Settings screen — TODO");
-        private void Notifications_Click(object s, RoutedEventArgs e) => MessageBox.Show("Notifications — TODO");
+        private void Customers_Click(object s, RoutedEventArgs e)     => NavigationService?.Navigate(new Customers());
+        private void Projects_Click(object s, RoutedEventArgs e)      => NavigationService?.Navigate(new Projects());
+        private void Invoices_Click(object s, RoutedEventArgs e)      => NavigationService?.Navigate(new Invoices());
+        private void Expenses_Click(object s, RoutedEventArgs e)      => NavigationService?.Navigate(new Expenses());
+        private void Reports_Click(object s, RoutedEventArgs e)       => NavigationService?.Navigate(new Reports());
+        private void Settings_Click(object s, RoutedEventArgs e)      => NavigationService?.Navigate(new Settings());
+        private void Notifications_Click(object s, RoutedEventArgs e) => NavigationService?.Navigate(new Notifications());
 
         private void Logout_Click(object s, RoutedEventArgs e)
         {
