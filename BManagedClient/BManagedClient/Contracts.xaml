@@ -98,9 +98,13 @@
                     <ComboBoxItem Content="Draft"/>
                     <ComboBoxItem Content="Sent"/>
                     <ComboBoxItem Content="Signed"/>
+                    <ComboBoxItem Content="Fulfilled"/>
                     <ComboBoxItem Content="Cancelled"/>
                 </ComboBox>
                 <Button Content="Update status" Click="Status_Click" Style="{StaticResource AmberButton}" Margin="0,0,6,0"/>
+                <Button Content="🧾 Invoice this contract" Click="InvoiceContract_Click"
+                        Style="{StaticResource MintButton}" Margin="0,0,6,0"
+                        ToolTip="Creates a Draft invoice prefilled with this contract's customer + total. After it's marked Paid the contract becomes Fulfilled automatically."/>
                 <Button Content="📄 PDF"        Click="Pdf_Click"    Style="{StaticResource PrimaryButton}" Margin="0,0,6,0"/>
                 <Button Content="🗑 Delete"     Click="Delete_Click" Style="{StaticResource RoseButton}"/>
             </StackPanel>

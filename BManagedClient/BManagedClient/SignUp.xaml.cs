@@ -8,8 +8,10 @@ namespace BManagedClient
 {
     public partial class SignUp : Page
     {
-        private static readonly Regex EmailRx = new Regex(@"^[\w\.\-]+@[\w\-]+\.[\w\-\.]+$");
-        private static readonly Regex PhoneRx = new Regex(@"^\+?\d{7,15}$");
+        private static readonly Regex UsernameRx = new Regex(@"^[A-Za-z0-9_.]{4,20}$");
+        private static readonly Regex EmailRx    = new Regex(@"^[\w\.\-]+@[\w\-]+\.[\w\-\.]+$");
+        private static readonly Regex PhoneRx    = new Regex(@"^\+?\d{7,15}$");
+        private static readonly Regex PasswordRx = new Regex(@"^(?=.*[A-Za-z])(?=.*\d).{8,}$");
 
         // "Owner" or "Employee" — set when the user picks a path. Empty = step 1 still.
         private string _selectedRole = "";
@@ -60,9 +62,14 @@ namespace BManagedClient
             string ph = phoneBox.Text?.Trim() ?? "";
             string cur = (curBox.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "ILS";
 
-            if (u.Length < 4 || p.Length < 4) { status.Text = "Username + password must be 4+ chars."; return; }
-            if (!EmailRx.IsMatch(em)) { status.Text = "Email looks invalid."; return; }
-            if (!PhoneRx.IsMatch(ph)) { status.Text = "Phone looks invalid."; return; }
+            if (!UsernameRx.IsMatch(u))
+            { status.Text = "Username must be 4–20 letters / digits / _ / ."; return; }
+            if (!PasswordRx.IsMatch(p))
+            { status.Text = "Password: 8+ chars, must include a letter and a digit."; return; }
+            if (string.Equals(u, p, StringComparison.OrdinalIgnoreCase))
+            { status.Text = "Password cannot match the username."; return; }
+            if (!EmailRx.IsMatch(em)) { status.Text = "Email looks invalid (e.g. name@example.com)."; return; }
+            if (!PhoneRx.IsMatch(ph)) { status.Text = "Phone must be 7–15 digits, optionally + country code."; return; }
 
             string bizType = "Individual";
             bool isZair = false;

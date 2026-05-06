@@ -16,23 +16,55 @@
                     <div>
                         <label class="pill text-ink/40 mb-2 block">@L.T(HttpContext,"Username","שם משתמש")</label>
                         <input asp-for="Username" autocomplete="username"
+                               minlength="4" maxlength="20" pattern="[A-Za-z0-9_.]{4,20}"
+                               required
                                class="w-full bg-paper-100/60 border border-black/5 rounded-2xl px-4 py-3 outline-none focus:border-accent transition" />
+                        <p class="text-xs text-ink/40 mt-1">@L.T(HttpContext,"4–20 letters, digits, _ or .","4–20 אותיות, ספרות, _ או .")</p>
                     </div>
                     <div>
                         <label class="pill text-ink/40 mb-2 block">@L.T(HttpContext,"Password","סיסמה")</label>
                         <input asp-for="Password" type="password" autocomplete="new-password"
+                               id="pwField" minlength="8" required
                                class="w-full bg-paper-100/60 border border-black/5 rounded-2xl px-4 py-3 outline-none focus:border-accent transition" />
+                        <p class="text-xs text-ink/40 mt-1">@L.T(HttpContext,"8+ chars, at least one letter and one digit.","8+ תווים, לפחות אות אחת וספרה אחת.")</p>
+                        <div id="pwHint" class="mt-1 text-xs space-y-0.5">
+                            <div data-rule="len"   class="text-ink/40">• @L.T(HttpContext,"At least 8 characters","לפחות 8 תווים")</div>
+                            <div data-rule="alpha" class="text-ink/40">• @L.T(HttpContext,"Contains a letter","מכילה אות")</div>
+                            <div data-rule="num"   class="text-ink/40">• @L.T(HttpContext,"Contains a digit","מכילה ספרה")</div>
+                        </div>
                     </div>
                     <div>
                         <label class="pill text-ink/40 mb-2 block">@L.T(HttpContext,"Email","אימייל")</label>
-                        <input asp-for="Email" type="email" autocomplete="email"
+                        <input asp-for="Email" type="email" autocomplete="email" required
                                class="w-full bg-paper-100/60 border border-black/5 rounded-2xl px-4 py-3 outline-none focus:border-accent transition" />
                     </div>
                     <div>
                         <label class="pill text-ink/40 mb-2 block">@L.T(HttpContext,"Phone","טלפון")</label>
-                        <input asp-for="Phone" type="tel" autocomplete="tel"
+                        <input asp-for="Phone" type="tel" autocomplete="tel" required
+                               pattern="\+?\d{7,15}"
                                class="w-full bg-paper-100/60 border border-black/5 rounded-2xl px-4 py-3 outline-none focus:border-accent transition" />
+                        <p class="text-xs text-ink/40 mt-1">@L.T(HttpContext,"7–15 digits, optional + country code.","7–15 ספרות, ניתן להוסיף + לקידומת מדינה.")</p>
                     </div>
+
+                    <script>
+                      (function () {
+                        var pw = document.getElementById('pwField');
+                        var hint = document.getElementById('pwHint');
+                        if (!pw || !hint) return;
+                        function tick(sel, ok) {
+                          var el = hint.querySelector('[data-rule="' + sel + '"]');
+                          if (!el) return;
+                          el.classList.toggle('text-mint', !!ok);
+                          el.classList.toggle('text-ink/40', !ok);
+                        }
+                        pw.addEventListener('input', function () {
+                          var v = pw.value || '';
+                          tick('len',   v.length >= 8);
+                          tick('alpha', /[A-Za-z]/.test(v));
+                          tick('num',   /\d/.test(v));
+                        });
+                      })();
+                    </script>
                     <div>
                         <label class="pill text-ink/40 mb-2 block">@L.T(HttpContext,"Account type","סוג חשבון")</label>
                         <select asp-for="BusinessType" id="bizSelect"

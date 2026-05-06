@@ -23,6 +23,8 @@ namespace BManagedWeb.Pages.Owner
         // P&L for the selected month (and year-to-date for tax-bracket calc)
         public ProfitLoss MonthPl   { get; set; } = new ProfitLoss();
         public ProfitLoss YearPl    { get; set; } = new ProfitLoss();
+        public AnalyticsKpis Kpis   { get; set; } = new AnalyticsKpis();
+        public LoanSummary  LoanSummary { get; set; } = new LoanSummary();
         public decimal    YearTax   { get; set; }
         public decimal    YearNet   { get; set; }
         public string     BusinessType { get; set; } = "Individual";
@@ -116,6 +118,10 @@ namespace BManagedWeb.Pages.Owner
 
                 YearTax = ComputeIsraeliIncomeTax(TaxableProfit);
                 YearNet = YearPl.Profit - YearTax;
+
+                // Composite KPI scorecard + loan exposure
+                try { Kpis        = _srv.GetAdvancedKpis(id, DisplayCurrency) ?? new AnalyticsKpis(); } catch { }
+                try { LoanSummary = _srv.GetLoanSummary(id, DisplayCurrency) ?? new LoanSummary(); }    catch { }
             }
             catch { }
             return Page();

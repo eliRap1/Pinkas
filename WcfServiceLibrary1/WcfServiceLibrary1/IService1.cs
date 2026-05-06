@@ -142,6 +142,21 @@ namespace WcfServiceLibrary1
         // Project next-N-months cashflow based on trailing-3-month average + outstanding invoices.
         [OperationContract] List<ProfitLoss> GetCashFlowForecast(int ownerId, int months, string displayCurrency);
 
+        // Composite KPI scorecard: receivables aging + payment lag + customer
+        // concentration + trailing-3-month flow + runway. Used by Reports +
+        // Owner Home dashboards.
+        [OperationContract] AnalyticsKpis GetAdvancedKpis(int ownerId, string displayCurrency);
+
+        // ==================== LOANS (קרן / business loans) ====================
+        [OperationContract] int  AddLoan(Loan l);
+        [OperationContract] void UpdateLoan(Loan l);
+        [OperationContract] void DeleteLoan(int id);
+        [OperationContract] Loan GetLoanById(int id);
+        [OperationContract] List<Loan> GetLoansForOwner(int ownerId);
+        [OperationContract] int  RecordLoanPayment(LoanPayment p);
+        [OperationContract] List<LoanPayment> GetLoanPayments(int loanId);
+        [OperationContract] LoanSummary GetLoanSummary(int ownerId, string displayCurrency);
+
         // Walks unpaid invoices, fires a notification per overdue one (idempotent — checks
         // for an existing Notification with the same invoice number in title).
         [OperationContract] int EnsureOverdueNotifications(int ownerId);

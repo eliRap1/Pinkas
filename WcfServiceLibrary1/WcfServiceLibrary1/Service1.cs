@@ -27,6 +27,7 @@ namespace WcfServiceLibrary1
         private readonly ReportsDB      reportsDB  = new ReportsDB();
         private readonly ProjectAssignmentDB assignDB = new ProjectAssignmentDB();
         private readonly ContractDB contractDB = new ContractDB();
+        private readonly LoanDB     loanDB     = new LoanDB();
 
         // ===================================================================
         // AUTH & USERS
@@ -221,7 +222,29 @@ namespace WcfServiceLibrary1
 
         public void MarkInvoicePaid(int id, DateTime paidDate)
         {
-            try { invDB.MarkPaid(id, paidDate); }
+            try
+            {
+                invDB.MarkPaid(id, paidDate);
+
+                // If the invoice was raised from a contract, mark the contract
+                // 'Fulfilled' so it stops appearing as outstanding work. We do
+                // not surface contract changes if the contract is already
+                // Fulfilled / Cancelled.
+                try
+                {
+                    var inv = invDB.GetById(id);
+                    if (inv != null && inv.ContractId.HasValue && inv.ContractId.Value > 0)
+                    {
+                        var c = contractDB.GetById(inv.ContractId.Value);
+                        if (c != null && c.Status != "Fulfilled" && c.Status != "Cancelled")
+                        {
+                            contractDB.SetStatus(c.Id, "Fulfilled", c.SignedDate);
+                        }
+                    }
+                }
+                catch (Exception inner)
+                { System.Diagnostics.Debug.WriteLine("MarkInvoicePaid (contract sync): " + inner.Message); }
+            }
             catch (Exception ex) { throw new FaultException("MarkInvoicePaid failed: " + ex.Message); }
         }
 
@@ -360,6 +383,78 @@ namespace WcfServiceLibrary1
                 });
             }
             return result;
+        }
+
+        public AnalyticsKpis GetAdvancedKpis(int ownerId, string displayCurrency)
+            => reportsDB.AdvancedKpis(ownerId, string.IsNullOrEmpty(displayCurrency) ? "ILS" : displayCurrency);
+
+        // ==================== LOANS ====================
+        public int  AddLoan(Loan l)
+        {
+            try { return loanDB.Insert(l); }
+            catch (Exception ex) { throw new FaultException("AddLoan failed: " + ex.Message); }
+        }
+        public void UpdateLoan(Loan l)
+        {
+            try { loanDB.Update(l); }
+            catch (Exception ex) { throw new FaultException("UpdateLoan failed: " + ex.Message); }
+        }
+        public void DeleteLoan(int id)
+        {
+            try { loanDB.Delete(id); }
+            catch (Exception ex) { throw new FaultException("DeleteLoan failed: " + ex.Message); }
+        }
+        public Loan GetLoanById(int id) => loanDB.GetById(id);
+        public List<Loan> GetLoansForOwner(int ownerId) => loanDB.GetForOwner(ownerId);
+        public int RecordLoanPayment(LoanPayment p)
+        {
+            try { return loanDB.InsertPayment(p); }
+            catch (Exception ex) { throw new FaultException("RecordLoanPayment failed: " + ex.Message); }
+        }
+        public List<LoanPayment> GetLoanPayments(int loanId) => loanDB.GetPaymentsByLoan(loanId);
+
+        public LoanSummary GetLoanSummary(int ownerId, string displayCurrency)
+        {
+            string cur = string.IsNullOrEmpty(displayCurrency) ? "ILS" : displayCurrency;
+            var loans = loanDB.GetForOwner(ownerId) ?? new List<Loan>();
+            var s = new LoanSummary { DisplayCurrency = cur };
+            var fx = new ViewDB.CurrencyConverter();
+            DateTime today = DateTime.Today;
+
+            foreach (var l in loans.Where(x => x.IsActive))
+            {
+                s.LoanCount++;
+                if (l.IsKerenBacked) s.KerenBackedCount++;
+                s.TotalPrincipal       += fx.Convert(l.Principal,        l.Currency, cur, today);
+                s.TotalRemaining       += fx.Convert(l.RemainingBalance, l.Currency, cur, today);
+                s.MonthlyPaymentTotal  += fx.Convert(l.MonthlyPayment,   l.Currency, cur, today);
+
+                if (l.NextPaymentDate.HasValue)
+                {
+                    if (!s.NextPaymentDate.HasValue || l.NextPaymentDate.Value < s.NextPaymentDate.Value)
+                    {
+                        s.NextPaymentDate   = l.NextPaymentDate;
+                        s.NextPaymentAmount = fx.Convert(l.MonthlyPayment, l.Currency, cur, today);
+                    }
+                }
+            }
+
+            // Debt-service ratios joined against trailing-3-month income
+            try
+            {
+                var kpis = reportsDB.AdvancedKpis(ownerId, cur);
+                if (kpis.AvgMonthlyIncome > 0)
+                {
+                    decimal annual = kpis.AvgMonthlyIncome * 12m;
+                    s.DebtToAnnualIncomePct = annual <= 0 ? 0
+                        : Math.Round((double)(s.TotalRemaining / annual) * 100.0, 1);
+                    s.MonthlyDebtServiceRatioPct = Math.Round(
+                        (double)(s.MonthlyPaymentTotal / kpis.AvgMonthlyIncome) * 100.0, 1);
+                }
+            }
+            catch { }
+
+            return s;
         }
 
         public int EnsureOverdueNotifications(int ownerId)

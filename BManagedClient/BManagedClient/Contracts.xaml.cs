@@ -134,5 +134,46 @@ namespace BManagedClient
 
         private void Back_Click(object s, RoutedEventArgs e)
             => NavigationService?.Navigate(new OwnerHome());
+
+        // Generate a Draft invoice from the selected contract: same customer +
+        // currency, with one initial line for the contract total. The contract
+        // auto-flips to 'Fulfilled' once that invoice is marked Paid (server-side).
+        private void InvoiceContract_Click(object s, RoutedEventArgs e)
+        {
+            if (Selected == null) { MessageBox.Show("Pick a signed contract first."); return; }
+            if (Selected.Status != "Signed")
+            { MessageBox.Show("Only Signed contracts can be invoiced."); return; }
+
+            try
+            {
+                double vatRate = (LogIn.sign != null && LogIn.sign.IsPatur) ? 0.0 : 0.18;
+                int newId = ServiceGateway.Use(c => c.CreateInvoice(new Invoice
+                {
+                    CustomerId = Selected.CustomerId,
+                    IssueDate  = DateTime.Today,
+                    DueDate    = DateTime.Today.AddDays(30),
+                    Currency   = Selected.Currency,
+                    Status     = "Draft",
+                    VatRate    = vatRate,
+                    ContractId = Selected.Id,
+                }));
+                if (Selected.TotalAmount > 0)
+                {
+                    ServiceGateway.Use(c => c.AddInvoiceLine(new InvoiceLine
+                    {
+                        InvoiceId   = newId,
+                        Description = Selected.Title ?? ("Contract " + Selected.ContractNumber),
+                        Quantity    = 1,
+                        UnitPrice   = Selected.TotalAmount,
+                        LineTotal   = Selected.TotalAmount,
+                        Currency    = Selected.Currency,
+                    }));
+                }
+                MessageBox.Show("Draft invoice created. Open the Invoices page to send / record payment.",
+                    "Invoice created", MessageBoxButton.OK, MessageBoxImage.Information);
+                NavigationService?.Navigate(new Invoices());
+            }
+            catch (Exception ex) { MessageBox.Show("Failed: " + ex.Message); }
+        }
     }
 }

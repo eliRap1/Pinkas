@@ -285,5 +285,184 @@ namespace ViewDB
             }
             return rows;
         }
+
+        // -----------------------------------------------------------------
+        // AnalyticsKpis — composite KPI scorecard for the Reports dashboard:
+        //   * Receivables aging buckets (outstanding by days late)
+        //   * Avg days to payment + on-time-rate over trailing 6 months
+        //   * Top customer concentration share + active customer count
+        //   * Trailing-3-month avg income / expenses / profit + runway
+        // All amounts converted to displayCurrency.
+        // -----------------------------------------------------------------
+        public AnalyticsKpis AdvancedKpis(int ownerId, string displayCurrency)
+        {
+            var k = new AnalyticsKpis { DisplayCurrency = displayCurrency };
+            DateTime today = DateTime.Today;
+            DateTime sixMonthsAgo = today.AddMonths(-6);
+            DateTime yearStart = new DateTime(today.Year, 1, 1);
+
+            using (var conn = GetConnection())
+            {
+                conn.Open();
+
+                // --- Aging: every Sent/Overdue invoice, bucketed by days past due
+                string agingSql = @"
+                    SELECT I.[total] AS tot, I.[currency] AS cur, I.[dueDate] AS due
+                    FROM [Invoices] AS I
+                    INNER JOIN [Customers] AS C ON I.[customerId] = C.[id]
+                    WHERE C.[ownerId] = ? AND I.[status] <> 'Paid'";
+                using (var cmd = new OleDbCommand(agingSql, conn))
+                {
+                    cmd.Parameters.Add(new OleDbParameter("@o", ownerId));
+                    using (var r = cmd.ExecuteReader())
+                    {
+                        while (r.Read())
+                        {
+                            decimal tot = r["tot"] == DBNull.Value ? 0m : Convert.ToDecimal(r["tot"]);
+                            string cur  = r["cur"]?.ToString() ?? "ILS";
+                            DateTime due = Convert.ToDateTime(r["due"]);
+                            decimal amt = _fx.Convert(tot, cur, displayCurrency, today);
+                            int daysLate = (today - due).Days;
+                            if (daysLate <= 0)      k.AgingCurrent += amt;
+                            else if (daysLate <= 30) k.Aging1To30  += amt;
+                            else if (daysLate <= 60) k.Aging31To60 += amt;
+                            else                     k.Aging61Plus += amt;
+                        }
+                    }
+                }
+                k.TotalOutstanding = k.AgingCurrent + k.Aging1To30 + k.Aging31To60 + k.Aging61Plus;
+
+                // --- Payment lag: paid invoices over trailing 6 months
+                string lagSql = @"
+                    SELECT I.[issueDate] AS iss, I.[paidDate] AS pd, I.[dueDate] AS due
+                    FROM [Invoices] AS I
+                    INNER JOIN [Customers] AS C ON I.[customerId] = C.[id]
+                    WHERE C.[ownerId] = ?
+                      AND I.[status] = 'Paid'
+                      AND I.[paidDate] >= ?";
+                using (var cmd = new OleDbCommand(lagSql, conn))
+                {
+                    cmd.Parameters.Add(new OleDbParameter("@o", ownerId));
+                    cmd.Parameters.Add(new OleDbParameter("@f", sixMonthsAgo));
+                    int n = 0, onTime = 0;
+                    double sumDays = 0;
+                    using (var r = cmd.ExecuteReader())
+                    {
+                        while (r.Read())
+                        {
+                            if (r["pd"] == DBNull.Value) continue;
+                            DateTime iss = Convert.ToDateTime(r["iss"]);
+                            DateTime pd  = Convert.ToDateTime(r["pd"]);
+                            DateTime due = Convert.ToDateTime(r["due"]);
+                            sumDays += (pd - iss).TotalDays;
+                            if (pd <= due) onTime++;
+                            n++;
+                        }
+                    }
+                    k.AvgDaysToPayment = n == 0 ? 0 : Math.Round(sumDays / n, 1);
+                    k.OnTimeRatePct    = n == 0 ? 0 : Math.Round(100.0 * onTime / n, 1);
+                }
+
+                // --- Customer concentration: YTD revenue (Paid) per customer
+                string concSql = @"
+                    SELECT C.[id] AS cid, C.[businessName] AS name,
+                           SUM(I.[total]) AS rev, I.[currency] AS cur
+                    FROM [Invoices] AS I
+                    INNER JOIN [Customers] AS C ON I.[customerId] = C.[id]
+                    WHERE C.[ownerId] = ?
+                      AND I.[status] = 'Paid'
+                      AND I.[paidDate] >= ?
+                    GROUP BY C.[id], C.[businessName], I.[currency]
+                    ORDER BY SUM(I.[total]) DESC";
+                using (var cmd = new OleDbCommand(concSql, conn))
+                {
+                    cmd.Parameters.Add(new OleDbParameter("@o", ownerId));
+                    cmd.Parameters.Add(new OleDbParameter("@y", yearStart));
+                    decimal totalYtd = 0m, topRev = 0m;
+                    string topName = null;
+                    int activeCount = 0;
+                    using (var r = cmd.ExecuteReader())
+                    {
+                        while (r.Read())
+                        {
+                            decimal rev = r["rev"] == DBNull.Value ? 0m : Convert.ToDecimal(r["rev"]);
+                            string cur  = r["cur"]?.ToString() ?? "ILS";
+                            decimal amt = _fx.Convert(rev, cur, displayCurrency, today);
+                            totalYtd += amt;
+                            if (amt > topRev) { topRev = amt; topName = r["name"]?.ToString(); }
+                            activeCount++;
+                        }
+                    }
+                    k.TopCustomerName       = topName;
+                    k.ActiveCustomerCount   = activeCount;
+                    k.TopCustomerSharePct   = totalYtd <= 0 ? 0
+                        : Math.Round((double)(topRev / totalYtd) * 100.0, 1);
+                }
+
+                // --- Trailing 3 months: avg income / expenses / profit
+                DateTime threeAgo = new DateTime(today.AddMonths(-3).Year, today.AddMonths(-3).Month, 1);
+                DateTime now      = today;
+                decimal totIncome = 0m, totExp = 0m;
+                using (var cmd = new OleDbCommand(
+                    @"SELECT I.[subtotal] AS sub, I.[currency] AS cur, I.[issueDate] AS dt
+                      FROM [Invoices] AS I
+                      INNER JOIN [Customers] AS C ON I.[customerId] = C.[id]
+                      WHERE C.[ownerId] = ?
+                        AND I.[status] = 'Paid'
+                        AND I.[issueDate] >= ? AND I.[issueDate] <= ?", conn))
+                {
+                    cmd.Parameters.Add(new OleDbParameter("@o", ownerId));
+                    cmd.Parameters.Add(new OleDbParameter("@f", threeAgo));
+                    cmd.Parameters.Add(new OleDbParameter("@t", now));
+                    using (var r = cmd.ExecuteReader())
+                    {
+                        while (r.Read())
+                        {
+                            decimal sub = r["sub"] == DBNull.Value ? 0m : Convert.ToDecimal(r["sub"]);
+                            string cur  = r["cur"]?.ToString() ?? "ILS";
+                            DateTime dt = Convert.ToDateTime(r["dt"]);
+                            totIncome += _fx.Convert(sub, cur, displayCurrency, dt);
+                        }
+                    }
+                }
+                using (var cmd = new OleDbCommand(
+                    @"SELECT [amount] AS amt, [currency] AS cur, [date] AS dt
+                      FROM [Expenses]
+                      WHERE [ownerId] = ? AND [date] >= ? AND [date] <= ?", conn))
+                {
+                    cmd.Parameters.Add(new OleDbParameter("@o", ownerId));
+                    cmd.Parameters.Add(new OleDbParameter("@f", threeAgo));
+                    cmd.Parameters.Add(new OleDbParameter("@t", now));
+                    using (var r = cmd.ExecuteReader())
+                    {
+                        while (r.Read())
+                        {
+                            decimal amt = r["amt"] == DBNull.Value ? 0m : Convert.ToDecimal(r["amt"]);
+                            string cur  = r["cur"]?.ToString() ?? "ILS";
+                            DateTime dt = Convert.ToDateTime(r["dt"]);
+                            totExp += _fx.Convert(amt, cur, displayCurrency, dt);
+                        }
+                    }
+                }
+                k.AvgMonthlyIncome   = Math.Round(totIncome / 3m, 2);
+                k.AvgMonthlyExpenses = Math.Round(totExp    / 3m, 2);
+                k.AvgMonthlyProfit   = k.AvgMonthlyIncome - k.AvgMonthlyExpenses;
+
+                // Runway: only meaningful if burning cash (negative trailing profit).
+                // Approximated as outstanding receivables + recent cash buffer
+                // proxy ÷ monthly burn. Using TotalOutstanding as the cash buffer
+                // proxy keeps it conservative (assumes everything outstanding
+                // gets collected). -1 signals "no burn / profitable".
+                if (k.AvgMonthlyProfit >= 0)
+                    k.RunwayMonths = -1;
+                else
+                {
+                    decimal burn = -k.AvgMonthlyProfit;
+                    k.RunwayMonths = burn <= 0 ? -1
+                        : Math.Round((double)(k.TotalOutstanding / burn), 1);
+                }
+            }
+            return k;
+        }
     }
 }

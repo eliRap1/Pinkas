@@ -8,8 +8,14 @@ namespace BManagedWeb.Pages
     public class SignUpModel : PageModel
     {
         private readonly Service1Client _srv = new Service1Client();
-        private static readonly Regex EmailRx = new Regex(@"^[\w\.\-]+@[\w\-]+\.[\w\-\.]+$");
-        private static readonly Regex PhoneRx = new Regex(@"^\+?\d{7,15}$");
+
+        // Username: 4-20 chars, letters/digits/underscores/dots only — keeps the
+        // value safe to reuse in URLs and the SecurityHelper.IsSafeString check.
+        private static readonly Regex UsernameRx = new Regex(@"^[A-Za-z0-9_.]{4,20}$");
+        private static readonly Regex EmailRx    = new Regex(@"^[\w\.\-]+@[\w\-]+\.[\w\-\.]+$");
+        private static readonly Regex PhoneRx    = new Regex(@"^\+?\d{7,15}$");
+        // Password: 8+ chars with at least one letter and one digit.
+        private static readonly Regex PasswordRx = new Regex(@"^(?=.*[A-Za-z])(?=.*\d).{8,}$");
 
         [BindProperty] public string Username { get; set; }
         [BindProperty] public string Password { get; set; }
@@ -24,11 +30,20 @@ namespace BManagedWeb.Pages
 
         public IActionResult OnPost()
         {
-            if (string.IsNullOrEmpty(Username) || Username.Length < 4 ||
-                string.IsNullOrEmpty(Password) || Password.Length < 4)
-            { ErrorMessage = "Username + password must be 4+ chars."; return Page(); }
-            if (!EmailRx.IsMatch(Email ?? "")) { ErrorMessage = "Invalid email."; return Page(); }
-            if (!PhoneRx.IsMatch(Phone ?? "")) { ErrorMessage = "Invalid phone."; return Page(); }
+            if (string.IsNullOrEmpty(Username) || !UsernameRx.IsMatch(Username))
+            { ErrorMessage = "Username must be 4–20 letters / digits / _ / ."; return Page(); }
+            if (string.IsNullOrEmpty(Password) || !PasswordRx.IsMatch(Password))
+            { ErrorMessage = "Password must be 8+ chars and include at least one letter and one digit."; return Page(); }
+            if (string.Equals(Password, Username, System.StringComparison.OrdinalIgnoreCase))
+            { ErrorMessage = "Password cannot be the same as username."; return Page(); }
+            if (!EmailRx.IsMatch(Email ?? "")) { ErrorMessage = "Email looks invalid (e.g. name@example.com)."; return Page(); }
+            if (!PhoneRx.IsMatch(Phone ?? "")) { ErrorMessage = "Phone must be 7–15 digits, optionally + country code."; return Page(); }
+            if (BusinessType == "Patur" || BusinessType == "Murshe")
+            {
+                // Business owners must self-identify a currency — Patur invoices
+                // depend on it for the VAT-zero default. Default fine if blank.
+                if (string.IsNullOrEmpty(Currency)) Currency = "ILS";
+            }
 
             try
             {

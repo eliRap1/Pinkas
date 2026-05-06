@@ -34,6 +34,7 @@
     <Compile Include="ExpenseDB.cs" />
     <Compile Include="InvoiceDB.cs" />
     <Compile Include="InvoiceLineDB.cs" />
+    <Compile Include="LoanDB.cs" />
     <Compile Include="NotificationDB.cs" />
     <Compile Include="ProjectDB.cs" />
     <Compile Include="ProjectAssignmentDB.cs" />

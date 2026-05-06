@@ -48,7 +48,7 @@
 <section class="reveal grid grid-cols-1 md:grid-cols-2 gap-4">
     @foreach (var c in Model.Contracts)
     {
-        var color = c.Status switch { "Signed" => "mint", "Cancelled" => "rose", _ => "amber" };
+        var color = c.Status switch { "Signed" => "mint", "Fulfilled" => "mint", "Cancelled" => "rose", _ => "amber" };
         <div class="bg-black/[0.04] ring-1 ring-black/5 rounded-shell p-1.5">
             <div class="bg-paper-50 rounded-core p-6 shadow-inset h-full">
                 <div class="flex justify-between items-start">
@@ -67,6 +67,7 @@
                         "Draft"     => L.T(HttpContext,"Draft","טיוטה"),
                         "Sent"      => L.T(HttpContext,"Sent","נשלח"),
                         "Signed"    => L.T(HttpContext,"Signed","חתום"),
+                        "Fulfilled" => L.T(HttpContext,"Fulfilled (paid)","הושלם (שולם)"),
                         "Cancelled" => L.T(HttpContext,"Cancelled","בוטל"),
                         _           => c.Status })</div>
                 </div>

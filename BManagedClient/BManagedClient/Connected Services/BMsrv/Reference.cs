@@ -26,6 +26,8 @@ namespace BManagedClient.BMsrv {
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(BManagedClient.BMsrv.ExpenseCategory))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(BManagedClient.BMsrv.Notification))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(BManagedClient.BMsrv.User))]
+    [System.Runtime.Serialization.KnownTypeAttribute(typeof(BManagedClient.BMsrv.Loan))]
+    [System.Runtime.Serialization.KnownTypeAttribute(typeof(BManagedClient.BMsrv.LoanPayment))]
     public partial class Base : object, System.Runtime.Serialization.IExtensibleDataObject, System.ComponentModel.INotifyPropertyChanged {
         
         [System.NonSerializedAttribute()]
@@ -1962,6 +1964,76 @@ namespace BManagedClient.BMsrv {
         }
     }
     
+    [System.Runtime.Serialization.DataContractAttribute(Name="AnalyticsKpis", Namespace="http://schemas.datacontract.org/2004/07/Model")]
+    [System.SerializableAttribute()]
+    public partial class AnalyticsKpis : object, System.Runtime.Serialization.IExtensibleDataObject {
+        [System.NonSerializedAttribute()] private System.Runtime.Serialization.ExtensionDataObject extensionDataField;
+        public System.Runtime.Serialization.ExtensionDataObject ExtensionData { get { return this.extensionDataField; } set { this.extensionDataField = value; } }
+        [System.Runtime.Serialization.DataMemberAttribute()] public decimal AgingCurrent { get; set; }
+        [System.Runtime.Serialization.DataMemberAttribute()] public decimal Aging1To30 { get; set; }
+        [System.Runtime.Serialization.DataMemberAttribute()] public decimal Aging31To60 { get; set; }
+        [System.Runtime.Serialization.DataMemberAttribute()] public decimal Aging61Plus { get; set; }
+        [System.Runtime.Serialization.DataMemberAttribute()] public decimal TotalOutstanding { get; set; }
+        [System.Runtime.Serialization.DataMemberAttribute()] public double  AvgDaysToPayment { get; set; }
+        [System.Runtime.Serialization.DataMemberAttribute()] public double  OnTimeRatePct { get; set; }
+        [System.Runtime.Serialization.DataMemberAttribute()] public string  TopCustomerName { get; set; }
+        [System.Runtime.Serialization.DataMemberAttribute()] public double  TopCustomerSharePct { get; set; }
+        [System.Runtime.Serialization.DataMemberAttribute()] public int     ActiveCustomerCount { get; set; }
+        [System.Runtime.Serialization.DataMemberAttribute()] public decimal AvgMonthlyIncome { get; set; }
+        [System.Runtime.Serialization.DataMemberAttribute()] public decimal AvgMonthlyExpenses { get; set; }
+        [System.Runtime.Serialization.DataMemberAttribute()] public decimal AvgMonthlyProfit { get; set; }
+        [System.Runtime.Serialization.DataMemberAttribute()] public double  RunwayMonths { get; set; }
+        [System.Runtime.Serialization.DataMemberAttribute()] public string  DisplayCurrency { get; set; }
+    }
+
+    [System.Runtime.Serialization.DataContractAttribute(Name="Loan", Namespace="http://schemas.datacontract.org/2004/07/Model")]
+    [System.SerializableAttribute()]
+    public partial class Loan : BManagedClient.BMsrv.Base {
+        [System.Runtime.Serialization.DataMemberAttribute()] public int OwnerId { get; set; }
+        [System.Runtime.Serialization.DataMemberAttribute()] public string Lender { get; set; }
+        [System.Runtime.Serialization.DataMemberAttribute()] public decimal Principal { get; set; }
+        [System.Runtime.Serialization.DataMemberAttribute()] public decimal RemainingBalance { get; set; }
+        [System.Runtime.Serialization.DataMemberAttribute()] public double  InterestRatePct { get; set; }
+        [System.Runtime.Serialization.DataMemberAttribute()] public decimal MonthlyPayment { get; set; }
+        [System.Runtime.Serialization.DataMemberAttribute()] public System.DateTime StartDate { get; set; }
+        [System.Runtime.Serialization.DataMemberAttribute()] public int     TermMonths { get; set; }
+        [System.Runtime.Serialization.DataMemberAttribute()] public System.Nullable<System.DateTime> NextPaymentDate { get; set; }
+        [System.Runtime.Serialization.DataMemberAttribute()] public string Currency { get; set; }
+        [System.Runtime.Serialization.DataMemberAttribute()] public string Purpose { get; set; }
+        [System.Runtime.Serialization.DataMemberAttribute()] public bool   IsKerenBacked { get; set; }
+        [System.Runtime.Serialization.DataMemberAttribute()] public bool   IsActive { get; set; }
+        [System.Runtime.Serialization.DataMemberAttribute()] public string Notes { get; set; }
+        [System.Runtime.Serialization.DataMemberAttribute()] public System.DateTime CreatedAt { get; set; }
+    }
+
+    [System.Runtime.Serialization.DataContractAttribute(Name="LoanPayment", Namespace="http://schemas.datacontract.org/2004/07/Model")]
+    [System.SerializableAttribute()]
+    public partial class LoanPayment : BManagedClient.BMsrv.Base {
+        [System.Runtime.Serialization.DataMemberAttribute()] public int LoanId { get; set; }
+        [System.Runtime.Serialization.DataMemberAttribute()] public System.DateTime PaidDate { get; set; }
+        [System.Runtime.Serialization.DataMemberAttribute()] public decimal Amount { get; set; }
+        [System.Runtime.Serialization.DataMemberAttribute()] public decimal PrincipalPortion { get; set; }
+        [System.Runtime.Serialization.DataMemberAttribute()] public decimal InterestPortion { get; set; }
+        [System.Runtime.Serialization.DataMemberAttribute()] public string Notes { get; set; }
+    }
+
+    [System.Runtime.Serialization.DataContractAttribute(Name="LoanSummary", Namespace="http://schemas.datacontract.org/2004/07/Model")]
+    [System.SerializableAttribute()]
+    public partial class LoanSummary : object, System.Runtime.Serialization.IExtensibleDataObject {
+        [System.NonSerializedAttribute()] private System.Runtime.Serialization.ExtensionDataObject extensionDataField;
+        public System.Runtime.Serialization.ExtensionDataObject ExtensionData { get { return this.extensionDataField; } set { this.extensionDataField = value; } }
+        [System.Runtime.Serialization.DataMemberAttribute()] public int    LoanCount { get; set; }
+        [System.Runtime.Serialization.DataMemberAttribute()] public decimal TotalPrincipal { get; set; }
+        [System.Runtime.Serialization.DataMemberAttribute()] public decimal TotalRemaining { get; set; }
+        [System.Runtime.Serialization.DataMemberAttribute()] public decimal MonthlyPaymentTotal { get; set; }
+        [System.Runtime.Serialization.DataMemberAttribute()] public int    KerenBackedCount { get; set; }
+        [System.Runtime.Serialization.DataMemberAttribute()] public double DebtToAnnualIncomePct { get; set; }
+        [System.Runtime.Serialization.DataMemberAttribute()] public double MonthlyDebtServiceRatioPct { get; set; }
+        [System.Runtime.Serialization.DataMemberAttribute()] public System.Nullable<System.DateTime> NextPaymentDate { get; set; }
+        [System.Runtime.Serialization.DataMemberAttribute()] public decimal NextPaymentAmount { get; set; }
+        [System.Runtime.Serialization.DataMemberAttribute()] public string DisplayCurrency { get; set; }
+    }
+
     [System.CodeDom.Compiler.GeneratedCodeAttribute("System.ServiceModel", "4.0.0.0")]
     [System.ServiceModel.ServiceContractAttribute(ConfigurationName="BMsrv.IService1")]
     public interface IService1 {
@@ -2376,9 +2448,36 @@ namespace BManagedClient.BMsrv {
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IService1/EnsureOverdueNotifications", ReplyAction="http://tempuri.org/IService1/EnsureOverdueNotificationsResponse")]
         int EnsureOverdueNotifications(int ownerId);
-        
+
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IService1/EnsureOverdueNotifications", ReplyAction="http://tempuri.org/IService1/EnsureOverdueNotificationsResponse")]
         System.Threading.Tasks.Task<int> EnsureOverdueNotificationsAsync(int ownerId);
+
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IService1/GetAdvancedKpis", ReplyAction="http://tempuri.org/IService1/GetAdvancedKpisResponse")]
+        BManagedClient.BMsrv.AnalyticsKpis GetAdvancedKpis(int ownerId, string displayCurrency);
+
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IService1/AddLoan", ReplyAction="http://tempuri.org/IService1/AddLoanResponse")]
+        int AddLoan(BManagedClient.BMsrv.Loan l);
+
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IService1/UpdateLoan", ReplyAction="http://tempuri.org/IService1/UpdateLoanResponse")]
+        void UpdateLoan(BManagedClient.BMsrv.Loan l);
+
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IService1/DeleteLoan", ReplyAction="http://tempuri.org/IService1/DeleteLoanResponse")]
+        void DeleteLoan(int id);
+
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IService1/GetLoanById", ReplyAction="http://tempuri.org/IService1/GetLoanByIdResponse")]
+        BManagedClient.BMsrv.Loan GetLoanById(int id);
+
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IService1/GetLoansForOwner", ReplyAction="http://tempuri.org/IService1/GetLoansForOwnerResponse")]
+        BManagedClient.BMsrv.Loan[] GetLoansForOwner(int ownerId);
+
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IService1/RecordLoanPayment", ReplyAction="http://tempuri.org/IService1/RecordLoanPaymentResponse")]
+        int RecordLoanPayment(BManagedClient.BMsrv.LoanPayment p);
+
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IService1/GetLoanPayments", ReplyAction="http://tempuri.org/IService1/GetLoanPaymentsResponse")]
+        BManagedClient.BMsrv.LoanPayment[] GetLoanPayments(int loanId);
+
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IService1/GetLoanSummary", ReplyAction="http://tempuri.org/IService1/GetLoanSummaryResponse")]
+        BManagedClient.BMsrv.LoanSummary GetLoanSummary(int ownerId, string displayCurrency);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IService1/GetExchangeRate", ReplyAction="http://tempuri.org/IService1/GetExchangeRateResponse")]
         double GetExchangeRate(string from, string to, System.DateTime asOfDate);
@@ -3009,9 +3108,24 @@ namespace BManagedClient.BMsrv {
         public int EnsureOverdueNotifications(int ownerId) {
             return base.Channel.EnsureOverdueNotifications(ownerId);
         }
-        
+
         public System.Threading.Tasks.Task<int> EnsureOverdueNotificationsAsync(int ownerId) {
             return base.Channel.EnsureOverdueNotificationsAsync(ownerId);
+        }
+
+        public BManagedClient.BMsrv.AnalyticsKpis GetAdvancedKpis(int ownerId, string displayCurrency) {
+            return base.Channel.GetAdvancedKpis(ownerId, displayCurrency);
+        }
+
+        public int AddLoan(BManagedClient.BMsrv.Loan l) { return base.Channel.AddLoan(l); }
+        public void UpdateLoan(BManagedClient.BMsrv.Loan l) { base.Channel.UpdateLoan(l); }
+        public void DeleteLoan(int id) { base.Channel.DeleteLoan(id); }
+        public BManagedClient.BMsrv.Loan GetLoanById(int id) { return base.Channel.GetLoanById(id); }
+        public BManagedClient.BMsrv.Loan[] GetLoansForOwner(int ownerId) { return base.Channel.GetLoansForOwner(ownerId); }
+        public int RecordLoanPayment(BManagedClient.BMsrv.LoanPayment p) { return base.Channel.RecordLoanPayment(p); }
+        public BManagedClient.BMsrv.LoanPayment[] GetLoanPayments(int loanId) { return base.Channel.GetLoanPayments(loanId); }
+        public BManagedClient.BMsrv.LoanSummary GetLoanSummary(int ownerId, string displayCurrency) {
+            return base.Channel.GetLoanSummary(ownerId, displayCurrency);
         }
         
         public double GetExchangeRate(string from, string to, System.DateTime asOfDate) {

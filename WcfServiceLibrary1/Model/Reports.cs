@@ -62,4 +62,40 @@ namespace Model
         [DataMember] public decimal RevenueGenerated { get; set; }
         [DataMember] public string DisplayCurrency { get; set; } = "ILS";
     }
+
+    /// <summary>
+    /// Composite KPI scorecard for the Reports / Owner Home dashboards.
+    /// All amounts are pre-converted to <see cref="DisplayCurrency"/>.
+    /// </summary>
+    [DataContract]
+    public class AnalyticsKpis
+    {
+        // Receivables aging — outstanding (Sent / Overdue, not Paid) invoice
+        // amounts bucketed by how long they have been due.
+        [DataMember] public decimal AgingCurrent { get; set; }   // not yet due
+        [DataMember] public decimal Aging1To30 { get; set; }     // 1–30 days late
+        [DataMember] public decimal Aging31To60 { get; set; }    // 31–60 days late
+        [DataMember] public decimal Aging61Plus { get; set; }    // 61+ days late
+        [DataMember] public decimal TotalOutstanding { get; set; }
+
+        // Payment behaviour over the trailing 6 months of paid invoices.
+        [DataMember] public double  AvgDaysToPayment { get; set; }
+        [DataMember] public double  OnTimeRatePct { get; set; }   // % paid on/before due date
+
+        // Customer concentration — risk if revenue is too concentrated in one
+        // customer. We report the top customer's share of YTD revenue.
+        [DataMember] public string  TopCustomerName { get; set; }
+        [DataMember] public double  TopCustomerSharePct { get; set; }
+        [DataMember] public int     ActiveCustomerCount { get; set; }   // had revenue YTD
+
+        // Trailing-3-month average flow + simple runway estimate. Runway = months
+        // before current cumulative profit hits zero at recent burn pace; -1 if
+        // the business is profitable (no runway concern).
+        [DataMember] public decimal AvgMonthlyIncome { get; set; }
+        [DataMember] public decimal AvgMonthlyExpenses { get; set; }
+        [DataMember] public decimal AvgMonthlyProfit { get; set; }
+        [DataMember] public double  RunwayMonths { get; set; } // -1 = profitable / no burn
+
+        [DataMember] public string  DisplayCurrency { get; set; } = "ILS";
+    }
 }

@@ -221,6 +221,72 @@ namespace BManagedWeb.bsrv
         [DataMember] public string DisplayCurrency { get; set; }
     }
 
+    [DataContract(Namespace = "http://schemas.datacontract.org/2004/07/Model")]
+    public class AnalyticsKpis
+    {
+        [DataMember] public decimal AgingCurrent { get; set; }
+        [DataMember] public decimal Aging1To30 { get; set; }
+        [DataMember] public decimal Aging31To60 { get; set; }
+        [DataMember] public decimal Aging61Plus { get; set; }
+        [DataMember] public decimal TotalOutstanding { get; set; }
+        [DataMember] public double  AvgDaysToPayment { get; set; }
+        [DataMember] public double  OnTimeRatePct { get; set; }
+        [DataMember] public string  TopCustomerName { get; set; }
+        [DataMember] public double  TopCustomerSharePct { get; set; }
+        [DataMember] public int     ActiveCustomerCount { get; set; }
+        [DataMember] public decimal AvgMonthlyIncome { get; set; }
+        [DataMember] public decimal AvgMonthlyExpenses { get; set; }
+        [DataMember] public decimal AvgMonthlyProfit { get; set; }
+        [DataMember] public double  RunwayMonths { get; set; }
+        [DataMember] public string  DisplayCurrency { get; set; }
+    }
+
+    [DataContract(Namespace = "http://schemas.datacontract.org/2004/07/Model")]
+    public class Loan : Base
+    {
+        [DataMember] public int OwnerId { get; set; }
+        [DataMember] public string Lender { get; set; }
+        [DataMember] public decimal Principal { get; set; }
+        [DataMember] public decimal RemainingBalance { get; set; }
+        [DataMember] public double  InterestRatePct { get; set; }
+        [DataMember] public decimal MonthlyPayment { get; set; }
+        [DataMember] public DateTime StartDate { get; set; }
+        [DataMember] public int     TermMonths { get; set; }
+        [DataMember] public DateTime? NextPaymentDate { get; set; }
+        [DataMember] public string Currency { get; set; }
+        [DataMember] public string Purpose { get; set; }
+        [DataMember] public bool   IsKerenBacked { get; set; }
+        [DataMember] public bool   IsActive { get; set; }
+        [DataMember] public string Notes { get; set; }
+        [DataMember] public DateTime CreatedAt { get; set; }
+    }
+
+    [DataContract(Namespace = "http://schemas.datacontract.org/2004/07/Model")]
+    public class LoanPayment : Base
+    {
+        [DataMember] public int LoanId { get; set; }
+        [DataMember] public DateTime PaidDate { get; set; }
+        [DataMember] public decimal Amount { get; set; }
+        [DataMember] public decimal PrincipalPortion { get; set; }
+        [DataMember] public decimal InterestPortion { get; set; }
+        [DataMember] public string Notes { get; set; }
+    }
+
+    [DataContract(Namespace = "http://schemas.datacontract.org/2004/07/Model")]
+    public class LoanSummary
+    {
+        [DataMember] public int    LoanCount { get; set; }
+        [DataMember] public decimal TotalPrincipal { get; set; }
+        [DataMember] public decimal TotalRemaining { get; set; }
+        [DataMember] public decimal MonthlyPaymentTotal { get; set; }
+        [DataMember] public int    KerenBackedCount { get; set; }
+        [DataMember] public double DebtToAnnualIncomePct { get; set; }   // total remaining / projected annual income
+        [DataMember] public double MonthlyDebtServiceRatioPct { get; set; } // monthly payments / avg monthly income
+        [DataMember] public DateTime? NextPaymentDate { get; set; }
+        [DataMember] public decimal NextPaymentAmount { get; set; }
+        [DataMember] public string  DisplayCurrency { get; set; }
+    }
+
     [ServiceContract(Namespace = "http://tempuri.org/", ConfigurationName = "bsrv.IService1")]
     public interface IService1
     {
@@ -302,6 +368,16 @@ namespace BManagedWeb.bsrv
         [OperationContract] EmployeeRevenueRow[]  GetEmployeeRevenueReport(int ownerId, string displayCurrency);
 
         [OperationContract] ProfitLoss[] GetCashFlowForecast(int ownerId, int months, string displayCurrency);
+        [OperationContract] AnalyticsKpis GetAdvancedKpis(int ownerId, string displayCurrency);
+
+        [OperationContract] int  AddLoan(Loan l);
+        [OperationContract] void UpdateLoan(Loan l);
+        [OperationContract] void DeleteLoan(int id);
+        [OperationContract] Loan GetLoanById(int id);
+        [OperationContract] Loan[] GetLoansForOwner(int ownerId);
+        [OperationContract] int  RecordLoanPayment(LoanPayment p);
+        [OperationContract] LoanPayment[] GetLoanPayments(int loanId);
+        [OperationContract] LoanSummary GetLoanSummary(int ownerId, string displayCurrency);
         [OperationContract] int          EnsureOverdueNotifications(int ownerId);
 
         [OperationContract] double GetExchangeRate(string from, string to, DateTime asOfDate);
@@ -429,6 +505,17 @@ namespace BManagedWeb.bsrv
 
         public ProfitLoss[] GetCashFlowForecast(int o, int m, string c)
             => Channel.GetCashFlowForecast(o, m, c);
+        public AnalyticsKpis GetAdvancedKpis(int o, string c) => Channel.GetAdvancedKpis(o, c);
+
+        public int  AddLoan(Loan l)                              => Channel.AddLoan(l);
+        public void UpdateLoan(Loan l)                           => Channel.UpdateLoan(l);
+        public void DeleteLoan(int id)                           => Channel.DeleteLoan(id);
+        public Loan GetLoanById(int id)                          => Channel.GetLoanById(id);
+        public Loan[] GetLoansForOwner(int o)                    => Channel.GetLoansForOwner(o);
+        public int  RecordLoanPayment(LoanPayment p)             => Channel.RecordLoanPayment(p);
+        public LoanPayment[] GetLoanPayments(int loanId)         => Channel.GetLoanPayments(loanId);
+        public LoanSummary GetLoanSummary(int o, string c)       => Channel.GetLoanSummary(o, c);
+
         public int EnsureOverdueNotifications(int o)
             => Channel.EnsureOverdueNotifications(o);
 
