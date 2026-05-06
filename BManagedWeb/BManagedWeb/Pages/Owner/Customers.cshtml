@@ -100,7 +100,26 @@
             <div id="cm-projects" class="space-y-1.5 text-sm mb-4 text-ink/60">—</div>
 
             <h3 class="display font-semibold mt-2 mb-2">@L.T(HttpContext,"Recent invoices","חשבוניות אחרונות")</h3>
-            <div id="cm-invoices" class="space-y-1.5 text-sm text-ink/60">—</div>
+            <div id="cm-invoices" class="space-y-1.5 text-sm text-ink/60 mb-6">—</div>
+
+            <details class="bg-paper-100 rounded-2xl px-5 py-3 text-sm">
+                <summary class="cursor-pointer pill text-ink/50">@L.T(HttpContext,"Edit / delete","עריכה / מחיקה")</summary>
+                <form method="post" asp-page-handler="Update" class="mt-3 space-y-2" id="cm-edit-form">
+                    <input type="hidden" name="id" id="cm-edit-id" />
+                    <input type="text" name="businessName" id="cm-edit-name"  placeholder="@L.T(HttpContext,"Business name","שם עסק")" class="w-full bg-white border border-black/5 rounded-xl px-3 py-2"/>
+                    <input type="text" name="contactName"  id="cm-edit-contact" placeholder="@L.T(HttpContext,"Contact","איש קשר")" class="w-full bg-white border border-black/5 rounded-xl px-3 py-2"/>
+                    <input type="text" name="email"        id="cm-edit-email"   placeholder="@L.T(HttpContext,"Email","אימייל")"     class="w-full bg-white border border-black/5 rounded-xl px-3 py-2"/>
+                    <input type="text" name="phone"        id="cm-edit-phone"   placeholder="@L.T(HttpContext,"Phone","טלפון")"     class="w-full bg-white border border-black/5 rounded-xl px-3 py-2"/>
+                    <input type="text" name="taxId"        id="cm-edit-tax"     placeholder="@L.T(HttpContext,"Tax ID","ח.פ")"      class="w-full bg-white border border-black/5 rounded-xl px-3 py-2"/>
+                    <div class="flex gap-2">
+                        <button class="bg-ink text-paper-50 rounded-full px-4 py-2 text-sm">@L.T(HttpContext,"Save","שמור")</button>
+                        <button type="button" id="cm-delete-btn" class="bg-rose text-white rounded-full px-4 py-2 text-sm">@L.T(HttpContext,"Delete","מחק")</button>
+                    </div>
+                </form>
+                <form method="post" asp-page-handler="Delete" id="cm-delete-form" class="hidden">
+                    <input type="hidden" name="id" id="cm-delete-id" />
+                </form>
+            </details>
         </div>
     </div>
 </div>
@@ -162,9 +181,22 @@
           });
         } else { invWrap.appendChild(emptyRow()); }
 
+        document.getElementById('cm-edit-id').value      = d.id;
+        document.getElementById('cm-edit-name').value    = d.businessName || '';
+        document.getElementById('cm-edit-contact').value = d.contactName  || '';
+        document.getElementById('cm-edit-email').value   = d.email        || '';
+        document.getElementById('cm-edit-phone').value   = d.phone        || '';
+        document.getElementById('cm-edit-tax').value     = d.taxId        || '';
+        document.getElementById('cm-delete-id').value    = d.id;
+
         modal.classList.remove('hidden');
       } catch (e) {}
     });
+  });
+
+  document.getElementById('cm-delete-btn').addEventListener('click', () => {
+    if (!confirm('Delete this customer? Their invoices/projects stay but are unlinked.')) return;
+    document.getElementById('cm-delete-form').submit();
   });
 </script>
 }

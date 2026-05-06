@@ -64,6 +64,35 @@ namespace BManagedWeb.Pages.Owner
             return OnGet();
         }
 
+        public IActionResult OnPostUpdate(int id, string businessName, string contactName, string email, string phone, string taxId)
+        {
+            var role = HttpContext.Session.GetString("Role");
+            if (role != "Owner") return RedirectToPage("/Login");
+            int ownerId = HttpContext.Session.GetInt32("UserId") ?? 0;
+            try
+            {
+                var c = _srv.GetCustomerById(id);
+                if (c == null) { Message = "Customer not found"; IsSuccess = false; return OnGet(); }
+                c.BusinessName = businessName ?? c.BusinessName;
+                c.ContactName  = contactName;
+                c.Email        = email;
+                c.Phone        = phone;
+                c.TaxId        = taxId;
+                _srv.UpdateCustomer(c);
+                Message = "Customer updated."; IsSuccess = true;
+            }
+            catch (System.Exception ex) { Message = "Update failed: " + ex.Message; IsSuccess = false; }
+            return OnGet();
+        }
+
+        public IActionResult OnPostDelete(int id)
+        {
+            if (HttpContext.Session.GetString("Role") != "Owner") return RedirectToPage("/Login");
+            try { _srv.DeleteCustomer(id); Message = "Customer removed."; IsSuccess = true; }
+            catch (System.Exception ex) { Message = "Delete failed: " + ex.Message; IsSuccess = false; }
+            return OnGet();
+        }
+
         // Quick-view modal — returns JSON with customer + projects + invoices + balance.
         public IActionResult OnGetDetail(int customerId)
         {
