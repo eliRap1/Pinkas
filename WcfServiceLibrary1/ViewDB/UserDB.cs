@@ -40,6 +40,7 @@ namespace ViewDB
         {
             AddColumnIfMissing("[businessType] TEXT(30)");
             AddColumnIfMissing("[isZair] BIT");
+            AddColumnIfMissing("[ownerId] LONG");
             MigrateLegacyZair();
         }
 
@@ -103,6 +104,12 @@ namespace ViewDB
                 u.IsZair = v != DBNull.Value && Convert.ToBoolean(v);
             }
             catch { u.IsZair = false; }
+            try
+            {
+                var v = reader["ownerId"];
+                u.OwnerId = v == DBNull.Value ? (int?)null : Convert.ToInt32(v);
+            }
+            catch { u.OwnerId = null; }
         }
 
         public void SetBusinessType(int userId, string businessType)
@@ -130,6 +137,25 @@ namespace ViewDB
                 cmd.ExecuteNonQuery();
             }
         }
+
+        public void SetOwnerId(int userId, int? ownerId)
+        {
+            using (var conn = GetConnection())
+            using (var cmd = new OleDbCommand(
+                "UPDATE [Users] SET [ownerId]=? WHERE [id]=?", conn))
+            {
+                cmd.Parameters.Add(new OleDbParameter("@o",  OleDbType.Integer) { Value = (object)ownerId ?? DBNull.Value });
+                cmd.Parameters.Add(new OleDbParameter("@id", OleDbType.Integer) { Value = userId });
+                conn.Open();
+                cmd.ExecuteNonQuery();
+            }
+        }
+
+        // Owners that an employee/client can pick at signup. Filters to
+        // active Owner accounts only.
+        public List<User> GetActiveOwners()
+            => Select("SELECT * FROM [Users] WHERE [role]='Owner' AND [isActive]=? ORDER BY [username]",
+                new OleDbParameter("@a", true)).OfType<User>().ToList();
 
         public bool UserExists(string username)
         {

@@ -108,6 +108,12 @@ namespace WcfServiceLibrary1
         public void SetIsZair(int userId, bool isZair)
             => userDB.SetIsZair(userId, isZair);
 
+        public void SetOwnerId(int userId, int ownerId)
+            => userDB.SetOwnerId(userId, ownerId > 0 ? ownerId : (int?)null);
+
+        public List<User> GetActiveOwners()
+            => userDB.GetActiveOwners();
+
         // ===================================================================
         // CUSTOMERS / CRM
         // ===================================================================

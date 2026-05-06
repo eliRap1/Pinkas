@@ -9,6 +9,9 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
             <!-- Header -->
@@ -77,8 +80,131 @@
                 </Border>
             </Grid>
 
+            <!-- P&L (year) + Tax -->
+            <Border Grid.Row="2" Style="{StaticResource ShellCard}" Margin="0,0,0,16">
+                <Border Style="{StaticResource CoreCard}" Padding="22">
+                    <StackPanel>
+                        <TextBlock Text="PROFIT &amp; LOSS (YEAR)" Style="{StaticResource Eyebrow}" Margin="0,0,0,12"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                                <TextBlock Text="INCOME (YR)" Style="{StaticResource Eyebrow}"/>
+                                <TextBlock x:Name="plIncome" Text="0" Style="{StaticResource Display}" FontSize="26"
+                                           Foreground="{StaticResource Mint}" Margin="0,4,0,0"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" Margin="8,0">
+                                <TextBlock Text="EXPENSES (YR)" Style="{StaticResource Eyebrow}"/>
+                                <TextBlock x:Name="plExpenses" Text="0" Style="{StaticResource Display}" FontSize="26"
+                                           Foreground="{StaticResource Rose}" Margin="0,4,0,0"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="2" Margin="8,0">
+                                <TextBlock Text="GROSS PROFIT" Style="{StaticResource Eyebrow}"/>
+                                <TextBlock x:Name="plProfit" Text="0" Style="{StaticResource Display}" FontSize="26" Margin="0,4,0,0"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="3" Margin="8,0">
+                                <TextBlock Text="INCOME TAX" Style="{StaticResource Eyebrow}"/>
+                                <TextBlock x:Name="plTax" Text="0" Style="{StaticResource Display}" FontSize="26"
+                                           Foreground="{StaticResource Amber}" Margin="0,4,0,0"/>
+                                <TextBlock x:Name="plTaxBase" Style="{StaticResource Caption}"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="4" Margin="8,0,0,0">
+                                <TextBlock Text="NET (YR)" Style="{StaticResource Eyebrow}"/>
+                                <TextBlock x:Name="plNet" Text="0" Style="{StaticResource Display}" FontSize="26"
+                                           Foreground="{StaticResource Mint}" Margin="0,4,0,0"/>
+                            </StackPanel>
+                        </Grid>
+                        <TextBlock x:Name="taxNote" Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,12,0,0"/>
+                    </StackPanel>
+                </Border>
+            </Border>
+
+            <!-- KPI scorecard -->
+            <Border Grid.Row="3" Style="{StaticResource ShellCard}" Margin="0,0,0,16">
+                <Border Style="{StaticResource CoreCard}" Padding="22">
+                    <StackPanel>
+                        <TextBlock Text="OPERATING KPIs" Style="{StaticResource Eyebrow}" Margin="0,0,0,12"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                                <TextBlock Text="OUTSTANDING TOTAL" Style="{StaticResource Eyebrow}"/>
+                                <TextBlock x:Name="kpiOutstanding" Text="0" Style="{StaticResource Display}" FontSize="22" Margin="0,4,0,0"/>
+                                <TextBlock x:Name="kpiAging" Style="{StaticResource Caption}"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" Margin="8,0">
+                                <TextBlock Text="AVG DAYS TO PAYMENT" Style="{StaticResource Eyebrow}"/>
+                                <TextBlock x:Name="kpiDays" Text="—" Style="{StaticResource Display}" FontSize="22" Margin="0,4,0,0"/>
+                                <TextBlock x:Name="kpiOnTime" Style="{StaticResource Caption}"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="2" Margin="8,0">
+                                <TextBlock Text="TOP CUSTOMER SHARE" Style="{StaticResource Eyebrow}"/>
+                                <TextBlock x:Name="kpiTopShare" Text="—" Style="{StaticResource Display}" FontSize="22" Margin="0,4,0,0"/>
+                                <TextBlock x:Name="kpiTopName"  Style="{StaticResource Caption}" TextTrimming="CharacterEllipsis"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="3" Margin="8,0,0,0">
+                                <TextBlock Text="AVG MONTHLY PROFIT" Style="{StaticResource Eyebrow}"/>
+                                <TextBlock x:Name="kpiMonthlyProfit" Text="0" Style="{StaticResource Display}" FontSize="22" Margin="0,4,0,0"/>
+                                <TextBlock x:Name="kpiRunway" Style="{StaticResource Caption}"/>
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+            </Border>
+
+            <!-- Loan summary -->
+            <Border Grid.Row="4" x:Name="loanCard" Style="{StaticResource ShellCard}" Margin="0,0,0,16" Visibility="Collapsed">
+                <Border Style="{StaticResource CoreCard}" Padding="22">
+                    <StackPanel>
+                        <Grid Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="LOANS (קרן)" Style="{StaticResource Eyebrow}"/>
+                            <Button Grid.Column="1" Content="→ Manage loans" Click="OpenLoans_Click"
+                                    Style="{StaticResource AmberButton}"/>
+                        </Grid>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                                <TextBlock Text="ACTIVE" Style="{StaticResource Eyebrow}"/>
+                                <TextBlock x:Name="loanCount" Text="0" Style="{StaticResource Display}" FontSize="22" Margin="0,4,0,0"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" Margin="8,0">
+                                <TextBlock Text="OUTSTANDING" Style="{StaticResource Eyebrow}"/>
+                                <TextBlock x:Name="loanRemaining" Text="0" Style="{StaticResource Display}" FontSize="22" Margin="0,4,0,0"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="2" Margin="8,0">
+                                <TextBlock Text="MONTHLY" Style="{StaticResource Eyebrow}"/>
+                                <TextBlock x:Name="loanMonthly" Text="0" Style="{StaticResource Display}" FontSize="22"
+                                           Foreground="{StaticResource Amber}" Margin="0,4,0,0"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="3" Margin="8,0,0,0">
+                                <TextBlock Text="DEBT-SERVICE RATIO" Style="{StaticResource Eyebrow}"/>
+                                <TextBlock x:Name="loanDsr" Text="—" Style="{StaticResource Display}" FontSize="22" Margin="0,4,0,0"/>
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+            </Border>
+
             <!-- Top customers -->
-            <Border Grid.Row="2" Style="{StaticResource ShellCard}">
+            <Border Grid.Row="5" Style="{StaticResource ShellCard}">
                 <Border Style="{StaticResource CoreCard}" Padding="22">
                     <StackPanel>
                         <TextBlock Text="TOP CUSTOMERS BY REVENUE" Style="{StaticResource Eyebrow}" Margin="0,0,0,12"/>
@@ -96,7 +222,7 @@
             </Border>
 
             <!-- Expense breakdown -->
-            <Border Grid.Row="3" Style="{StaticResource ShellCard}">
+            <Border Grid.Row="6" Style="{StaticResource ShellCard}">
                 <Border Style="{StaticResource CoreCard}" Padding="22">
                     <StackPanel>
                         <TextBlock Text="EXPENSE BREAKDOWN" Style="{StaticResource Eyebrow}" Margin="0,0,0,12"/>

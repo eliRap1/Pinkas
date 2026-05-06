@@ -153,6 +153,10 @@
                                         Click="Settings_Click" Style="{StaticResource SecondaryButton}"
                                         Height="56" Margin="4"
                                         ToolTip="Manage users, approve sign-ups, reset passwords"/>
+                                <Button Grid.Column="1" Content="🏦  Loans (קרן)"
+                                        Click="Loans_Click" Style="{StaticResource AmberButton}"
+                                        Height="56" Margin="4"
+                                        ToolTip="Track business loans, principal, debt-to-income"/>
                             </Grid>
                         </StackPanel>
                     </Border>

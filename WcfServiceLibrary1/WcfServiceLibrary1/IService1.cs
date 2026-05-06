@@ -62,6 +62,10 @@ namespace WcfServiceLibrary1
         [OperationContract] void SetBusinessType(int userId, string businessType);
         /// <summary>Toggle Osek Zair income-tax status (independent of BusinessType).</summary>
         [OperationContract] void SetIsZair(int userId, bool isZair);
+        /// <summary>Link an Employee/Client to its Owner ('the company they belong to').</summary>
+        [OperationContract] void SetOwnerId(int userId, int ownerId);
+        /// <summary>List active Owners — for the company-picker dropdown on signup.</summary>
+        [OperationContract] List<User> GetActiveOwners();
 
         // ==================== CUSTOMERS / CRM ====================
 

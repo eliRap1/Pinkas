@@ -27,10 +27,11 @@ namespace BManagedClient
             }
             try
             {
-                bool ok = ServiceGateway.Use(c => c.CheckUserPassword(u, p));
-                if (!ok) { ShowError("Wrong username or password."); return; }
-
-                var user = ServiceGateway.Use(c => c.GetUserById(c.GetUserId(u)));
+                // Verify password + load user in one ServiceGateway call so the
+                // shared channel doesn't reopen between two SOAP ops.
+                var user = ServiceGateway.Use(c =>
+                    c.CheckUserPassword(u, p) ? c.GetUserById(c.GetUserId(u)) : null);
+                if (user == null) { ShowError("Wrong username or password."); return; }
                 sign.Username          = user.Username;
                 sign.Password          = p;
                 sign.Email             = user.Email;

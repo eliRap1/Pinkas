@@ -38,5 +38,13 @@ namespace Model
         /// Does NOT change VAT obligations — those follow BusinessType.
         /// </summary>
         [DataMember] public bool IsZair { get; set; } = false;
+
+        /// <summary>
+        /// Multi-tenant link: when Role == "Employee" or "Client", this is the
+        /// Owner-user-id they belong to (chosen at signup). Null/0 for Owner
+        /// rows themselves. Drives which company's projects the employee
+        /// can be assigned to and which Owner approves the account.
+        /// </summary>
+        [DataMember] public int? OwnerId { get; set; }
     }
 }

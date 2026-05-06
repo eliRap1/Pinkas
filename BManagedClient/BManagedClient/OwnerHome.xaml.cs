@@ -127,6 +127,7 @@ namespace BManagedClient
         private void Contracts_Click(object s, RoutedEventArgs e)     => NavigationService?.Navigate(new Contracts());
         private void Expenses_Click(object s, RoutedEventArgs e)      => NavigationService?.Navigate(new Expenses());
         private void Reports_Click(object s, RoutedEventArgs e)       => NavigationService?.Navigate(new Reports());
+        private void Loans_Click(object s, RoutedEventArgs e)         => NavigationService?.Navigate(new Loans());
         private void Settings_Click(object s, RoutedEventArgs e)      => NavigationService?.Navigate(new ManageUsers());
         private void Notifications_Click(object s, RoutedEventArgs e) => NavigationService?.Navigate(new Notifications());
 

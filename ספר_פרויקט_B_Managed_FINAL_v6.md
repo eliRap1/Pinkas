@@ -40,6 +40,10 @@
 21. מפת הפרויקט (Project Map) — תמונות זרימה
 22. סיכום ורפלקציה
 23. נספחים — צילומי מסך, רשימת קבצים, ביבליוגרפיה
+24. עדכון 2026 — מודל עוסק תקין (Patur / Murshe / Zair) ושינוי מע״מ ל-18%
+25. הלוואות עסקיות וקרנות (קרן) — מעקב חוב ויחס חוב להכנסה
+26. דשבורד אנליטיקה מתקדם — Receivables Aging, Payment Lag, Concentration, Runway
+27. שיפורי חוויית משתמש (UX) — Login Spinner, ולידציות הרשמה, הרשמת עובד/בעלים ב-WPF, חוזה→חשבונית→הושלם
 
 ---
 
@@ -1822,4 +1826,488 @@ async function refreshBadge() {
 
 ---
 
-**סוף הספר.** סך הכל ~50 פעולות WCF, 13 טבלאות, 33 דפי UI (15 WPF + 18 Web), 4 דו״חות, 2 לקוחות, 2 שפות, 2 מטבעות.
+# 24. עדכון 2026 — מודל עוסק תקין (Patur / Murshe / Zair) ושינוי מע״מ ל-18%
+
+פרק זה מתעד שיפור גדול שבוצע במאי 2026 לאחר חקר חוזר של דיני המס הישראליים העדכניים. הגרסה הקודמת של B-Managed הניחה כמה הנחות שגויות: מע״מ של 17%, התייחסות לעוסק זעיר כסוג עוסק נפרד, וכלל ניכוי חוצה של 30% שלא קיים בפועל. עדכון זה מיישר את המערכת עם הכללים הנכונים של 2025–2026.
+
+## 24.1 מצב חוקי — המציאות הישראלית בשנת 2026
+
+| מעמד | סוג מעמד | מע״מ | מס הכנסה | תקרה שנתית |
+|------|-----------|------|-----------|--------------|
+| **עוסק פטור** | רישום מע״מ | 0% (אינו גובה ואינו מקזז) | רגיל — הכנסה פחות הוצאות → מדרגות מס | ~120,000 ₪ |
+| **עוסק מורשה** | רישום מע״מ | 18% (גובה ומקזז) | רגיל — הכנסה פחות הוצאות → מדרגות מס | ללא תקרה |
+| **עוסק זעיר** | מעמד **במס הכנסה בלבד** (אופציונלי) | אינו משנה — נשאר Patur או Murshe | מסלול מקוצר: 70% מהמחזור הוא בסיס המס (ניכוי הוצאות אוטומטי 30%) | ~122,833 ₪ |
+| **יחיד** (פרטי) | אין רישום מע״מ | אין דיווח | רגיל | — |
+
+**שינוי חשוב לעומת הגרסה הקודמת:** מע״מ ישראלי עלה מ-17% ל-18% בינואר 2025. כל הקבועים ב-`VatCalculator.DefaultRate`, `Invoice.VatRate`, חישובי 17/117 בתשובת מע״מ אוטומטית, וטקסטים בממשקים — עודכנו ל-18 ו-18/118.
+
+**עוסק זעיר אינו סוג עוסק.** הוא מעמד במס הכנסה שאפשר לבחור מעליו: עוסק פטור יכול להיות גם זעיר, ועוסק מורשה יכול להיות גם זעיר. לכן במערכת מודלנו אותו כדגל בוליאני נפרד (`IsZair`) ולא כערך נוסף ב-`BusinessType`.
+
+## 24.2 שינויים במודל ובסכמה
+
+`WcfServiceLibrary1/Model/User.cs:24-40` — שדה חדש:
+
+```csharp
+[DataMember] public string BusinessType { get; set; } = "Individual";
+// "Patur" | "Murshe" | "Individual" — סוג רישום מע״מ
+[DataMember] public bool   IsZair { get; set; } = false;
+// אופציונלי, אינו תלוי ב-BusinessType
+```
+
+`WcfServiceLibrary1/ViewDB/UserDB.cs:39-90` — מיגרציית סכמה אוטומטית בעת התחלת השרת:
+
+```csharp
+private void EnsureSchema()
+{
+    AddColumnIfMissing("[businessType] TEXT(30)");
+    AddColumnIfMissing("[isZair] BIT");
+    MigrateLegacyZair();
+}
+
+// העברת רשומות ישנות עם businessType='Zair' → Patur+IsZair=true
+private void MigrateLegacyZair()
+{
+    using (var cmd = new OleDbCommand(
+        "UPDATE [Users] SET [businessType]='Patur', [isZair]=? WHERE [businessType]='Zair'", conn))
+    { /* ... */ }
+}
+```
+
+## 24.3 חישוב מס הכנסה — לוגיקה לפי IsZair
+
+`BManagedWeb/BManagedWeb/Pages/Owner/Reports.cshtml.cs:90-95`:
+
+```csharp
+if (IsZair && YearPl.Income <= ZairThreshold)
+    TaxableProfit = Math.Round(YearPl.Income * 0.70m, 2);   // 70% מהמחזור
+else
+    TaxableProfit = YearPl.Profit;                          // הכנסה פחות הוצאות
+```
+
+מדרגות מס הכנסה ליחיד 2026 (מוקפאות ללא הצמדה לאינפלציה):
+
+| מ- | עד | שיעור |
+|------|------|---------|
+| 0 | 84,120 | 10% |
+| 84,120 | 120,720 | 14% |
+| 120,720 | 193,800 | 20% |
+| 193,800 | 269,280 | 31% |
+| 269,280 | 560,280 | 35% |
+| 560,280 | 721,560 | 47% |
+| 721,560 | ∞ | 50% |
+
+## 24.4 התראת מעבר תקרה לעוסק פטור
+
+כאשר עוסק פטור עובר את 120,000 ₪ במצטבר השנתי, הוא חייב לעבור לעוסק מורשה. המערכת מציגה אזהרה צהובה בולטת בעמוד הדו״חות:
+
+`Reports.cshtml:31-39` — "מחזור עוסק פטור מתחילת השנה: X ₪ — מעל סף 120,000 ₪. חובה לעבור לעוסק מורשה ברשות המסים."
+
+## 24.5 כפתור "סמן ששולם" — תנאי חדש
+
+`Reports.cshtml.cs:209-220` — הכפתור "סמן ששולם לרשות המסים" מוצג רק לעוסק מורשה. הלוגיקה בצד השרת (OnPostPayVat) דוחה ניסיון של פטור/יחיד עם הודעה "VAT settlement applies to Osek Murshe only."
+
+## 24.6 בחירת עוסק זעיר ב-UI
+
+ה-Web SignUp הציג בעבר רשימה של 4 ערכים (Individual / Patur / Zair / Murshe). כעת הרשימה כוללת רק 3 ערכים, וצ'קבוקס נוסף "Claim Osek Zair income-tax status" מופיע רק כאשר נבחר Patur או Murshe. ב-Reports, הבעלים יכול להפעיל/לכבות את הסטטוס דרך כפתור Toggle Zair בכל עת.
+
+`SignUp.cshtml:36-77` (Web) + `SignUp.xaml`/`SignUp.xaml.cs` (WPF) — שני הלקוחות מסונכרנים.
+
+---
+
+# 25. הלוואות עסקיות וקרנות (קרן) — מעקב חוב ויחס חוב להכנסה
+
+עסק קטן בישראל לרוב מקבל הלוואות שונות לאורך הדרך — בנקאית רגילה, הלוואה בערבות מדינה (קרן הלוואות בערבות מדינה לעסקים קטנים ובינוניים), קרן שמש, קרן קורת ועוד. עד כה לא היה ב-B-Managed מקום לעקוב אחר הלוואות אלה, ולא היה אפשר לדעת כמה מההכנסה החודשית הולך להחזרי הלוואה. פרק זה מתעד את המודול שהתווסף.
+
+## 25.1 מודלים חדשים
+
+`WcfServiceLibrary1/Model/Loan.cs` — שלוש מחלקות חדשות:
+
+```csharp
+public class Loan : Base
+{
+    public int OwnerId { get; set; }
+    public string Lender { get; set; }              // הבנק / הקרן
+    public decimal Principal { get; set; }          // קרן ההלוואה (סכום מקורי)
+    public decimal RemainingBalance { get; set; }   // יתרה לתשלום
+    public double  InterestRatePct { get; set; }    // ריבית שנתית
+    public decimal MonthlyPayment { get; set; }     // החזר חודשי
+    public DateTime StartDate { get; set; }
+    public int     TermMonths { get; set; }
+    public DateTime? NextPaymentDate { get; set; }  // תאריך התשלום הבא
+    public string Currency { get; set; }
+    public string Purpose { get; set; }             // מטרת ההלוואה (חופשי)
+    public bool   IsKerenBacked { get; set; }       // ⭐ קרן בערבות מדינה
+    public bool   IsActive { get; set; }
+    public string Notes { get; set; }
+    public DateTime CreatedAt { get; set; }
+}
+
+public class LoanPayment : Base
+{
+    public int LoanId { get; set; }
+    public DateTime PaidDate { get; set; }
+    public decimal Amount { get; set; }
+    public decimal PrincipalPortion { get; set; }   // החלק שמקטין את הקרן
+    public decimal InterestPortion { get; set; }    // הריבית של החודש הזה
+    public string Notes { get; set; }
+}
+
+public class LoanSummary
+{
+    public int     LoanCount { get; set; }
+    public decimal TotalPrincipal { get; set; }
+    public decimal TotalRemaining { get; set; }
+    public decimal MonthlyPaymentTotal { get; set; }
+    public int     KerenBackedCount { get; set; }
+    public double  DebtToAnnualIncomePct { get; set; }       // יחס חוב להכנסה שנתית
+    public double  MonthlyDebtServiceRatioPct { get; set; }  // נטל חודשי
+    public DateTime? NextPaymentDate { get; set; }
+    public decimal NextPaymentAmount { get; set; }
+    public string  DisplayCurrency { get; set; }
+}
+```
+
+הדגל `IsKerenBacked` מסמן הלוואה מקרן ממשלתית בערבות מדינה. אלה בדרך כלל בריבית נמוכה יותר, ולעיתים עם תקופת חסד.
+
+## 25.2 סכמת בסיס נתונים — אוטו-יצירה
+
+`WcfServiceLibrary1/ViewDB/LoanDB.cs:34-83` — שתי טבלאות חדשות נוצרות אוטומטית בעלייה הראשונה של השרת (idempotent — לא נופל אם הטבלאות כבר קיימות):
+
+```sql
+CREATE TABLE [Loans] (
+  [id] COUNTER PRIMARY KEY,
+  [ownerId] LONG,
+  [lender] TEXT(120),
+  [principal] CURRENCY,
+  [remainingBalance] CURRENCY,
+  [interestRatePct] DOUBLE,
+  [monthlyPayment] CURRENCY,
+  [startDate] DATETIME,
+  [termMonths] LONG,
+  [nextPaymentDate] DATETIME,
+  [currency] TEXT(3),
+  [purpose] TEXT(200),
+  [isKerenBacked] BIT,
+  [isActive] BIT,
+  [notes] MEMO,
+  [createdAt] DATETIME
+);
+
+CREATE TABLE [LoanPayments] (
+  [id] COUNTER PRIMARY KEY,
+  [loanId] LONG,
+  [paidDate] DATETIME,
+  [amount] CURRENCY,
+  [principalPortion] CURRENCY,
+  [interestPortion] CURRENCY,
+  [notes] MEMO
+);
+```
+
+## 25.3 רישום תשלום — אטומיות ידנית
+
+ב-Access אין תמיכה בטרנזקציות multi-statement דרך OleDb בצורה פשוטה, ולכן רישום תשלום בנוי משתי פעולות עוקבות:
+
+`LoanDB.cs:163-200`:
+
+1. INSERT לטבלת LoanPayments.
+2. UPDATE על Loans:
+   * `remainingBalance` יורד ב-`PrincipalPortion`.
+   * `nextPaymentDate` מתקדם בחודש.
+   * אם `remainingBalance ≤ 0`, ה-`isActive` נכבה אוטומטית (ההלוואה הסתיימה).
+
+## 25.4 שכבת WCF — שמונה פעולות חדשות
+
+`WcfServiceLibrary1/WcfServiceLibrary1/IService1.cs:152-160`:
+
+```csharp
+[OperationContract] int  AddLoan(Loan l);
+[OperationContract] void UpdateLoan(Loan l);
+[OperationContract] void DeleteLoan(int id);
+[OperationContract] Loan GetLoanById(int id);
+[OperationContract] List<Loan> GetLoansForOwner(int ownerId);
+[OperationContract] int  RecordLoanPayment(LoanPayment p);
+[OperationContract] List<LoanPayment> GetLoanPayments(int loanId);
+[OperationContract] LoanSummary GetLoanSummary(int ownerId, string displayCurrency);
+```
+
+## 25.5 חישוב יחס חוב להכנסה (DSR — Debt Service Ratio)
+
+`WcfServiceLibrary1/WcfServiceLibrary1/Service1.cs:LoanSummary` — הפעולה `GetLoanSummary` עוברת על כל ההלוואות הפעילות, ממירה למטבע התצוגה דרך `CurrencyConverter`, ואז מצרפת לכך את הנתונים מ-`AdvancedKpis` (פרק 26):
+
+```csharp
+if (kpis.AvgMonthlyIncome > 0)
+{
+    decimal annual = kpis.AvgMonthlyIncome * 12m;
+    s.DebtToAnnualIncomePct = (double)(s.TotalRemaining / annual) * 100;
+    s.MonthlyDebtServiceRatioPct =
+        (double)(s.MonthlyPaymentTotal / kpis.AvgMonthlyIncome) * 100;
+}
+```
+
+המערכת מציגה התראות לפי הספים המקובלים בעולם הפיננסי:
+
+* **DSR ≥ 40%** — אזהרה אדומה ("נטל חוב גבוה").
+* **DSR בין 25%–40%** — אזהרה צהובה ("כדאי לעקוב").
+* **DSR < 25%** — לא מציגים אזהרה.
+
+## 25.6 ממשק המשתמש — `/Owner/Loans`
+
+עמוד חדש ב-Web (`BManagedWeb/BManagedWeb/Pages/Owner/Loans.cshtml`) הכולל:
+
+1. **כותרת + פילטר מטבע** (ILS / USD).
+2. **רצועת KPI עם 4 כרטיסים**:
+   * הלוואות פעילות (כולל מספר הלוואות בערבות מדינה).
+   * יתרת קרן (Outstanding) + הקרן המקורית.
+   * תשלום חודשי + תאריך התשלום הבא.
+   * יחס חוב להכנסה שנתית + נטל חודשי.
+3. **טופס הוספת הלוואה** עם כל השדות הנדרשים, כולל צ'קבוקס בולט: "State-backed business fund (קרן הלוואות בערבות מדינה)".
+4. **רשימת הלוואות בכרטיסים**: לכל הלוואה יש תוויות "קרן" / "Closed" כאשר רלוונטי, פירוט קרן + יתרה + תשלום חודשי, **פס התקדמות (Progress bar)** המציג כמה אחוזים מהקרן נפרעו, פאנל מתקפל "רשום תשלום + היסטוריה" עם 6 התשלומים האחרונים, וכפתור מחיקה.
+
+ב-`/Owner/Home` נוסף כרטיס מסכם של ההלוואות עם קישור ל-`/Owner/Loans`. ב-`/Owner/Reports` נוסף כרטיס סיכום הלוואות בתוך ה-bento עם 4 כרטיסי משנה.
+
+---
+
+# 26. דשבורד אנליטיקה מתקדם — Receivables Aging, Payment Lag, Concentration, Runway
+
+הגרסה הקודמת של ה-Reports התמקדה בעיקר במע״מ ובדו״חות גליונים פר-לקוח/פר-קטגוריה. עדכון 2026 הוסיף שכבה אנליטית עליונה שמשקפת **בריאות עסקית** במבט מהיר.
+
+## 26.1 ה-DTO החדש — AnalyticsKpis
+
+`WcfServiceLibrary1/Model/Reports.cs` (סוף הקובץ):
+
+```csharp
+public class AnalyticsKpis
+{
+    // יתרת חייבים מפורקת לפי איחור
+    public decimal AgingCurrent { get; set; }     // עוד לא הגיע מועד
+    public decimal Aging1To30 { get; set; }       // 1-30 ימים באיחור
+    public decimal Aging31To60 { get; set; }
+    public decimal Aging61Plus { get; set; }
+    public decimal TotalOutstanding { get; set; }
+
+    // התנהגות תשלום ב-6 חודשים האחרונים
+    public double  AvgDaysToPayment { get; set; }
+    public double  OnTimeRatePct { get; set; }    // אחוז ששולם בזמן
+
+    // ריכוזיות לקוחות (סיכון)
+    public string  TopCustomerName { get; set; }
+    public double  TopCustomerSharePct { get; set; }
+    public int     ActiveCustomerCount { get; set; }
+
+    // מגמות חודשיות + רנווי
+    public decimal AvgMonthlyIncome { get; set; }
+    public decimal AvgMonthlyExpenses { get; set; }
+    public decimal AvgMonthlyProfit { get; set; }
+    public double  RunwayMonths { get; set; }     // -1 = רווחי
+
+    public string  DisplayCurrency { get; set; }
+}
+```
+
+## 26.2 שאילתות מתקדמות — `ReportsDB.AdvancedKpis`
+
+`WcfServiceLibrary1/ViewDB/ReportsDB.cs:300-450` — מימוש שמשלב 4 שאילתות:
+
+### Aging — לולאה על כל החשבוניות שלא שולמו, חישוב ימים מ-DueDate
+
+```csharp
+foreach row in (Sent/Overdue invoices):
+   daysLate = today - dueDate
+   if daysLate <= 0   AgingCurrent += amt
+   else if <= 30      Aging1To30   += amt
+   else if <= 60      Aging31To60  += amt
+   else               Aging61Plus  += amt
+```
+
+### Payment Lag — חשבוניות ששולמו ב-6 חודשים האחרונים
+
+```sql
+SELECT I.[issueDate] AS iss, I.[paidDate] AS pd, I.[dueDate] AS due
+FROM [Invoices] AS I INNER JOIN [Customers] AS C ON I.[customerId] = C.[id]
+WHERE C.[ownerId] = ? AND I.[status] = 'Paid' AND I.[paidDate] >= ?
+```
+
+האלגוריתם מחשב `AvgDaysToPayment = avg(paidDate - issueDate)` ו-`OnTimeRatePct = paid_on_time / total`. תאריך פירעון השוואה ל-`dueDate`.
+
+### Customer Concentration — INNER JOIN + GROUP BY
+
+```sql
+SELECT C.[id], C.[businessName], SUM(I.[total]) AS rev, I.[currency]
+FROM [Invoices] AS I INNER JOIN [Customers] AS C ON I.[customerId] = C.[id]
+WHERE C.[ownerId] = ? AND I.[status] = 'Paid' AND I.[paidDate] >= yearStart
+GROUP BY C.[id], C.[businessName], I.[currency]
+ORDER BY SUM(I.[total]) DESC
+```
+
+האלגוריתם מסכם את כל ההכנסות מתחילת השנה, מוצא את הלקוח עם ההכנסה הגבוהה ביותר, ומחשב את אחוז ההכנסה ממנו מתוך הכלל. אם האחוז גבוה מ-50% → אזהרה: "More than half of revenue is from one customer — concentrated risk."
+
+### Trailing-3-month flow + Runway
+
+ממוצע הכנסה חודשית והוצאה חודשית בשלושת החודשים האחרונים. אם הממוצע **חיובי**, `RunwayMonths = -1` (רווחי, אין שריפת מזומנים). אם שלילי, `RunwayMonths = TotalOutstanding ÷ |AvgMonthlyProfit|` (כמה חודשים של שריפה אפשר לכסות מהיתרה החייבת).
+
+## 26.3 רינדור ב-Web
+
+ה-Reports עכשיו מציג שני כרטיסים חדשים:
+
+* **Receivables aging (md:7)** — 4 ברים אופקיים צבעוניים (mint/amber/rose) המפורקים ביחס למקסימום מבין הדליים. סך הכל ה-`TotalOutstanding` מוצג בולט בצד ימין.
+* **Operating KPIs (md:5)** — 4 תאי מידע: ימים ממוצעים לתשלום, אחוז תשלומים בזמן, ריכוזיות לקוחות (עם אזהרה), רווח חודשי ממוצע, רנווי.
+
+ב-`/Owner/Home` (Dashboard) נוספו תיקני זמן-אמת:
+
+* **טייל Aging** (md:6) עם 4 קטעים מיני.
+* **טייל On-time payments** (md:3).
+* **טייל Loans** (md:3) עם נתונים מ-`LoanSummary`.
+
+---
+
+# 27. שיפורי חוויית משתמש (UX) — Login Spinner, ולידציות הרשמה, הרשמת עובד/בעלים ב-WPF, חוזה→חשבונית→הושלם
+
+פרק זה אוסף את שיפורי חוויית המשתמש שבוצעו לאורך עדכון 2026. כל שיפור נראה קטן בנפרד, אבל יחד הם הופכים את המערכת מאב-טיפוס לימודי לכלי שאפשר לחיות איתו ביום-יום.
+
+## 27.1 כניסה למערכת — Spinner + Fail-fast
+
+`BManagedWeb/BManagedWeb/Pages/Login.cshtml.cs:17-30`:
+
+לפני: לחיצה על "כניסה" שלחה את הטופס. בזמן שהשרת בוצע (קריאת WCF + PBKDF2 עם 10,000 איטרציות), המסך נראה קפוא. אם המשתמש לא קיים, הוא היה ממתין באופן לא מוצדק לכל ה-PBKDF2.
+
+אחרי:
+1. **Fail-fast** — בדיקת `CheckUserExist` רצה ראשונה. אם המשתמש לא קיים, חוזרת תשובה מיד עם הודעה גנרית "Invalid username or password" בלי לחשב hash מיותר.
+2. **Spinner** — JS קטן (15 שורות) על submit: כפתור הופך ל-disabled (מונע double-click), כיתוב משתנה ל-"Signing in… / מתחבר…", ה-arrow icon מתחלף ב-SVG מסתובב (`animate-spin` של Tailwind).
+
+## 27.2 הרשמה — ולידציות מחמירות
+
+`BManagedClient/BManagedClient/SignUp.xaml.cs:11-15` + `BManagedWeb/BManagedWeb/Pages/SignUp.cshtml.cs:14-18`:
+
+| שדה | חוק קודם | חוק עדכני |
+|------|------------|-------------|
+| Username | 4+ תווים כלשהם | רגקס: `^[A-Za-z0-9_.]{4,20}$` |
+| Password | 4+ תווים | רגקס: `^(?=.*[A-Za-z])(?=.*\d).{8,}$` (8+ תווים, אות אחת, ספרה אחת) |
+| Password = Username | מותר | חסום |
+| Email | רגקס פשוט | זהה — אבל הודעת השגיאה כוללת דוגמה |
+| Phone | 7-15 ספרות, פלוס אופציונלי | זהה — הודעת השגיאה הוסברה |
+
+ב-Web גם נוספו attributes ב-HTML5: `minlength`, `maxlength`, `pattern`, `required` — כך שהדפדפן חוסם submit לפני שיגיע לשרת. **רשימת ביקורת חיה לסיסמה** מופיעה מתחת לשדה הסיסמה: 3 בולטים שהופכים ירוקים בזמן אמת ככל שהמשתמש מקליד (אורך 8+, אות, ספרה).
+
+## 27.3 הרשמה ב-WPF — מסלול דו-שלבי (Owner / Employee)
+
+הגרסה הקודמת קודדה תפקיד `"Client"` בקשיחות בקוד `BManagedClient/BManagedClient/SignUp.xaml.cs:33`. לא היה אפשר ליצור דרך WPF משתמש Owner או Employee.
+
+המסך נכתב מחדש כשני שלבים:
+
+**שלב 1** — בורר תפקיד עם שתי כרטיסים מוארים:
+* "OWNER — I run a business" — בעלי עסק. בוחר Patur או Murshe + צ'קבוקס Zair + מטבע.
+* "EMPLOYEE — I work on assigned projects" — עובד שכיר/קבלן. אין שדות עוסק.
+
+**שלב 2** — טופס דינמי שמתאים את עצמו לתפקיד שנבחר:
+* אם Owner: מוצגים בנוסף ComboBox "VAT REGISTRATION" + CheckBox "Claim Osek Zair income-tax status".
+* אם Employee: שדות הבסיס בלבד (username, password, email, phone, currency).
+
+חשבונות Owner מופעלים מיידית (server-side: `r == "Owner" → active = true`). חשבונות Employee נכנסים פעולה רק לאחר שהבעלים מאשר אותם בעמוד Manage Users.
+
+`SignUp.xaml.cs:24-50` — `SwitchToForm(role)` פותר/מסתיר את האלמנטים לפי `_selectedRole`:
+
+```csharp
+private void SwitchToForm(string role)
+{
+    _selectedRole = role;
+    roleStep.Visibility    = Visibility.Collapsed;
+    formStep.Visibility    = Visibility.Visible;
+    ownerExtras.Visibility = role == "Owner" ? Visibility.Visible : Visibility.Collapsed;
+    titleText.Text   = role == "Owner" ? "Owner sign-up" : "Employee sign-up";
+    subtitleText.Text = role == "Owner"
+        ? "Run the business — you'll log invoices, expenses, and VAT."
+        : "Work on assigned projects and log your expenses.";
+}
+```
+
+## 27.4 לקוחות — טופס הוספה אמיתי במקום InputBox
+
+ב-`BManagedClient/BManagedClient/Customers.xaml.cs` — כפתור "+ New customer" קרא בעבר ל-`Microsoft.VisualBasic.Interaction.InputBox` שמבקש שורה אחת בלבד (Business Name). שאר השדות (Contact, Tax ID, Email, Phone, Address, Currency) נשארו ריקים על Insert.
+
+עדכון 2026 — פאנל מוטמע מתחת לבר החיפוש שמתפתח על ToggleAdd_Click:
+* 6 שדות עם תוויות UPPERCASE.
+* ולידציה: שם עסק חובה; אימייל וטלפון רגקס אם הוזנו (זהה לרגקסים של SignUp).
+* כפתורי Save / Cancel.
+* `status` TextBlock קיים מציג שגיאות + הצלחה.
+
+`Customers.xaml.cs:SaveAdd_Click` — בודק את כל השדות, יוצר אובייקט Customer מלא, ושולח ל-`AddCustomer`.
+
+## 27.5 חשבוניות — תוויות ברורות ועזרי הסבר
+
+ב-`BManagedClient/BManagedClient/Invoices.xaml`:
+* בטופס "צור חשבונית" נוספו תוויות מעל הבוררים: CUSTOMER (BILL TO), CURRENCY.
+* כל שדה קיבל ToolTip מסביר.
+* בטופס "הוסף שורה" נוספו תוויות: DESCRIPTION (WHAT WAS DONE), QUANTITY (HOURS / UNITS), UNIT PRICE (PER UNIT).
+* שורת עזרה תחתונה: "Line total = Quantity × Unit price (auto). VAT 18% added on the invoice totals row (0% for Osek Patur)."
+
+ב-Web (`Invoices.cshtml`) — אותו עיקרון: תוויות לכל שדה בטופס יצירת חשבונית, פסקת הסבר על מע״מ.
+
+## 27.6 חוזה → חשבונית → הושלם — מחזור חיים אוטומטי
+
+זרימת חוזה ⇆ חשבונית מתואמת אוטומטית בצד השרת:
+
+`WcfServiceLibrary1/WcfServiceLibrary1/Service1.cs:222-250`:
+
+```csharp
+public void MarkInvoicePaid(int id, DateTime paidDate)
+{
+    invDB.MarkPaid(id, paidDate);
+
+    // אם החשבונית קושרה לחוזה, עדכן את החוזה ל-Fulfilled
+    var inv = invDB.GetById(id);
+    if (inv != null && inv.ContractId.HasValue && inv.ContractId.Value > 0)
+    {
+        var c = contractDB.GetById(inv.ContractId.Value);
+        if (c != null && c.Status != "Fulfilled" && c.Status != "Cancelled")
+        {
+            contractDB.SetStatus(c.Id, "Fulfilled", c.SignedDate);
+        }
+    }
+}
+```
+
+ב-WPF נוסף בעמוד `Contracts.xaml` כפתור חדש "🧾 Invoice this contract" שזמין רק לחוזים בסטטוס Signed. לחיצה עליו יוצרת חשבונית Draft עם הלקוח והמטבע מהחוזה, ושורה ראשונית עם הסכום והכותרת מהחוזה. ברגע שהחשבונית הזו מסומנת Paid, החוזה הופך אוטומטית ל-Fulfilled. ב-Web הכפתור היה קיים מקודם.
+
+`Contracts.xaml.cs:InvoiceContract_Click`:
+
+```csharp
+double vatRate = (LogIn.sign != null && LogIn.sign.IsPatur) ? 0.0 : 0.18;
+int newId = ServiceGateway.Use(c => c.CreateInvoice(new Invoice {
+    CustomerId = Selected.CustomerId,
+    DueDate    = DateTime.Today.AddDays(30),
+    Currency   = Selected.Currency,
+    VatRate    = vatRate,
+    ContractId = Selected.Id,        // קישור לחוזה
+}));
+ServiceGateway.Use(c => c.AddInvoiceLine(new InvoiceLine {
+    InvoiceId = newId,
+    Description = Selected.Title,
+    Quantity = 1,
+    UnitPrice = Selected.TotalAmount,
+    LineTotal = Selected.TotalAmount,
+}));
+```
+
+הסטטוס "Fulfilled" התווסף לרשימת הסטטוסים של חוזים. ה-pill ב-UI צבוע ב-mint וכתוב "הושלם (שולם)".
+
+## 27.7 פולינג עקבי
+
+`BManagedClient/BManagedClient/ClientHome.xaml.cs:27` — שונה מ-30 שניות ל-15 שניות, כדי להתאים ל-EmployeeHome.xaml.cs (שם זה כבר היה 15). UX אחיד בין כל שלוש הרמות.
+
+---
+
+# 28. סיכום השינויים — ספירת קוד עדכנית
+
+| מדד | לפני העדכון | אחרי עדכון 2026 |
+|-------|----------------|---------------------|
+| פעולות WCF | 50 | **70** |
+| טבלאות Access | 13 | **15** (הוספו Loans, LoanPayments) |
+| דפי UI | 33 | **35+** (הוסף /Owner/Loans + עדכוני SignUp) |
+| מודלי DataContract | 11 | **15** (הוספו Loan, LoanPayment, LoanSummary, AnalyticsKpis) |
+| חוקי ולידציה ב-SignUp | 3 | **6** (Username regex, Password 8+letter+digit, Password ≠ Username, Email, Phone, BusinessType-aware) |
+| מצבי Status של Contract | Draft / Sent / Signed / Cancelled | + **Fulfilled** |
+
+---
+
+**סוף הספר.** סך הכל **70 פעולות WCF**, **15 טבלאות**, **35+ דפי UI** (15 WPF + 20+ Web), **5 דו״חות** (כולל KPIs ו-Loan Summary), 2 לקוחות, 2 שפות, 2 מטבעות. עדכון 2026 הוסיף תמיכה ב-VAT 18%, מודל עוסק תקין (Patur/Murshe + IsZair), הלוואות עסקיות (כולל קרן בערבות מדינה), אנליטיקה מתקדמת (Aging/Payment Lag/Concentration/Runway), ושיפורי UX משמעותיים.

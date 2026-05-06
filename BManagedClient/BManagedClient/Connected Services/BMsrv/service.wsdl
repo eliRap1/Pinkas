@@ -98,6 +98,12 @@
   <wsdl:message name="IService1_SetBusinessType_OutputMessage">
     <wsdl:part name="parameters" element="tns:SetBusinessTypeResponse" />
   </wsdl:message>
+  <wsdl:message name="IService1_SetIsZair_InputMessage">
+    <wsdl:part name="parameters" element="tns:SetIsZair" />
+  </wsdl:message>
+  <wsdl:message name="IService1_SetIsZair_OutputMessage">
+    <wsdl:part name="parameters" element="tns:SetIsZairResponse" />
+  </wsdl:message>
   <wsdl:message name="IService1_AddCustomer_InputMessage">
     <wsdl:part name="parameters" element="tns:AddCustomer" />
   </wsdl:message>
@@ -410,6 +416,60 @@
   <wsdl:message name="IService1_GetCashFlowForecast_OutputMessage">
     <wsdl:part name="parameters" element="tns:GetCashFlowForecastResponse" />
   </wsdl:message>
+  <wsdl:message name="IService1_GetAdvancedKpis_InputMessage">
+    <wsdl:part name="parameters" element="tns:GetAdvancedKpis" />
+  </wsdl:message>
+  <wsdl:message name="IService1_GetAdvancedKpis_OutputMessage">
+    <wsdl:part name="parameters" element="tns:GetAdvancedKpisResponse" />
+  </wsdl:message>
+  <wsdl:message name="IService1_AddLoan_InputMessage">
+    <wsdl:part name="parameters" element="tns:AddLoan" />
+  </wsdl:message>
+  <wsdl:message name="IService1_AddLoan_OutputMessage">
+    <wsdl:part name="parameters" element="tns:AddLoanResponse" />
+  </wsdl:message>
+  <wsdl:message name="IService1_UpdateLoan_InputMessage">
+    <wsdl:part name="parameters" element="tns:UpdateLoan" />
+  </wsdl:message>
+  <wsdl:message name="IService1_UpdateLoan_OutputMessage">
+    <wsdl:part name="parameters" element="tns:UpdateLoanResponse" />
+  </wsdl:message>
+  <wsdl:message name="IService1_DeleteLoan_InputMessage">
+    <wsdl:part name="parameters" element="tns:DeleteLoan" />
+  </wsdl:message>
+  <wsdl:message name="IService1_DeleteLoan_OutputMessage">
+    <wsdl:part name="parameters" element="tns:DeleteLoanResponse" />
+  </wsdl:message>
+  <wsdl:message name="IService1_GetLoanById_InputMessage">
+    <wsdl:part name="parameters" element="tns:GetLoanById" />
+  </wsdl:message>
+  <wsdl:message name="IService1_GetLoanById_OutputMessage">
+    <wsdl:part name="parameters" element="tns:GetLoanByIdResponse" />
+  </wsdl:message>
+  <wsdl:message name="IService1_GetLoansForOwner_InputMessage">
+    <wsdl:part name="parameters" element="tns:GetLoansForOwner" />
+  </wsdl:message>
+  <wsdl:message name="IService1_GetLoansForOwner_OutputMessage">
+    <wsdl:part name="parameters" element="tns:GetLoansForOwnerResponse" />
+  </wsdl:message>
+  <wsdl:message name="IService1_RecordLoanPayment_InputMessage">
+    <wsdl:part name="parameters" element="tns:RecordLoanPayment" />
+  </wsdl:message>
+  <wsdl:message name="IService1_RecordLoanPayment_OutputMessage">
+    <wsdl:part name="parameters" element="tns:RecordLoanPaymentResponse" />
+  </wsdl:message>
+  <wsdl:message name="IService1_GetLoanPayments_InputMessage">
+    <wsdl:part name="parameters" element="tns:GetLoanPayments" />
+  </wsdl:message>
+  <wsdl:message name="IService1_GetLoanPayments_OutputMessage">
+    <wsdl:part name="parameters" element="tns:GetLoanPaymentsResponse" />
+  </wsdl:message>
+  <wsdl:message name="IService1_GetLoanSummary_InputMessage">
+    <wsdl:part name="parameters" element="tns:GetLoanSummary" />
+  </wsdl:message>
+  <wsdl:message name="IService1_GetLoanSummary_OutputMessage">
+    <wsdl:part name="parameters" element="tns:GetLoanSummaryResponse" />
+  </wsdl:message>
   <wsdl:message name="IService1_EnsureOverdueNotifications_InputMessage">
     <wsdl:part name="parameters" element="tns:EnsureOverdueNotifications" />
   </wsdl:message>
@@ -530,6 +590,10 @@
     <wsdl:operation name="SetBusinessType">
       <wsdl:input wsaw:Action="http://tempuri.org/IService1/SetBusinessType" message="tns:IService1_SetBusinessType_InputMessage" />
       <wsdl:output wsaw:Action="http://tempuri.org/IService1/SetBusinessTypeResponse" message="tns:IService1_SetBusinessType_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="SetIsZair">
+      <wsdl:input wsaw:Action="http://tempuri.org/IService1/SetIsZair" message="tns:IService1_SetIsZair_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IService1/SetIsZairResponse" message="tns:IService1_SetIsZair_OutputMessage" />
     </wsdl:operation>
     <wsdl:operation name="AddCustomer">
       <wsdl:input wsaw:Action="http://tempuri.org/IService1/AddCustomer" message="tns:IService1_AddCustomer_InputMessage" />
@@ -739,6 +803,42 @@
       <wsdl:input wsaw:Action="http://tempuri.org/IService1/GetCashFlowForecast" message="tns:IService1_GetCashFlowForecast_InputMessage" />
       <wsdl:output wsaw:Action="http://tempuri.org/IService1/GetCashFlowForecastResponse" message="tns:IService1_GetCashFlowForecast_OutputMessage" />
     </wsdl:operation>
+    <wsdl:operation name="GetAdvancedKpis">
+      <wsdl:input wsaw:Action="http://tempuri.org/IService1/GetAdvancedKpis" message="tns:IService1_GetAdvancedKpis_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IService1/GetAdvancedKpisResponse" message="tns:IService1_GetAdvancedKpis_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="AddLoan">
+      <wsdl:input wsaw:Action="http://tempuri.org/IService1/AddLoan" message="tns:IService1_AddLoan_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IService1/AddLoanResponse" message="tns:IService1_AddLoan_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="UpdateLoan">
+      <wsdl:input wsaw:Action="http://tempuri.org/IService1/UpdateLoan" message="tns:IService1_UpdateLoan_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IService1/UpdateLoanResponse" message="tns:IService1_UpdateLoan_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="DeleteLoan">
+      <wsdl:input wsaw:Action="http://tempuri.org/IService1/DeleteLoan" message="tns:IService1_DeleteLoan_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IService1/DeleteLoanResponse" message="tns:IService1_DeleteLoan_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="GetLoanById">
+      <wsdl:input wsaw:Action="http://tempuri.org/IService1/GetLoanById" message="tns:IService1_GetLoanById_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IService1/GetLoanByIdResponse" message="tns:IService1_GetLoanById_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="GetLoansForOwner">
+      <wsdl:input wsaw:Action="http://tempuri.org/IService1/GetLoansForOwner" message="tns:IService1_GetLoansForOwner_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IService1/GetLoansForOwnerResponse" message="tns:IService1_GetLoansForOwner_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="RecordLoanPayment">
+      <wsdl:input wsaw:Action="http://tempuri.org/IService1/RecordLoanPayment" message="tns:IService1_RecordLoanPayment_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IService1/RecordLoanPaymentResponse" message="tns:IService1_RecordLoanPayment_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="GetLoanPayments">
+      <wsdl:input wsaw:Action="http://tempuri.org/IService1/GetLoanPayments" message="tns:IService1_GetLoanPayments_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IService1/GetLoanPaymentsResponse" message="tns:IService1_GetLoanPayments_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="GetLoanSummary">
+      <wsdl:input wsaw:Action="http://tempuri.org/IService1/GetLoanSummary" message="tns:IService1_GetLoanSummary_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IService1/GetLoanSummaryResponse" message="tns:IService1_GetLoanSummary_OutputMessage" />
+    </wsdl:operation>
     <wsdl:operation name="EnsureOverdueNotifications">
       <wsdl:input wsaw:Action="http://tempuri.org/IService1/EnsureOverdueNotifications" message="tns:IService1_EnsureOverdueNotifications_InputMessage" />
       <wsdl:output wsaw:Action="http://tempuri.org/IService1/EnsureOverdueNotificationsResponse" message="tns:IService1_EnsureOverdueNotifications_OutputMessage" />
@@ -910,6 +1010,15 @@
     </wsdl:operation>
     <wsdl:operation name="SetBusinessType">
       <soap:operation soapAction="http://tempuri.org/IService1/SetBusinessType" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="SetIsZair">
+      <soap:operation soapAction="http://tempuri.org/IService1/SetIsZair" style="document" />
       <wsdl:input>
         <soap:body use="literal" />
       </wsdl:input>
@@ -1378,6 +1487,87 @@
     </wsdl:operation>
     <wsdl:operation name="GetCashFlowForecast">
       <soap:operation soapAction="http://tempuri.org/IService1/GetCashFlowForecast" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetAdvancedKpis">
+      <soap:operation soapAction="http://tempuri.org/IService1/GetAdvancedKpis" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="AddLoan">
+      <soap:operation soapAction="http://tempuri.org/IService1/AddLoan" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="UpdateLoan">
+      <soap:operation soapAction="http://tempuri.org/IService1/UpdateLoan" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="DeleteLoan">
+      <soap:operation soapAction="http://tempuri.org/IService1/DeleteLoan" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetLoanById">
+      <soap:operation soapAction="http://tempuri.org/IService1/GetLoanById" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetLoansForOwner">
+      <soap:operation soapAction="http://tempuri.org/IService1/GetLoansForOwner" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="RecordLoanPayment">
+      <soap:operation soapAction="http://tempuri.org/IService1/RecordLoanPayment" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetLoanPayments">
+      <soap:operation soapAction="http://tempuri.org/IService1/GetLoanPayments" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetLoanSummary">
+      <soap:operation soapAction="http://tempuri.org/IService1/GetLoanSummary" style="document" />
       <wsdl:input>
         <soap:body use="literal" />
       </wsdl:input>

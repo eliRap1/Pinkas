@@ -3,137 +3,214 @@
 @{ ViewData["Title"] = "Create account"; }
 
 <section class="reveal min-h-[80dvh] grid place-items-center">
-    <div class="w-full max-w-md">
+    <div class="w-full max-w-xl">
         <div class="flex justify-center mb-6">
             <span class="pill rounded-full px-3 py-1 bg-black/5 border border-black/5">@L.T(HttpContext,"New here","חדש כאן")</span>
         </div>
         <h1 class="display text-5xl md:text-6xl font-bold text-center text-ink mb-2">@L.T(HttpContext,"Create account","צור חשבון")</h1>
-        <p class="text-center text-ink/50 mb-12">@L.T(HttpContext,"Self-register as a Client. Owner approves later.","הרשם כלקוח. הבעלים יאשר אחר כך.")</p>
+        <p id="subtitle" class="text-center text-ink/50 mb-10">@L.T(HttpContext,"Pick the role that fits you.","בחר את התפקיד שמתאים לך.")</p>
 
-        <div class="bg-black/[0.04] ring-1 ring-black/5 rounded-shell p-1.5 shadow-float">
-            <div class="bg-paper-50 rounded-core shadow-inset p-8">
-                <form method="post" class="space-y-4">
-                    <div>
-                        <label class="pill text-ink/40 mb-2 block">@L.T(HttpContext,"Username","שם משתמש")</label>
-                        <input asp-for="Username" autocomplete="username"
-                               minlength="4" maxlength="20" pattern="[A-Za-z0-9_.]{4,20}"
-                               required
-                               class="w-full bg-paper-100/60 border border-black/5 rounded-2xl px-4 py-3 outline-none focus:border-accent transition" />
-                        <p class="text-xs text-ink/40 mt-1">@L.T(HttpContext,"4–20 letters, digits, _ or .","4–20 אותיות, ספרות, _ או .")</p>
+        @* Step 1: role picker *@
+        <div id="roleStep" class="grid md:grid-cols-2 gap-4 @(Model.SelectedRole == "" ? "" : "hidden")">
+            <button type="button" onclick="pickRole('Owner')"
+                    class="text-left bg-black/[0.04] ring-1 ring-black/5 rounded-shell p-1.5 hover:shadow-float transition-all duration-500 ease-spring">
+                <div class="bg-paper-50 rounded-core p-6 shadow-inset h-full">
+                    <div class="text-3xl mb-3">🏢</div>
+                    <div class="display text-2xl font-bold mb-2">@L.T(HttpContext,"Owner — I run a business","בעלים — אני מנהל עסק")</div>
+                    <p class="text-sm text-ink/60">
+                        @L.T(HttpContext,
+                            "Manage customers, projects, invoices, expenses and VAT. Pick Osek Patur or Murshe.",
+                            "ניהול לקוחות, פרויקטים, חשבוניות, הוצאות ומע״מ. בחר עוסק פטור או מורשה.")
+                    </p>
+                    <div class="mt-3 inline-flex items-center gap-2 bg-mint text-white rounded-full px-4 py-1.5 text-sm">
+                        @L.T(HttpContext,"Continue as Owner","המשך כבעלים") →
                     </div>
-                    <div>
-                        <label class="pill text-ink/40 mb-2 block">@L.T(HttpContext,"Password","סיסמה")</label>
-                        <input asp-for="Password" type="password" autocomplete="new-password"
-                               id="pwField" minlength="8" required
-                               class="w-full bg-paper-100/60 border border-black/5 rounded-2xl px-4 py-3 outline-none focus:border-accent transition" />
-                        <p class="text-xs text-ink/40 mt-1">@L.T(HttpContext,"8+ chars, at least one letter and one digit.","8+ תווים, לפחות אות אחת וספרה אחת.")</p>
-                        <div id="pwHint" class="mt-1 text-xs space-y-0.5">
-                            <div data-rule="len"   class="text-ink/40">• @L.T(HttpContext,"At least 8 characters","לפחות 8 תווים")</div>
-                            <div data-rule="alpha" class="text-ink/40">• @L.T(HttpContext,"Contains a letter","מכילה אות")</div>
-                            <div data-rule="num"   class="text-ink/40">• @L.T(HttpContext,"Contains a digit","מכילה ספרה")</div>
+                </div>
+            </button>
+            <button type="button" onclick="pickRole('Employee')"
+                    class="text-left bg-black/[0.04] ring-1 ring-black/5 rounded-shell p-1.5 hover:shadow-float transition-all duration-500 ease-spring">
+                <div class="bg-paper-50 rounded-core p-6 shadow-inset h-full">
+                    <div class="text-3xl mb-3">👤</div>
+                    <div class="display text-2xl font-bold mb-2">@L.T(HttpContext,"Employee — I work on assigned projects","עובד — אני עובד על פרויקטים")</div>
+                    <p class="text-sm text-ink/60">
+                        @L.T(HttpContext,
+                            "Pick the company you work for, log expenses, see your tasks. Owner approves before activation.",
+                            "בחר את החברה שאתה עובד בה, דווח הוצאות, ראה משימות. הבעלים מאשר לפני הפעלה.")
+                    </p>
+                    <div class="mt-3 inline-flex items-center gap-2 bg-ink text-paper-50 rounded-full px-4 py-1.5 text-sm">
+                        @L.T(HttpContext,"Continue as Employee","המשך כעובד") →
+                    </div>
+                </div>
+            </button>
+            <p class="md:col-span-2 text-center text-xs text-ink/40 mt-2">
+                @L.T(HttpContext,"Already have an account?","יש לך חשבון?")
+                <a asp-page="/Login" class="text-accent hover:underline">@L.T(HttpContext,"Sign in","כניסה")</a>
+            </p>
+        </div>
+
+        @* Step 2: form *@
+        <div id="formStep" class="@(Model.SelectedRole == "" ? "hidden" : "")">
+            <div class="bg-black/[0.04] ring-1 ring-black/5 rounded-shell p-1.5 shadow-float">
+                <div class="bg-paper-50 rounded-core shadow-inset p-8">
+                    <form method="post" class="space-y-4">
+                        <input asp-for="SelectedRole" type="hidden" id="selectedRoleHidden" value="@Model.SelectedRole"/>
+
+                        <div class="flex items-center justify-between">
+                            <span id="roleBadge" class="pill rounded-full px-3 py-1 bg-mint/10 text-mint border border-mint/20 text-xs">@(Model.SelectedRole == "Owner" ? "OWNER" : "EMPLOYEE")</span>
+                            <button type="button" onclick="goBackToRole()" class="text-xs text-ink/50 hover:underline">← @L.T(HttpContext,"Change role","שנה תפקיד")</button>
                         </div>
-                    </div>
-                    <div>
-                        <label class="pill text-ink/40 mb-2 block">@L.T(HttpContext,"Email","אימייל")</label>
-                        <input asp-for="Email" type="email" autocomplete="email" required
-                               class="w-full bg-paper-100/60 border border-black/5 rounded-2xl px-4 py-3 outline-none focus:border-accent transition" />
-                    </div>
-                    <div>
-                        <label class="pill text-ink/40 mb-2 block">@L.T(HttpContext,"Phone","טלפון")</label>
-                        <input asp-for="Phone" type="tel" autocomplete="tel" required
-                               pattern="\+?\d{7,15}"
-                               class="w-full bg-paper-100/60 border border-black/5 rounded-2xl px-4 py-3 outline-none focus:border-accent transition" />
-                        <p class="text-xs text-ink/40 mt-1">@L.T(HttpContext,"7–15 digits, optional + country code.","7–15 ספרות, ניתן להוסיף + לקידומת מדינה.")</p>
-                    </div>
 
-                    <script>
-                      (function () {
-                        var pw = document.getElementById('pwField');
-                        var hint = document.getElementById('pwHint');
-                        if (!pw || !hint) return;
-                        function tick(sel, ok) {
-                          var el = hint.querySelector('[data-rule="' + sel + '"]');
-                          if (!el) return;
-                          el.classList.toggle('text-mint', !!ok);
-                          el.classList.toggle('text-ink/40', !ok);
-                        }
-                        pw.addEventListener('input', function () {
-                          var v = pw.value || '';
-                          tick('len',   v.length >= 8);
-                          tick('alpha', /[A-Za-z]/.test(v));
-                          tick('num',   /\d/.test(v));
-                        });
-                      })();
-                    </script>
-                    <div>
-                        <label class="pill text-ink/40 mb-2 block">@L.T(HttpContext,"Account type","סוג חשבון")</label>
-                        <select asp-for="BusinessType" id="bizSelect"
-                                class="w-full bg-paper-100/60 border border-black/5 rounded-2xl px-4 py-3 outline-none focus:border-accent transition">
-                            <option value="Individual">@L.T(HttpContext,"Individual / Client (no VAT filing)","יחיד / לקוח (ללא דיווח מע״מ)")</option>
-                            <option value="Patur">@L.T(HttpContext,"Osek Patur (VAT-exempt, ≤120k ₪/yr)","עוסק פטור (ללא מע״מ, עד 120k ₪/שנה)")</option>
-                            <option value="Murshe">@L.T(HttpContext,"Osek Murshe (regular 18% VAT)","עוסק מורשה (מע״מ 18%)")</option>
-                        </select>
-                        <p class="text-xs text-ink/40 mt-2">
-                            @L.T(HttpContext,"Patur invoices issue without 18% VAT. Murshe collects VAT on every sale (Form 836/874).",
-                                              "עוסק פטור מנפיק חשבוניות ללא 18% מע״מ. עוסק מורשה גובה מע״מ על כל עסקה (טופס 836/874).")
-                        </p>
-                    </div>
+                        <div>
+                            <label class="pill text-ink/40 mb-2 block">@L.T(HttpContext,"Username","שם משתמש")</label>
+                            <input asp-for="Username" autocomplete="username"
+                                   minlength="4" maxlength="20" pattern="[A-Za-z0-9_.]{4,20}" required
+                                   class="w-full bg-paper-100/60 border border-black/5 rounded-2xl px-4 py-3 outline-none focus:border-accent transition" />
+                            <p class="text-xs text-ink/40 mt-1">@L.T(HttpContext,"4–20 letters, digits, _ or .","4–20 אותיות, ספרות, _ או .")</p>
+                        </div>
+                        <div>
+                            <label class="pill text-ink/40 mb-2 block">@L.T(HttpContext,"Password","סיסמה")</label>
+                            <input asp-for="Password" type="password" autocomplete="new-password"
+                                   id="pwField" minlength="8" required
+                                   class="w-full bg-paper-100/60 border border-black/5 rounded-2xl px-4 py-3 outline-none focus:border-accent transition" />
+                            <div id="pwHint" class="mt-1 text-xs space-y-0.5">
+                                <div data-rule="len"   class="text-ink/40">• @L.T(HttpContext,"At least 8 characters","לפחות 8 תווים")</div>
+                                <div data-rule="alpha" class="text-ink/40">• @L.T(HttpContext,"Contains a letter","מכילה אות")</div>
+                                <div data-rule="num"   class="text-ink/40">• @L.T(HttpContext,"Contains a digit","מכילה ספרה")</div>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="pill text-ink/40 mb-2 block">@L.T(HttpContext,"Email","אימייל")</label>
+                            <input asp-for="Email" type="email" autocomplete="email" required
+                                   class="w-full bg-paper-100/60 border border-black/5 rounded-2xl px-4 py-3 outline-none focus:border-accent transition" />
+                        </div>
+                        <div>
+                            <label class="pill text-ink/40 mb-2 block">@L.T(HttpContext,"Phone","טלפון")</label>
+                            <input asp-for="Phone" type="tel" autocomplete="tel" required pattern="\+?\d{7,15}"
+                                   class="w-full bg-paper-100/60 border border-black/5 rounded-2xl px-4 py-3 outline-none focus:border-accent transition" />
+                            <p class="text-xs text-ink/40 mt-1">@L.T(HttpContext,"7–15 digits, optional + country code.","7–15 ספרות, ניתן להוסיף + לקידומת מדינה.")</p>
+                        </div>
 
-                    <div id="zairWrap" class="hidden">
-                        <label class="flex items-start gap-3 select-none cursor-pointer bg-paper-100/40 border border-black/5 rounded-2xl px-4 py-3">
-                            <input asp-for="IsZair" type="checkbox" class="mt-1 accent-ink"/>
-                            <span class="block">
-                                <span class="block font-semibold text-ink">@L.T(HttpContext,"Claim Osek Zair income-tax status","סטטוס עוסק זעיר במס הכנסה")</span>
-                                <span class="block text-xs text-ink/50 mt-1">
-                                    @L.T(HttpContext,"Available if annual revenue ≤ ~122,833 ₪. Income tax is computed on 70% of revenue (flat 30% deemed-expenses, no receipts). Independent of VAT type.",
-                                                      "זמין אם מחזור שנתי עד ~122,833 ₪. מס הכנסה מחושב על 70% מהמחזור (ניכוי הוצאות אוטומטי 30%, ללא קבלות). אינו משפיע על מעמד מע״מ.")
+                        @* Owner-only fields *@
+                        <div id="ownerOnly" class="space-y-4 @(Model.SelectedRole == "Owner" ? "" : "hidden")">
+                            <div>
+                                <label class="pill text-ink/40 mb-2 block">@L.T(HttpContext,"VAT registration","רישום מע״מ")</label>
+                                <select asp-for="BusinessType" id="bizSelect"
+                                        class="w-full bg-paper-100/60 border border-black/5 rounded-2xl px-4 py-3 outline-none focus:border-accent transition">
+                                    <option value="Patur">@L.T(HttpContext,"Osek Patur (VAT-exempt, ≤120k ₪/yr)","עוסק פטור (ללא מע״מ, עד 120k ₪/שנה)")</option>
+                                    <option value="Murshe">@L.T(HttpContext,"Osek Murshe (regular 18% VAT)","עוסק מורשה (מע״מ 18%)")</option>
+                                </select>
+                                <p class="text-xs text-ink/40 mt-2">
+                                    @L.T(HttpContext,"Patur invoices issue without 18% VAT. Murshe collects VAT on every sale (Form 836/874).",
+                                                      "עוסק פטור מנפיק חשבוניות ללא 18% מע״מ. עוסק מורשה גובה מע״מ על כל עסקה (טופס 836/874).")
+                                </p>
+                            </div>
+                            <label class="flex items-start gap-3 select-none cursor-pointer bg-paper-100/40 border border-black/5 rounded-2xl px-4 py-3">
+                                <input asp-for="IsZair" type="checkbox" class="mt-1 accent-ink"/>
+                                <span class="block">
+                                    <span class="block font-semibold text-ink">@L.T(HttpContext,"Claim Osek Zair income-tax status","סטטוס עוסק זעיר במס הכנסה")</span>
+                                    <span class="block text-xs text-ink/50 mt-1">
+                                        @L.T(HttpContext,"Available if annual revenue ≤ ~122,833 ₪. Income tax on 70% of revenue (flat 30% deemed-expenses).",
+                                                          "זמין אם מחזור שנתי עד ~122,833 ₪. מס הכנסה על 70% מהמחזור (ניכוי הוצאות אוטומטי 30%).")
+                                    </span>
                                 </span>
-                            </span>
-                        </label>
-                    </div>
+                            </label>
+                        </div>
 
-                    <script>
-                        (function () {
-                            var sel = document.getElementById('bizSelect');
-                            var wrap = document.getElementById('zairWrap');
-                            if (!sel || !wrap) return;
-                            function sync() {
-                                var v = sel.value;
-                                if (v === 'Patur' || v === 'Murshe') wrap.classList.remove('hidden');
-                                else wrap.classList.add('hidden');
+                        @* Employee-only field: pick the Owner / company *@
+                        <div id="employeeOnly" class="@(Model.SelectedRole == "Employee" ? "" : "hidden")">
+                            <label class="pill text-ink/40 mb-2 block">@L.T(HttpContext,"Which company do you work for?","באיזו חברה אתה עובד?")</label>
+                            @if (Model.AvailableOwners.Count == 0)
+                            {
+                                <div class="bg-rose/10 text-rose border border-rose/20 rounded-2xl px-4 py-3 text-sm">
+                                    @L.T(HttpContext,"No active Owner accounts found. Ask the business owner to sign up first.",
+                                                      "לא נמצאו בעלים פעילים. בקש מהבעלים של העסק להירשם תחילה.")
+                                </div>
                             }
-                            sel.addEventListener('change', sync);
-                            sync();
-                        })();
-                    </script>
-                    <div>
-                        <label class="pill text-ink/40 mb-2 block">@L.T(HttpContext,"Preferred currency","מטבע מועדף")</label>
-                        <select asp-for="Currency"
-                                class="w-full bg-paper-100/60 border border-black/5 rounded-2xl px-4 py-3 outline-none focus:border-accent transition">
-                            <option>ILS</option>
-                            <option>USD</option>
-                        </select>
-                    </div>
+                            else
+                            {
+                                <select asp-for="OwnerId"
+                                        class="w-full bg-paper-100/60 border border-black/5 rounded-2xl px-4 py-3 outline-none focus:border-accent transition">
+                                    <option value="0">@L.T(HttpContext,"Pick your company…","בחר את החברה שלך…")</option>
+                                    @foreach (var o in Model.AvailableOwners)
+                                    { <option value="@o.Id">@o.Username</option> }
+                                </select>
+                                <p class="text-xs text-ink/40 mt-2">
+                                    @L.T(HttpContext,"This Owner will receive your sign-up request and approve your account before you can log in.",
+                                                      "הבעלים שתבחר יקבל בקשת הצטרפות ויאשר אותך לפני שתוכל להיכנס.")
+                                </p>
+                            }
+                        </div>
 
-                    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
-                    {
-                        <p class="text-rose text-sm">@Model.ErrorMessage</p>
-                    }
+                        <div>
+                            <label class="pill text-ink/40 mb-2 block">@L.T(HttpContext,"Preferred currency","מטבע מועדף")</label>
+                            <select asp-for="Currency"
+                                    class="w-full bg-paper-100/60 border border-black/5 rounded-2xl px-4 py-3 outline-none focus:border-accent transition">
+                                <option>ILS</option>
+                                <option>USD</option>
+                            </select>
+                        </div>
 
-                    <button type="submit"
-                            class="group w-full inline-flex items-center justify-center gap-3 bg-ink text-paper-50 rounded-full px-6 py-3 mt-2 transition-all duration-500 ease-spring active:scale-[0.98]">
-                        <span class="font-semibold">@L.T(HttpContext,"Create account","צור חשבון")</span>
-                        <span class="w-7 h-7 rounded-full bg-white/15 flex items-center justify-center group-hover:translate-x-0.5 transition-all duration-500 ease-spring">
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
-                        </span>
-                    </button>
-                </form>
+                        @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+                        {
+                            <p class="text-rose text-sm">@Model.ErrorMessage</p>
+                        }
 
-                <p class="text-center text-xs text-ink/40 mt-6">
-                    @L.T(HttpContext,"Already have an account?","יש לך חשבון?")
-                    <a asp-page="/Login" class="text-accent hover:underline">@L.T(HttpContext,"Sign in","כניסה")</a>
-                </p>
+                        <button type="submit"
+                                class="group w-full inline-flex items-center justify-center gap-3 bg-ink text-paper-50 rounded-full px-6 py-3 mt-2 transition-all duration-500 ease-spring active:scale-[0.98]">
+                            <span class="font-semibold">@L.T(HttpContext,"Create account","צור חשבון")</span>
+                            <span class="w-7 h-7 rounded-full bg-white/15 flex items-center justify-center group-hover:translate-x-0.5 transition-all duration-500 ease-spring">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+                            </span>
+                        </button>
+                    </form>
+                </div>
             </div>
+
+            <p class="text-center text-xs text-ink/40 mt-6">
+                @L.T(HttpContext,"Already have an account?","יש לך חשבון?")
+                <a asp-page="/Login" class="text-accent hover:underline">@L.T(HttpContext,"Sign in","כניסה")</a>
+            </p>
         </div>
     </div>
 </section>
+
+<script>
+    function pickRole(role) {
+        document.getElementById('selectedRoleHidden').value = role;
+        document.getElementById('roleBadge').textContent = role.toUpperCase();
+        document.getElementById('roleStep').classList.add('hidden');
+        document.getElementById('formStep').classList.remove('hidden');
+        var owner = document.getElementById('ownerOnly');
+        var emp   = document.getElementById('employeeOnly');
+        if (role === 'Owner') { owner.classList.remove('hidden'); emp.classList.add('hidden'); }
+        else                  { owner.classList.add('hidden');    emp.classList.remove('hidden'); }
+        document.getElementById('subtitle').textContent =
+            role === 'Owner'
+                ? @Html.Raw(Json.Serialize(L.T(HttpContext,"Run the business — track invoices, expenses, VAT.","נהל את העסק — חשבוניות, הוצאות, מע״מ.")))
+                : @Html.Raw(Json.Serialize(L.T(HttpContext,"Join a company and log your work.","הצטרף לחברה ודווח את העבודה שלך.")));
+    }
+    function goBackToRole() {
+        document.getElementById('selectedRoleHidden').value = '';
+        document.getElementById('roleStep').classList.remove('hidden');
+        document.getElementById('formStep').classList.add('hidden');
+        document.getElementById('subtitle').textContent =
+            @Html.Raw(Json.Serialize(L.T(HttpContext,"Pick the role that fits you.","בחר את התפקיד שמתאים לך.")));
+    }
+    (function () {
+        var pw = document.getElementById('pwField');
+        var hint = document.getElementById('pwHint');
+        if (!pw || !hint) return;
+        function tick(sel, ok) {
+            var el = hint.querySelector('[data-rule="' + sel + '"]');
+            if (!el) return;
+            el.classList.toggle('text-mint', !!ok);
+            el.classList.toggle('text-ink/40', !ok);
+        }
+        pw.addEventListener('input', function () {
+            var v = pw.value || '';
+            tick('len',   v.length >= 8);
+            tick('alpha', /[A-Za-z]/.test(v));
+            tick('num',   /\d/.test(v));
+        });
+    })();
+</script>

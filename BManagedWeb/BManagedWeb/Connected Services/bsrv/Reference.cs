@@ -31,6 +31,7 @@ namespace BManagedWeb.bsrv
         [DataMember] public string PreferredCurrency { get; set; }
         [DataMember] public string BusinessType { get; set; }
         [DataMember] public bool IsZair { get; set; }
+        [DataMember] public int? OwnerId { get; set; }
     }
 
     [DataContract(Namespace = "http://schemas.datacontract.org/2004/07/Model")]
@@ -304,6 +305,8 @@ namespace BManagedWeb.bsrv
         [OperationContract] void UpdateUserProfile(int userId, string email, string phone, string preferredCurrency);
         [OperationContract] void SetBusinessType(int userId, string businessType);
         [OperationContract] void SetIsZair(int userId, bool isZair);
+        [OperationContract] void SetOwnerId(int userId, int ownerId);
+        [OperationContract] User[] GetActiveOwners();
         [OperationContract] List<User> GetPendingUsers();
         [OperationContract] void SetUserActive(int userId, bool isActive);
         [OperationContract] void DeleteUser(int userId);
@@ -433,6 +436,8 @@ namespace BManagedWeb.bsrv
         public void UpdateUserProfile(int id, string e, string p, string c) => Channel.UpdateUserProfile(id, e, p, c);
         public void SetBusinessType(int id, string b) => Channel.SetBusinessType(id, b);
         public void SetIsZair(int id, bool z) => Channel.SetIsZair(id, z);
+        public void SetOwnerId(int id, int oid) => Channel.SetOwnerId(id, oid);
+        public User[] GetActiveOwners() => Channel.GetActiveOwners();
         public List<User> GetPendingUsers() => Channel.GetPendingUsers();
         public void SetUserActive(int id, bool a) => Channel.SetUserActive(id, a);
         public void DeleteUser(int id) => Channel.DeleteUser(id);

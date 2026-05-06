@@ -8,6 +8,7 @@
           <xs:element minOccurs="0" name="CreatedAt" type="xs:dateTime" />
           <xs:element minOccurs="0" name="Email" nillable="true" type="xs:string" />
           <xs:element minOccurs="0" name="IsActive" type="xs:boolean" />
+          <xs:element minOccurs="0" name="IsZair" type="xs:boolean" />
           <xs:element minOccurs="0" name="PasswordHash" nillable="true" type="xs:string" />
           <xs:element minOccurs="0" name="Phone" nillable="true" type="xs:string" />
           <xs:element minOccurs="0" name="PreferredCurrency" nillable="true" type="xs:string" />
@@ -278,6 +279,92 @@
     </xs:sequence>
   </xs:complexType>
   <xs:element name="ArrayOfProfitLoss" nillable="true" type="tns:ArrayOfProfitLoss" />
+  <xs:complexType name="AnalyticsKpis">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="ActiveCustomerCount" type="xs:int" />
+      <xs:element minOccurs="0" name="Aging1To30" type="xs:decimal" />
+      <xs:element minOccurs="0" name="Aging31To60" type="xs:decimal" />
+      <xs:element minOccurs="0" name="Aging61Plus" type="xs:decimal" />
+      <xs:element minOccurs="0" name="AgingCurrent" type="xs:decimal" />
+      <xs:element minOccurs="0" name="AvgDaysToPayment" type="xs:double" />
+      <xs:element minOccurs="0" name="AvgMonthlyExpenses" type="xs:decimal" />
+      <xs:element minOccurs="0" name="AvgMonthlyIncome" type="xs:decimal" />
+      <xs:element minOccurs="0" name="AvgMonthlyProfit" type="xs:decimal" />
+      <xs:element minOccurs="0" name="DisplayCurrency" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="OnTimeRatePct" type="xs:double" />
+      <xs:element minOccurs="0" name="RunwayMonths" type="xs:double" />
+      <xs:element minOccurs="0" name="TopCustomerName" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="TopCustomerSharePct" type="xs:double" />
+      <xs:element minOccurs="0" name="TotalOutstanding" type="xs:decimal" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="AnalyticsKpis" nillable="true" type="tns:AnalyticsKpis" />
+  <xs:complexType name="Loan">
+    <xs:complexContent mixed="false">
+      <xs:extension base="tns:Base">
+        <xs:sequence>
+          <xs:element minOccurs="0" name="CreatedAt" type="xs:dateTime" />
+          <xs:element minOccurs="0" name="Currency" nillable="true" type="xs:string" />
+          <xs:element minOccurs="0" name="InterestRatePct" type="xs:double" />
+          <xs:element minOccurs="0" name="IsActive" type="xs:boolean" />
+          <xs:element minOccurs="0" name="IsKerenBacked" type="xs:boolean" />
+          <xs:element minOccurs="0" name="Lender" nillable="true" type="xs:string" />
+          <xs:element minOccurs="0" name="MonthlyPayment" type="xs:decimal" />
+          <xs:element minOccurs="0" name="NextPaymentDate" nillable="true" type="xs:dateTime" />
+          <xs:element minOccurs="0" name="Notes" nillable="true" type="xs:string" />
+          <xs:element minOccurs="0" name="OwnerId" type="xs:int" />
+          <xs:element minOccurs="0" name="Principal" type="xs:decimal" />
+          <xs:element minOccurs="0" name="Purpose" nillable="true" type="xs:string" />
+          <xs:element minOccurs="0" name="RemainingBalance" type="xs:decimal" />
+          <xs:element minOccurs="0" name="StartDate" type="xs:dateTime" />
+          <xs:element minOccurs="0" name="TermMonths" type="xs:int" />
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:element name="Loan" nillable="true" type="tns:Loan" />
+  <xs:complexType name="ArrayOfLoan">
+    <xs:sequence>
+      <xs:element minOccurs="0" maxOccurs="unbounded" name="Loan" nillable="true" type="tns:Loan" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="ArrayOfLoan" nillable="true" type="tns:ArrayOfLoan" />
+  <xs:complexType name="LoanPayment">
+    <xs:complexContent mixed="false">
+      <xs:extension base="tns:Base">
+        <xs:sequence>
+          <xs:element minOccurs="0" name="Amount" type="xs:decimal" />
+          <xs:element minOccurs="0" name="InterestPortion" type="xs:decimal" />
+          <xs:element minOccurs="0" name="LoanId" type="xs:int" />
+          <xs:element minOccurs="0" name="Notes" nillable="true" type="xs:string" />
+          <xs:element minOccurs="0" name="PaidDate" type="xs:dateTime" />
+          <xs:element minOccurs="0" name="PrincipalPortion" type="xs:decimal" />
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:element name="LoanPayment" nillable="true" type="tns:LoanPayment" />
+  <xs:complexType name="ArrayOfLoanPayment">
+    <xs:sequence>
+      <xs:element minOccurs="0" maxOccurs="unbounded" name="LoanPayment" nillable="true" type="tns:LoanPayment" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="ArrayOfLoanPayment" nillable="true" type="tns:ArrayOfLoanPayment" />
+  <xs:complexType name="LoanSummary">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="DebtToAnnualIncomePct" type="xs:double" />
+      <xs:element minOccurs="0" name="DisplayCurrency" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="KerenBackedCount" type="xs:int" />
+      <xs:element minOccurs="0" name="LoanCount" type="xs:int" />
+      <xs:element minOccurs="0" name="MonthlyDebtServiceRatioPct" type="xs:double" />
+      <xs:element minOccurs="0" name="MonthlyPaymentTotal" type="xs:decimal" />
+      <xs:element minOccurs="0" name="NextPaymentAmount" type="xs:decimal" />
+      <xs:element minOccurs="0" name="NextPaymentDate" nillable="true" type="xs:dateTime" />
+      <xs:element minOccurs="0" name="TotalPrincipal" type="xs:decimal" />
+      <xs:element minOccurs="0" name="TotalRemaining" type="xs:decimal" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="LoanSummary" nillable="true" type="tns:LoanSummary" />
   <xs:complexType name="Notification">
     <xs:complexContent mixed="false">
       <xs:extension base="tns:Base">

@@ -29,11 +29,24 @@ namespace BManagedClient
             _selectedRole = role;
             roleStep.Visibility = Visibility.Collapsed;
             formStep.Visibility = Visibility.Visible;
-            ownerExtras.Visibility = role == "Owner" ? Visibility.Visible : Visibility.Collapsed;
+            ownerExtras.Visibility    = role == "Owner"    ? Visibility.Visible : Visibility.Collapsed;
+            employeeExtras.Visibility = role == "Employee" ? Visibility.Visible : Visibility.Collapsed;
             titleText.Text = role == "Owner" ? "Owner sign-up" : "Employee sign-up";
             subtitleText.Text = role == "Owner"
                 ? "Run the business — you'll log invoices, expenses, and VAT."
-                : "Work on assigned projects and log your expenses.";
+                : "Pick the company you work for. Owner approves before activation.";
+
+            if (role == "Employee" && ownerBox.ItemsSource == null)
+            {
+                try
+                {
+                    var owners = ServiceGateway.Use(c => c.GetActiveOwners());
+                    ownerBox.ItemsSource = owners;
+                    if (owners != null && owners.Length > 0) ownerBox.SelectedIndex = 0;
+                    else status.Text = "No active Owner accounts. Ask the business owner to sign up first.";
+                }
+                catch (Exception ex) { status.Text = "Failed to load companies: " + ex.Message; }
+            }
         }
 
         private void ResetSteps_Click(object s, RoutedEventArgs e)
@@ -73,10 +86,16 @@ namespace BManagedClient
 
             string bizType = "Individual";
             bool isZair = false;
+            int? employeeOwnerId = null;
             if (_selectedRole == "Owner")
             {
                 bizType = (bizBox.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "Patur";
                 isZair = zairBox.IsChecked == true;
+            }
+            else if (_selectedRole == "Employee")
+            {
+                if (ownerBox.SelectedValue is int oid && oid > 0) employeeOwnerId = oid;
+                else { status.Text = "Pick the company you work for."; return; }
             }
 
             try
@@ -96,6 +115,15 @@ namespace BManagedClient
                         if (isZair) ServiceGateway.Use(c => c.SetIsZair(newId, true));
                     }
                     catch { /* business-type set is best-effort; account exists either way */ }
+                }
+                else if (_selectedRole == "Employee" && employeeOwnerId.HasValue)
+                {
+                    try
+                    {
+                        int newId = ServiceGateway.Use(c => c.GetUserId(u));
+                        ServiceGateway.Use(c => c.SetOwnerId(newId, employeeOwnerId.Value));
+                    }
+                    catch { /* link is best-effort; Owner can fix in Manage Users */ }
                 }
 
                 string msg = _selectedRole == "Owner"

@@ -95,6 +95,15 @@
                                           Content="Claim Osek Zair income-tax status (≤122,833 ₪/yr, 30% deemed-expenses)"/>
                             </StackPanel>
 
+                            <!-- Employee-only: pick the company / owner -->
+                            <StackPanel x:Name="employeeExtras" Visibility="Collapsed">
+                                <TextBlock Text="WHICH COMPANY DO YOU WORK FOR?" Style="{StaticResource InputLabel}"/>
+                                <ComboBox x:Name="ownerBox" Style="{StaticResource ModernCombo}" Margin="0,0,0,8"
+                                          DisplayMemberPath="Username" SelectedValuePath="Id"/>
+                                <TextBlock Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,0,0,10"
+                                           Text="The Owner you select will receive your sign-up request and approve your account before you can sign in."/>
+                            </StackPanel>
+
                             <Button x:Name="submitBtn" Content="Create account" Click="Create_Click"
                                     Style="{StaticResource PrimaryButton}" Height="42"/>
                             <Button Content="← Back" Click="ResetSteps_Click" Style="{StaticResource GhostButton}" Margin="0,10,0,0"/>

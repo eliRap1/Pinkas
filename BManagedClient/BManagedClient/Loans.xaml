@@ -1,0 +1,219 @@
+<Page x:Class="BManagedClient.Loans"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      Title="Loans" Background="{StaticResource Bg}">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <Grid Margin="32,28">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Header -->
+            <Grid Grid.Row="0" Margin="0,0,0,20">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel>
+                    <Border Style="{StaticResource EyebrowPill}">
+                        <TextBlock Text="FINANCING — קרן" Style="{StaticResource Eyebrow}"/>
+                    </Border>
+                    <TextBlock Text="Loans." Style="{StaticResource DisplayLg}" Margin="0,10,0,0"/>
+                    <TextBlock Text="Principal (קרן), interest, monthly payment, and debt vs income."
+                               Style="{StaticResource Body}" Margin="0,4,0,0"/>
+                </StackPanel>
+                <Button Grid.Column="1" Content="← Back" Click="Back_Click" Style="{StaticResource SecondaryButton}"
+                        VerticalAlignment="Top"/>
+            </Grid>
+
+            <!-- KPI strip -->
+            <Grid Grid.Row="1" Margin="0,0,0,16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Border Grid.Column="0" Style="{StaticResource ShellCard}" Margin="0,0,4,0">
+                    <Border Style="{StaticResource CoreCard}" Padding="18">
+                        <StackPanel>
+                            <TextBlock Text="ACTIVE LOANS" Style="{StaticResource Eyebrow}"/>
+                            <TextBlock x:Name="kpiCount" Text="0" Style="{StaticResource Display}" FontSize="34" Margin="0,6,0,0"/>
+                            <TextBlock x:Name="kpiKeren" Style="{StaticResource Caption}" Margin="0,2,0,0"
+                                       Foreground="{StaticResource Mint}"/>
+                        </StackPanel>
+                    </Border>
+                </Border>
+                <Border Grid.Column="1" Style="{StaticResource ShellCard}" Margin="4,0">
+                    <Border Style="{StaticResource CoreCard}" Padding="18">
+                        <StackPanel>
+                            <TextBlock Text="OUTSTANDING (קרן נותרת)" Style="{StaticResource Eyebrow}"/>
+                            <TextBlock x:Name="kpiRemaining" Text="0" Style="{StaticResource Display}" FontSize="34" Margin="0,6,0,0"/>
+                            <TextBlock x:Name="kpiPrincipal" Style="{StaticResource Caption}" Margin="0,2,0,0"/>
+                        </StackPanel>
+                    </Border>
+                </Border>
+                <Border Grid.Column="2" Style="{StaticResource ShellCard}" Margin="4,0">
+                    <Border Style="{StaticResource CoreCard}" Padding="18">
+                        <StackPanel>
+                            <TextBlock Text="MONTHLY PAYMENT" Style="{StaticResource Eyebrow}"/>
+                            <TextBlock x:Name="kpiMonthly" Text="0" Style="{StaticResource Display}" FontSize="34"
+                                       Foreground="{StaticResource Amber}" Margin="0,6,0,0"/>
+                            <TextBlock x:Name="kpiNext" Style="{StaticResource Caption}" Margin="0,2,0,0"/>
+                        </StackPanel>
+                    </Border>
+                </Border>
+                <Border Grid.Column="3" Style="{StaticResource ShellCard}" Margin="4,0,0,0">
+                    <Border Style="{StaticResource DarkCoreCard}" Padding="18">
+                        <StackPanel>
+                            <TextBlock Text="DEBT vs ANNUAL INCOME" Style="{StaticResource Eyebrow}" Foreground="#88FFFFFF"/>
+                            <TextBlock x:Name="kpiDsr" Text="—" Style="{StaticResource Display}" FontSize="34"
+                                       Foreground="White" Margin="0,6,0,0"/>
+                            <TextBlock x:Name="kpiBurden" Style="{StaticResource Caption}" Foreground="#88FFFFFF" Margin="0,2,0,0"/>
+                        </StackPanel>
+                    </Border>
+                </Border>
+            </Grid>
+
+            <!-- Warning banner -->
+            <Border Grid.Row="2" x:Name="warningBox" Style="{StaticResource ShellCard}"
+                    Visibility="Collapsed" Margin="0,0,0,16">
+                <Border Style="{StaticResource CoreCard}" Padding="18">
+                    <TextBlock x:Name="warningText" TextWrapping="Wrap" Foreground="{StaticResource Rose}"/>
+                </Border>
+            </Border>
+
+            <!-- Add new loan -->
+            <Border Grid.Row="3" Style="{StaticResource ShellCard}" Margin="0,0,0,16">
+                <Border Style="{StaticResource CoreCard}" Padding="18">
+                    <StackPanel>
+                        <TextBlock Text="ADD A NEW LOAN" Style="{StaticResource Eyebrow}" Margin="0,0,0,12"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="LENDER (BANK / FUND)" Style="{StaticResource InputLabel}" Margin="0,0,8,4"/>
+                            <TextBlock Grid.Row="0" Grid.Column="1" Text="PRINCIPAL (קרן)"      Style="{StaticResource InputLabel}" Margin="8,0,8,4"/>
+                            <TextBlock Grid.Row="0" Grid.Column="2" Text="INTEREST RATE %"      Style="{StaticResource InputLabel}" Margin="8,0,0,4"/>
+                            <TextBox  Grid.Row="1" Grid.Column="0" x:Name="lenderBox" Style="{StaticResource ModernTextBox}" Margin="0,0,8,8"
+                                      ToolTip="e.g. Bank Hapoalim, Keren Shemesh"/>
+                            <TextBox  Grid.Row="1" Grid.Column="1" x:Name="principalBox" Style="{StaticResource ModernTextBox}" Margin="8,0,8,8" Text="0"/>
+                            <TextBox  Grid.Row="1" Grid.Column="2" x:Name="interestBox"  Style="{StaticResource ModernTextBox}" Margin="8,0,0,8" Text="0"/>
+
+                            <TextBlock Grid.Row="2" Grid.Column="0" Text="MONTHLY PAYMENT" Style="{StaticResource InputLabel}" Margin="0,0,8,4"/>
+                            <TextBlock Grid.Row="2" Grid.Column="1" Text="TERM (MONTHS)"   Style="{StaticResource InputLabel}" Margin="8,0,8,4"/>
+                            <TextBlock Grid.Row="2" Grid.Column="2" Text="START DATE"      Style="{StaticResource InputLabel}" Margin="8,0,0,4"/>
+                            <TextBox    Grid.Row="3" Grid.Column="0" x:Name="monthlyBox" Style="{StaticResource ModernTextBox}" Margin="0,0,8,8" Text="0"/>
+                            <TextBox    Grid.Row="3" Grid.Column="1" x:Name="termBox"    Style="{StaticResource ModernTextBox}" Margin="8,0,8,8" Text="60"/>
+                            <DatePicker Grid.Row="3" Grid.Column="2" x:Name="startBox"   Margin="8,0,0,8"/>
+
+                            <TextBlock Grid.Row="4" Grid.Column="0" Text="CURRENCY" Style="{StaticResource InputLabel}" Margin="0,0,8,4"/>
+                            <TextBlock Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="2" Text="PURPOSE"
+                                       Style="{StaticResource InputLabel}" Margin="8,0,0,4"/>
+                            <ComboBox Grid.Row="5" Grid.Column="0" x:Name="curBox" Style="{StaticResource ModernCombo}" Margin="0,0,8,8">
+                                <ComboBoxItem Content="ILS" IsSelected="True"/>
+                                <ComboBoxItem Content="USD"/>
+                            </ComboBox>
+                            <TextBox Grid.Row="5" Grid.Column="1" Grid.ColumnSpan="2" x:Name="purposeBox"
+                                     Style="{StaticResource ModernTextBox}" Margin="8,0,0,8"
+                                     ToolTip="e.g. equipment, working capital"/>
+
+                            <CheckBox Grid.Row="6" Grid.ColumnSpan="3" x:Name="kerenBox" Margin="0,4,0,8"
+                                      FontWeight="SemiBold" Foreground="{StaticResource Mint}"
+                                      Content="State-backed business fund (קרן הלוואות בערבות מדינה / קרן שמש / קרן קורת)"/>
+                        </Grid>
+
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                            <TextBlock x:Name="addStatus" Style="{StaticResource Caption}" Foreground="{StaticResource Rose}"
+                                       VerticalAlignment="Center" Margin="0,0,12,0"/>
+                            <Button Content="➕ Save loan" Click="SaveLoan_Click" Style="{StaticResource MintButton}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+            </Border>
+
+            <!-- Loans list + payment recorder -->
+            <Border Grid.Row="4" Style="{StaticResource ShellCard}">
+                <Border Style="{StaticResource CoreCard}" Padding="18">
+                    <StackPanel>
+                        <Grid Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="MY LOANS" Style="{StaticResource Eyebrow}"/>
+                            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                <Button Content="🗑 Delete selected" Click="Delete_Click" Style="{StaticResource RoseButton}"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <ListView x:Name="loansList" Background="Transparent" BorderThickness="0" Height="240"
+                                  SelectionMode="Single" SelectionChanged="Loan_Selected">
+                            <ListView.View>
+                                <GridView>
+                                    <GridViewColumn Header="Lender"      DisplayMemberBinding="{Binding Lender}"          Width="180"/>
+                                    <GridViewColumn Header="Principal"   DisplayMemberBinding="{Binding Principal,        StringFormat=N0}" Width="100"/>
+                                    <GridViewColumn Header="Remaining"   DisplayMemberBinding="{Binding RemainingBalance, StringFormat=N0}" Width="100"/>
+                                    <GridViewColumn Header="Rate %"      DisplayMemberBinding="{Binding InterestRatePct,  StringFormat=N2}" Width="70"/>
+                                    <GridViewColumn Header="Monthly"     DisplayMemberBinding="{Binding MonthlyPayment,   StringFormat=N0}" Width="90"/>
+                                    <GridViewColumn Header="Next"        DisplayMemberBinding="{Binding NextPaymentDate,  StringFormat=dd/MM/yyyy}" Width="100"/>
+                                    <GridViewColumn Header="Currency"    DisplayMemberBinding="{Binding Currency}"        Width="70"/>
+                                    <GridViewColumn Header="קרן (state)" DisplayMemberBinding="{Binding IsKerenBacked}"   Width="80"/>
+                                    <GridViewColumn Header="Active"      DisplayMemberBinding="{Binding IsActive}"        Width="60"/>
+                                </GridView>
+                            </ListView.View>
+                        </ListView>
+
+                        <!-- Payment recorder -->
+                        <Border Style="{StaticResource ShellCard}" Margin="0,16,0,0">
+                            <Border Style="{StaticResource CoreCard}" Padding="14">
+                                <StackPanel>
+                                    <TextBlock Text="RECORD A PAYMENT (FOR SELECTED LOAN)"
+                                               Style="{StaticResource Eyebrow}" Margin="0,0,0,8"/>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+                                        <TextBlock Grid.Row="0" Grid.Column="0" Text="DATE" Style="{StaticResource InputLabel}" Margin="0,0,6,4"/>
+                                        <TextBlock Grid.Row="0" Grid.Column="1" Text="AMOUNT" Style="{StaticResource InputLabel}" Margin="6,0,6,4"/>
+                                        <TextBlock Grid.Row="0" Grid.Column="2" Text="OF WHICH PRINCIPAL (קרן)" Style="{StaticResource InputLabel}" Margin="6,0,6,4"/>
+                                        <DatePicker Grid.Row="1" Grid.Column="0" x:Name="payDateBox" Margin="0,0,6,0"/>
+                                        <TextBox    Grid.Row="1" Grid.Column="1" x:Name="payAmountBox"    Style="{StaticResource ModernTextBox}" Margin="6,0,6,0" Text="0"/>
+                                        <TextBox    Grid.Row="1" Grid.Column="2" x:Name="payPrincipalBox" Style="{StaticResource ModernTextBox}" Margin="6,0,6,0" Text="0"
+                                                    ToolTip="The portion of the payment that reduces the principal (the rest is interest)."/>
+                                        <Button     Grid.Row="1" Grid.Column="3" Content="+ Record" Click="RecordPayment_Click"
+                                                    Style="{StaticResource PrimaryButton}"/>
+                                    </Grid>
+                                    <TextBlock x:Name="payStatus" Style="{StaticResource Caption}" Margin="0,8,0,0"/>
+                                </StackPanel>
+                            </Border>
+                        </Border>
+                    </StackPanel>
+                </Border>
+            </Border>
+        </Grid>
+    </ScrollViewer>
+</Page>

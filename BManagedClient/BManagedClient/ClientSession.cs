@@ -6,46 +6,71 @@ namespace BManagedClient
 {
     public static class ServiceGateway
     {
+        // Performance fix (May 2026): every action used to open + close a fresh
+        // Service1Client, paying TCP handshake + WCF channel-open overhead per
+        // call. Pages that call several SOAP ops back-to-back were burning
+        // hundreds of ms on plumbing alone. We now keep ONE long-lived client
+        // and only rebuild it if it faults.
+        private static Service1Client _shared;
+        private static readonly object _lock = new object();
+
+        private static Service1Client GetClient()
+        {
+            lock (_lock)
+            {
+                if (_shared == null
+                    || _shared.State == CommunicationState.Faulted
+                    || _shared.State == CommunicationState.Closed
+                    || _shared.State == CommunicationState.Closing)
+                {
+                    if (_shared != null)
+                    { try { _shared.Abort(); } catch { } _shared = null; }
+                    _shared = new Service1Client();
+                }
+                return _shared;
+            }
+        }
+
         public static T Use<T>(Func<Service1Client, T> action)
         {
-            var client = new Service1Client();
-            try
-            {
-                T result = action(client);
-                Close(client);
-                return result;
-            }
+            try { return action(GetClient()); }
             catch
             {
-                Abort(client);
+                // Force a rebuild on the next call so a transient channel fault
+                // doesn't permanently break the app.
+                lock (_lock)
+                {
+                    if (_shared != null) { try { _shared.Abort(); } catch { } }
+                    _shared = null;
+                }
                 throw;
             }
         }
 
         public static void Use(Action<Service1Client> action)
         {
-            Use(client =>
-            {
-                action(client);
-                return true;
-            });
+            Use(client => { action(client); return true; });
         }
 
-        private static void Close(Service1Client client)
+        // Optional: open the channel ahead of time so the first user-visible
+        // call doesn't pay the cold-start cost. Call this once after login.
+        public static void Warm()
         {
             try
             {
-                if (client.State != CommunicationState.Faulted)
-                    client.Close();
-                else
-                    client.Abort();
+                var c = GetClient();
+                if (c.State == CommunicationState.Created) c.Open();
             }
-            catch { client.Abort(); }
+            catch { /* best-effort */ }
         }
 
-        private static void Abort(Service1Client client)
+        public static void Reset()
         {
-            try { client.Abort(); } catch { }
+            lock (_lock)
+            {
+                if (_shared != null) { try { _shared.Abort(); } catch { } }
+                _shared = null;
+            }
         }
     }
 
