@@ -70,20 +70,22 @@ namespace BManagedWeb.Pages.Owner
                 }
                 catch { }
 
-                if (BusinessType == "Zair" || BusinessType == "Patur")
+                // Israeli tax reality (2025):
+                //   * VAT path is the only thing that differs between business types.
+                //   * Income tax always = (real income) − (real expenses), then progressive brackets.
+                //   * No 30 % presumptive deduction exists for Patur — that earlier rule was wrong.
+                //   * Zair / Patur do NOT collect VAT on sales and CANNOT deduct VAT on expenses,
+                //     so their gross figures already equal their net for income-tax purposes.
+                //   * Murshe collects + deducts VAT (filed separately on Form 836/874). Income
+                //     tax is on net-of-VAT amounts on both sides.
+                TaxableProfit = YearPl.Profit;
+                TaxNote = BusinessType switch
                 {
-                    TaxableProfit = YearPl.Income * 0.70m;
-                    TaxNote = "Osek " + (BusinessType == "Zair" ? "Zair" : "Patur") +
-                              " — 30 % presumptive expense deduction on income (independent of actual expenses). " +
-                              "Invoices issued without 17 % VAT. VAT on expenses cannot be deducted.";
-                }
-                else
-                {
-                    TaxableProfit = YearPl.Profit;
-                    TaxNote = BusinessType == "Murshe"
-                        ? "Osek Murshe — collects 17 % VAT on sales, deducts 17 % on qualifying expenses, taxable profit = real income − real expenses."
-                        : "Individual — taxable profit = income − expenses, no VAT filing.";
-                }
+                    "Patur"  => "Osek Patur — revenue < ~120k ₪/year. Issues invoices without 17 % VAT and cannot deduct VAT on expenses. Income tax = real income − real expenses, taxed at the progressive brackets shown below.",
+                    "Zair"   => "Osek Zair — small business < ~120k ₪/year, similar to Patur for VAT (none either way). Income tax = real income − real expenses; some professions may opt into a simplified track separately.",
+                    "Murshe" => "Osek Murshe — collects 17 % VAT on sales (filed on Form 836/874) and deducts 17 % on qualifying expenses. Income tax computed on net-of-VAT amounts both ways.",
+                    _        => "Individual — no VAT filing. Income tax = income − expenses at the progressive brackets shown below.",
+                };
 
                 YearTax = ComputeIsraeliIncomeTax(TaxableProfit);
                 YearNet = YearPl.Profit - YearTax;
