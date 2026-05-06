@@ -1,65 +1,104 @@
-"""Build the Hebrew project book .docx from the v6 markdown.
-Pure python-docx, no pandoc. Handles headings, tables, lists, code, paragraphs."""
+"""Build the Hebrew project book .docx from v6 markdown.
+Force RTL at every level: section, paragraph, run, table."""
 import re
 from docx import Document
 from docx.shared import Pt, RGBColor, Inches
 from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.enum.table import WD_TABLE_ALIGNMENT
 from docx.oxml.ns import qn
 from docx.oxml import OxmlElement
 
 SRC = r"D:\yudb\ספר_פרויקט_B_Managed_FINAL_v6.md"
-OUT = r"D:\yudb\ספר_פרויקט_B_Managed_FINAL_v6.docx"
+OUT = r"D:\yudb\ספר_פרויקט_B_Managed_FINAL_v6b.docx"
 
 doc = Document()
 
-# Set document defaults: RTL Hebrew, A4
+# A4
 section = doc.sections[0]
 section.page_height = Inches(11.69)
 section.page_width  = Inches(8.27)
 section.left_margin = section.right_margin = Inches(0.8)
 section.top_margin  = section.bottom_margin = Inches(0.8)
 
+# Section-level RTL — flips entire document gutter to Hebrew
+sectPr = section._sectPr
+bidiSect = OxmlElement("w:bidi")
+sectPr.append(bidiSect)
+rtlGutter = OxmlElement("w:rtlGutter")
+sectPr.append(rtlGutter)
+
+# Default style — David CS for Hebrew, Calibri for Latin
 style = doc.styles["Normal"]
 style.font.name = "Calibri"
 style.font.size = Pt(11)
-# Hebrew shaping support
 rPr = style.element.get_or_add_rPr()
-rFonts = rPr.find(qn("w:rFonts"))
-if rFonts is None:
-    rFonts = OxmlElement("w:rFonts")
-    rPr.append(rFonts)
-rFonts.set(qn("w:cs"), "David")
+for tag in rPr.findall(qn("w:rFonts")):
+    rPr.remove(tag)
+rFonts = OxmlElement("w:rFonts")
+rFonts.set(qn("w:cs"),    "David")
 rFonts.set(qn("w:ascii"), "Calibri")
 rFonts.set(qn("w:hAnsi"), "Calibri")
+rFonts.set(qn("w:hint"),  "cs")
+rPr.append(rFonts)
+# Run-level RTL flag baked into Normal style
+rtl = OxmlElement("w:rtl")
+rPr.append(rtl)
+lang = OxmlElement("w:lang")
+lang.set(qn("w:val"),       "he-IL")
+lang.set(qn("w:bidi"),      "he-IL")
+rPr.append(lang)
 
-def set_rtl(p):
+# Same for every Heading style
+for hname in ("Heading 1", "Heading 2", "Heading 3", "Heading 4"):
+    try:
+        st = doc.styles[hname]
+        rp = st.element.get_or_add_rPr()
+        for tag in rp.findall(qn("w:rFonts")):
+            rp.remove(tag)
+        rf = OxmlElement("w:rFonts")
+        rf.set(qn("w:cs"), "David")
+        rf.set(qn("w:hint"), "cs")
+        rp.append(rf)
+        rp.append(OxmlElement("w:rtl"))
+    except KeyError:
+        pass
+
+def set_p_rtl(p):
+    """Paragraph-level: bidi + right-align + run RTL."""
     pPr = p._p.get_or_add_pPr()
-    bidi = OxmlElement("w:bidi")
-    pPr.append(bidi)
+    if pPr.find(qn("w:bidi")) is None:
+        pPr.append(OxmlElement("w:bidi"))
+    p.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+    for r in p.runs:
+        rPr = r._r.get_or_add_rPr()
+        if rPr.find(qn("w:rtl")) is None:
+            rPr.append(OxmlElement("w:rtl"))
+        if rPr.find(qn("w:cs")) is None:
+            rPr.append(OxmlElement("w:cs"))
+
+def set_p_ltr(p):
+    """For code blocks — keep LTR + monospace."""
+    p.alignment = WD_ALIGN_PARAGRAPH.LEFT
 
 def add_heading(text, level=1):
     p = doc.add_heading(text, level=level)
-    p.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-    set_rtl(p)
+    set_p_rtl(p)
     return p
 
-def add_para(text, bold=False, color=None):
+def add_para(text):
     p = doc.add_paragraph()
-    p.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-    set_rtl(p)
     r = p.add_run(text)
-    r.bold = bold
-    if color:
-        r.font.color.rgb = color
+    r.font.size = Pt(11)
+    set_p_rtl(p)
     return p
 
 def add_code(text):
     p = doc.add_paragraph()
-    p.alignment = WD_ALIGN_PARAGRAPH.LEFT
     pPr = p._p.get_or_add_pPr()
     shd = OxmlElement("w:shd")
     shd.set(qn("w:val"), "clear"); shd.set(qn("w:color"), "auto"); shd.set(qn("w:fill"), "F2F2EE")
     pPr.append(shd)
+    set_p_ltr(p)
     r = p.add_run(text)
     r.font.name = "Consolas"
     r.font.size = Pt(9)
@@ -67,20 +106,23 @@ def add_code(text):
     return p
 
 def add_table(rows):
-    """rows = list of list of cells. First row is header."""
     if not rows: return
     t = doc.add_table(rows=len(rows), cols=len(rows[0]))
     t.style = "Light Grid Accent 1"
-    for i, r in enumerate(rows):
-        for j, c in enumerate(r):
+    t.alignment = WD_TABLE_ALIGNMENT.RIGHT
+    # bidiVisual on the table flips column order to RTL
+    tblPr = t._tbl.tblPr
+    bidiV = OxmlElement("w:bidiVisual")
+    tblPr.append(bidiV)
+    for i, row in enumerate(rows):
+        for j, c in enumerate(row):
             cell = t.rows[i].cells[j]
-            cell.text = str(c)
-            for p in cell.paragraphs:
-                p.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-                set_rtl(p)
-                if i == 0:
-                    for run in p.runs:
-                        run.bold = True
+            cell.text = ""
+            p = cell.paragraphs[0]
+            r = p.add_run(str(c))
+            if i == 0:
+                r.bold = True
+            set_p_rtl(p)
     return t
 
 # ---------------- Parse markdown ----------------
@@ -102,7 +144,6 @@ def flush_code():
 
 def flush_table():
     global table_buf, in_table
-    # parse markdown table (skip separator row of dashes)
     parsed = []
     for row in table_buf:
         cells = [c.strip() for c in row.strip("|").split("|")]
@@ -155,18 +196,24 @@ while i < len(lines):
     if line.strip().startswith("* ") or line.strip().startswith("- "):
         flush_code()
         text = re.sub(r"^[\s]*[\*\-]\s+", "", line)
-        p = doc.add_paragraph(text, style="List Bullet")
-        p.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-        set_rtl(p)
+        text = re.sub(r"`([^`]+)`", r"\1", text)
+        text = re.sub(r"\*\*([^*]+)\*\*", r"\1", text)
+        text = re.sub(r"\*([^*]+)\*", r"\1", text)
+        p = doc.add_paragraph(style="List Bullet")
+        p.add_run(text)
+        set_p_rtl(p)
         i += 1
         continue
 
     if re.match(r"^\d+\.\s", line.strip()):
         flush_code()
         text = re.sub(r"^\d+\.\s+", "", line.strip())
-        p = doc.add_paragraph(text, style="List Number")
-        p.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-        set_rtl(p)
+        text = re.sub(r"`([^`]+)`", r"\1", text)
+        text = re.sub(r"\*\*([^*]+)\*\*", r"\1", text)
+        text = re.sub(r"\*([^*]+)\*", r"\1", text)
+        p = doc.add_paragraph(style="List Number")
+        p.add_run(text)
+        set_p_rtl(p)
         i += 1
         continue
 
@@ -174,7 +221,6 @@ while i < len(lines):
         i += 1
         continue
 
-    # plain paragraph — strip inline backticks markers but keep text
     text = line.strip()
     text = re.sub(r"`([^`]+)`", r"\1", text)
     text = re.sub(r"\*\*([^*]+)\*\*", r"\1", text)
@@ -186,4 +232,4 @@ flush_code()
 flush_table()
 
 doc.save(OUT)
-print("wrote", OUT)
+print("done")
