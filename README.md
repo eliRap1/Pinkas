@@ -1,173 +1,261 @@
+<div align="center">
+
 # B-Managed
 
-All-in-One management system for freelancers and small businesses.
+**All-in-one management system for freelancers and small businesses.**
 
-WCF service backend, MS Access (.accdb) database, three clients (Owner / Employee / Client roles), two front-ends (WPF desktop + ASP.NET Razor Pages web).
+CRM · Projects · Invoices · Expenses · VAT · Reports — one ledger, two clients, zero monthly fees.
+
+[![.NET](https://img.shields.io/badge/.NET-Framework_4.7.2_%2F_8-512BD4?style=flat&logo=dotnet)](#)
+[![WCF](https://img.shields.io/badge/WCF-BasicHttpBinding-1f6feb?style=flat)](#)
+[![WPF](https://img.shields.io/badge/WPF-XAML-blueviolet?style=flat)](#)
+[![ASP.NET](https://img.shields.io/badge/ASP.NET-Razor_Pages-0a86d8?style=flat)](#)
+[![MS Access](https://img.shields.io/badge/MS_Access-OleDb-A4373A?style=flat)](#)
+[![Tailwind](https://img.shields.io/badge/Tailwind_CSS-CDN-06B6D4?style=flat&logo=tailwindcss)](#)
+[![PdfSharp](https://img.shields.io/badge/PdfSharp-1.50-EF4444?style=flat)](#)
+[![Status](https://img.shields.io/badge/build-passing-10B981?style=flat)](#)
+
+![architecture](arch-flow.png)
+
+</div>
+
+---
+
+## Why B-Managed
+
+Small businesses (1–10 people) need one place to see customers, projects, invoices, expenses, VAT due, and notifications — without paying QuickBooks rent. B-Managed is that place. Run it on your own machine, your own .accdb, your own port. Two front-ends share one WCF service so the desktop you use at home and the browser your client opens stay in sync.
+
+* 50+ WCF operations
+* 13 normalised Access tables
+* 33 UI pages (15 WPF + 18 Razor)
+* 3 roles, 2 currencies, 2 languages
+* PDF export, CSV export, receipt upload, multi-employee assignment
+* Real-time notifications via DispatcherTimer (WPF) + setInterval (Web)
+
+---
+
+## Architecture
+
+```
+                ┌─ BManagedClient (WPF, .NET 4.7.2) ──┐
+   role login ──┤                                     ├── BasicHttpBinding ──┐
+                └─ BManagedWeb (Razor Pages, .NET 8) ─┘                      │
+                                                                             ▼
+                                                              ┌─ WCF Service1 (port 8733)
+                                                              │   ├ BusinessLogic (PDF, VAT, FX)
+                                                              │   └ ViewDB (parameterised OleDb)
+                                                              └────────── BManaged.accdb (13 tables)
+```
+
+See `arch-flow.png`, `wpf-flow.png`, `web-flow.png` for the full project map.
+
+---
+
+## Features
+
+<table>
+<tr>
+<td valign="top" width="33%">
+
+### Owner
+* Customers — search, modal edit, CSV
+* Projects — multi-employee assign, status flow
+* Invoices — auto-numbered, line items, VAT auto-calc, **PDF export**
+* Expenses — **Auto-VAT 17/117**, receipt upload, CSV
+* Reports — VAT summary, top customers (INNER JOIN + GROUP BY), profit chart, **Mark VAT paid**
+* Manage Users — approve, promote, reset
+* Notifications inbox + live badge
+
+</td>
+<td valign="top" width="33%">
+
+### Employee
+* Dashboard — assigned projects, my expenses, unread count
+* My Projects detail page (description, customer, due)
+* Log own expenses
+* Settings (change profile / password)
+* Notifications
+
+</td>
+<td valign="top" width="33%">
+
+### Client
+* Portal — outstanding balance, paid / unpaid counters
+* Invoice list with status pills
+* Download invoice PDF
+* Settings
+
+</td>
+</tr>
+</table>
+
+---
+
+## Highlights
+
+* **Multi-employee assignment** — `ProjectAssignments` table auto-created on first run, no migration needed.
+* **Auto-VAT 17/117** — Israeli formula baked in. Type a gross amount, VAT field fills automatically.
+* **Mark VAT paid** — one-click record of the periodic settlement to Israel Tax Authority.
+* **PDF invoices** via PdfSharp.
+* **Receipt upload** up to 5 MB with sanitised filenames stored under `/Receipts`.
+* **6-month profit sparkline** on Owner dashboard (Chart.js + JSON handler).
+* **Forgot password flow** — fans out a notification to all Owners; reset password is `reset1234`; logging in with it auto-redirects to Settings.
+* **Multi-currency** — ILS + USD via `ExchangeRates` table + `CurrencyConverter`.
+* **Bilingual** — Hebrew + English with RTL via `L.T(en, he)` helper.
+* **Soft Structuralism design system** in `App.xaml` — eyebrow pills, double-bezel cards, pill buttons, Plus Jakarta Sans + Clash Display.
+
+---
+
+## Tech stack
+
+| Layer | Tech |
+|-------|------|
+| Database | MS Access `.accdb` via Microsoft.ACE.OLEDB.12.0 |
+| Server | C# WCF (.NET Framework 4.7.2), BasicHttpBinding |
+| Clients | WPF (.NET Framework 4.7.2) + ASP.NET Razor Pages (.NET 8) |
+| Auth | PBKDF2 + 16-byte salt + 10 000 iterations + SlowEquals |
+| PDF | PdfSharp 1.50.5147 |
+| Charts | Chart.js 4.4 (web) |
+| CSS | Tailwind via CDN + custom tokens |
+| Fonts | Plus Jakarta Sans + Clash Display (web), Segoe UI Variable (WPF) |
 
 ---
 
 ## Quick start
 
-### 0. Clone
+**Prereqs:** Visual Studio 2022, .NET Framework 4.7.2 + .NET 8, Microsoft Access Database Engine 2016 (32-bit), PowerShell.
 
-```cmd
+```powershell
+# 1. Clone
 git clone https://github.com/eliRap1/yudb.git
 cd yudb
+
+# 2. Initialise the database (creates BManaged.accdb + seeds admin/dana/acme)
+.\_init_db.ps1
+
+# 3. Open BManaged.sln in Visual Studio
+#    Right-click WcfServiceLibrary1 → Set as Startup Project
+#    F5 — WCF Test Client opens at http://localhost:8733/
+
+# 4. Right-click BManagedClient (WPF) → Debug → Start New Instance
+#    Login: admin / admin1234
+
+# 5. (optional) Web — open BManagedWeb/BManagedWeb in a second VS instance
+#    F5 — http://localhost:5050/
 ```
-
-### 1. Bootstrap the database
-
-```cmd
-powershell -ExecutionPolicy Bypass -File _init_db.ps1
-```
-
-Creates `WcfServiceLibrary1/ViewDB/Database/BManaged.accdb` with 10 tables and seeds:
-
-| User | Password | Role |
-|------|----------|------|
-| `admin` | `admin1234` | Owner |
-| `dana` | `admin1234` | Employee |
-| `acme` | `admin1234` | Client |
-
-…plus 2 customers, 2 projects, 1 invoice (with line items), 2 expenses, 8 expense categories, ILS↔USD exchange rates.
-
-### 2. Restore the PdfSharp NuGet package
-
-```cmd
-nuget restore WcfServiceLibrary1\BusinessLogic\packages.config -PackagesDirectory packages
-```
-
-(or open `BManaged.sln` in Visual Studio — auto-restores on build).
-
-### 3. Run the WCF host
-
-Open `WcfServiceLibrary1\BManaged.sln` in Visual Studio.
-
-**Set startup project = `WcfServiceLibrary1`** → press **F5**. WcfSvcHost + WcfTestClient open. Service is at:
-
-```
-http://localhost:8744/Design_Time_Addresses/WcfServiceLibrary1/Service1/
-```
-
-If "Class Library cannot be started" — your VS install lacks WCF tooling. Use the included fallback:
-
-- Set startup project = `ConsoleHost` → F5 → console-hosted service runs at the same URL.
-
-### 4. Run the WPF client
-
-Open `BManagedClient\BManagedClient.csproj` in Visual Studio (separate window).
-
-Build → F5. Sign in with `admin` / `admin1234` to land on the Owner dashboard.
-
-**No "Add Service Reference" step needed** — `Connected Services\bsrv\Reference.cs` is hand-written and committed.
-
-### 5. Run the web
-
-```cmd
-cd BManagedWeb\BManagedWeb
-dotnet restore
-dotnet run
-```
-
-→ http://localhost:5050. Same logins.
 
 ---
 
-## Layout
+## Test credentials
+
+| Role | Username | Password |
+|------|----------|----------|
+| Owner | `admin` | `admin1234` |
+| Employee | `dana` | `admin1234` |
+| Client | `acme` | `admin1234` |
+
+After Owner uses **Reset PW**, the temp password is `reset1234` and login routes the user straight to Settings.
+
+---
+
+## Folder structure
 
 ```
 yudb/
-├── _init_db.ps1                ← bootstrap script for BManaged.accdb
-├── _md_to_docx.py              ← rebuild project-book .docx from .md
-├── _make_flows.py              ← regenerate flow PNGs
-├── arch-flow.png  wpf-flow.png  web-flow.png
-├── README.md
-├── ספר_פרויקט_B_Managed_HE.md  ←  project book (Hebrew)
-├── ספר_פרויקט_B_Managed_HE.docx
-├── BManaged_ProjectBook_EN.md  ←  project book (English)
-├── BManaged_ProjectBook_EN.docx
-├── WcfServiceLibrary1/         server
-│   ├── WcfServiceLibrary1/     IService1, Service1, App.config
-│   ├── Model/                  DataContract entities + SecurityHelper
-│   ├── ViewDB/                 BaseDB + 9 per-table DBs + BManaged.accdb
-│   ├── BusinessLogic/          VAT, CurrencyConverter, InvoicePdfBuilder (PdfSharp)
-│   ├── ConsoleHost/            standalone WCF host fallback
-│   └── BManaged.sln            4 projects + ConsoleHost
-├── BManagedClient/             WPF client (.NET 4.7.2)
-├── BManagedWeb/                ASP.NET Razor Pages (.NET 8)
-└── nav-map/                    Mermaid maps + page screenshots
+├── WcfServiceLibrary1/
+│   ├── Model/                 ← Base + Customer/Project/Invoice/Expense/User/Notification + Reports DTOs
+│   ├── ViewDB/                ← BaseDB + per-table DBs + ProjectAssignmentDB (auto-schema)
+│   │   └── Database/BManaged.accdb
+│   ├── BusinessLogic/         ← InvoicePdfBuilder, VatCalculator, CurrencyConverter
+│   ├── WcfServiceLibrary1/    ← IService1, Service1, App.config (port 8733)
+│   └── ConsoleHost/           ← optional executable host (no admin / no VS WCF tools needed)
+├── BManagedClient/            ← WPF (.NET Framework 4.7.2)
+│   └── BManagedClient/
+│       ├── App.xaml           ← Soft Structuralism design tokens (palette + typography + cards)
+│       ├── *.xaml + *.xaml.cs ← 15 pages
+│       └── Connected Services/BMsrv/Reference.cs   (svcutil-generated)
+├── BManagedWeb/               ← ASP.NET Razor Pages (.NET 8)
+│   └── BManagedWeb/
+│       ├── Pages/             ← Login, SignUp, ForgotPassword, Owner/, Employee/, Client/, Notifications, Lang
+│       ├── Helpers/L.cs       ← i18n helper (en/he)
+│       └── Connected Services/bsrv/Reference.cs    (hand-written sync)
+├── packages/PdfSharp.1.50.5147/  ← bundled NuGet for offline build
+├── _init_db.ps1               ← seeds admin/dana/acme + 2 customers + 2 projects + invoice + expenses
+├── _make_flows.py             ← regenerates arch-flow / wpf-flow / web-flow PNGs
+├── _md_to_docx_v6.py          ← builds the Hebrew project book DOCX (RTL)
+├── ספר_פרויקט_B_Managed_FINAL_v6.md   ← Hebrew project book (23 chapters)
+├── ספר_פרויקט_B_Managed_FINAL_v6b.docx ← rendered DOCX with embedded flow PNGs
+├── arch-flow.png  · wpf-flow.png  · web-flow.png
+└── README.md
 ```
 
 ---
 
-## Roles & features
+## Project map
 
-| Role | Capabilities |
-|------|--------------|
-| **Owner** | Customers · Projects · Invoices (with PDF) · Expenses · Reports (VAT/P&L/charts/CSV) · ManageUsers (approve, promote, reset, deactivate) · Settings |
-| **Employee** | Assigned projects · Log own expenses · Notifications |
-| **Client** | Read-only invoice portal · Self-signup |
-
-### Pending approval workflow
-
-New users that sign up via SignUp default to `IsActive = false`. Owner sees them in **ManageUsers → Pending approvals** and clicks **Approve**. `CheckUserPassword` rejects inactive accounts so unapproved users cannot log in.
-
-### Multi-currency
-
-Every monetary table has a `currency` column (ILS / USD). `CurrencyConverter` reads the latest matching row from `ExchangeRates` (effectiveDate ≤ asOfDate). Reports take a `displayCurrency` parameter.
-
-### PDF invoices
-
-`InvoicePdfBuilder.cs` uses **PdfSharp 1.50.5147** (the .NET-Framework-compatible build). Dotted-line totals box, A4 page, English font (Helvetica). NuGet package restores automatically; if not, run `nuget restore` from the repo root.
-
-### Charts & CSV
-
-Owner Reports page renders a Chart.js bar (income vs expenses vs VAT due) plus a doughnut (expenses by category) and exports a CSV via the **Export CSV** button.
-
-### RTL / Hebrew
-
-Click the **EN ↔ עב** toggle in the floating nav — sets `Session["Lang"]` and switches `<html dir="rtl" lang="he">`.
+<table>
+<tr>
+<td><strong>Architecture</strong><br><img src="arch-flow.png" width="100%"></td>
+</tr>
+<tr>
+<td><strong>WPF page navigation</strong><br><img src="wpf-flow.png" width="100%"></td>
+</tr>
+<tr>
+<td><strong>Web page navigation</strong><br><img src="web-flow.png" width="100%"></td>
+</tr>
+</table>
 
 ---
 
-## Architecture rubric mapping
+## Documentation
 
-| Rubric requirement | Where it lives |
-|--------------------|----------------|
-| WCF service + multi-client | `WcfServiceLibrary1` + `BManagedClient` + `BManagedWeb` |
-| Multiple normalized tables + link table | 10 tables — `Invoices` is link `Customer ↔ Project`, `InvoiceLines` is link `Invoice ↔ items` |
-| Complex SQL (JOINs / aggregation) | `ViewDB/ReportsDB.cs` — 4-table INNER JOIN + GROUP BY + SUM in `EmployeeRevenueReport` |
-| OOP + inheritance | All entities inherit `Base`; all DBs inherit `BaseDB`; `AllUsers : List<User>` |
-| Multiple roles + role-aware UI | `Session["Role"]` (Web) / `ClientSession.IsOwner` (WPF) gates every page |
-| Encryption | `Model/Helpers/SecurityHelper.cs` — PBKDF2 + 16-byte salt + 10000 iter + constant-time compare |
-| Validation | `BManagedClient/ValidationRules.cs` (7 rules) + Razor `Regex` validation in `SignUp.cshtml.cs` |
-| `IValueConverter` | `BManagedClient/ImgConventer.cs` |
-| External service consumption | Both clients consume the WCF service over `BasicHttpBinding` |
-| Async / threading | WPF `DispatcherTimer` polling + Web `setInterval` JSON polling |
-| File transfer | Invoice PDF returned as `byte[]` over WCF |
-| SQL-injection protection | `OleDbParameter` everywhere + `IsSafeString(input, max)` sanitizer |
-
-Full rubric → `ספר_פרויקט_B_Managed_HE.md` chapter 2.
+* **`ספר_פרויקט_B_Managed_FINAL_v6.md`** — full Hebrew project book, 23 chapters, ~80 KB markdown.
+* **`ספר_פרויקט_B_Managed_FINAL_v6b.docx`** — rendered RTL DOCX with the three flow PNGs embedded.
+* Each chapter cites file paths + line ranges so you can jump to the code.
 
 ---
 
-## Project book
+## Rubric coverage (Israeli matriculation, 5-unit "Web Services, Async Programming and Databases")
 
-- **Hebrew master**: `ספר_פרויקט_B_Managed_HE.md` + `.docx`
-- **English appendix**: `BManaged_ProjectBook_EN.md` + `.docx`
+| # | Mandatory item | Status |
+|---|----------------|--------|
+| 1 | Full information-system interface, multi-table reads/writes | ✅ 50 WCF ops / 13 tables |
+| 2 | DB-backed clients with multiple control types | ✅ TextBox, ComboBox, ListView, GridView, ListBox, RadioButton, etc. |
+| 3 | Normalised schema + link tables | ✅ InvoiceLines, ProjectAssignments, ExchangeRates, Notifications |
+| 4 | 2/3 client kinds | ✅ WPF (desktop) + ASP.NET Razor Pages (web) |
+| 5 | Smart data — INNER JOIN + GROUP BY + UPDATE | ✅ 4 reports with INNER JOIN + GROUP BY + SUM |
+| 6 | OOP + inheritance | ✅ Base→Customer/Project/.../User; BaseDB→all DBs; AllUsers : List<User> |
+| 7 | Multiple permission levels | ✅ Owner, Employee, Client |
+| 8 | UI gated by permission | ✅ Server-side guards on every page |
 
-To rebuild docx:
-
-```cmd
-python _md_to_docx.py
-```
+| Extension item | Status |
+|----------------|--------|
+| 9A — File transfer (PDF + receipts) | ✅ `GenerateInvoicePdf` + `UploadReceipt` |
+| 9B — One-way encryption (PBKDF2) | ✅ `SecurityHelper` |
+| 9C — Multi-tenant data | ✅ `ProjectAssignments` many-to-many |
+| 10 — Async UI / Polling / IValueConverter / Validation / Multi-currency / Notifications / i18n | ✅ all wired |
 
 ---
 
-## Running tests / smoke test
+## Roadmap
 
-WCF: `curl http://localhost:8744/Design_Time_Addresses/WcfServiceLibrary1/Service1/?wsdl`
+- [ ] Audit log table + viewer
+- [ ] Background job for overdue-invoice email reminders
+- [ ] Bank-statement CSV import for expenses auto-match
+- [ ] Two-factor auth (TOTP)
+- [ ] Multi-tenant (one server, multiple Owners)
+- [ ] Mobile (.NET MAUI)
 
-DB: PowerShell ACE.OLEDB query against `BManaged.accdb`.
+---
 
-Web: `agent-browser open http://localhost:5050/Login` (see `nav-map/`).
+## License
+
+Educational project — Mateh Ze, Ashdod. Used for the 5-unit matriculation in *Web Services, Async Programming and Databases*. Reuse for personal/study purposes welcome; commercial redistribution requires permission.
+
+---
+
+<div align="center">
+
+Built with C#, WCF, WPF, ASP.NET, MS Access, and a lot of Hebrew project-book pages.
+
+</div>
