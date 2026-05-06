@@ -52,6 +52,7 @@
     <Page Include="Settings.xaml">         <Generator>MSBuild:Compile</Generator><SubType>Designer</SubType></Page>
     <Page Include="Notifications.xaml">    <Generator>MSBuild:Compile</Generator><SubType>Designer</SubType></Page>
     <Page Include="SignUp.xaml">           <Generator>MSBuild:Compile</Generator><SubType>Designer</SubType></Page>
+    <Page Include="ManageUsers.xaml">      <Generator>MSBuild:Compile</Generator><SubType>Designer</SubType></Page>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="App.xaml.cs">          <DependentUpon>App.xaml</DependentUpon><SubType>Code</SubType></Compile>
@@ -68,6 +69,7 @@
     <Compile Include="Settings.xaml.cs">     <DependentUpon>Settings.xaml</DependentUpon><SubType>Code</SubType></Compile>
     <Compile Include="Notifications.xaml.cs"><DependentUpon>Notifications.xaml</DependentUpon><SubType>Code</SubType></Compile>
     <Compile Include="SignUp.xaml.cs">       <DependentUpon>SignUp.xaml</DependentUpon><SubType>Code</SubType></Compile>
+    <Compile Include="ManageUsers.xaml.cs">  <DependentUpon>ManageUsers.xaml</DependentUpon><SubType>Code</SubType></Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ClientSession.cs" />
     <Compile Include="ImgConventer.cs" />

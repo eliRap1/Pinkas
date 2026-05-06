@@ -236,5 +236,82 @@ ExecP "INSERT INTO [ExchangeRates] ([fromCurrency],[toCurrency],[rate],[effectiv
   @('@f','ILS'), @('@t','USD'), @('@r',0.27), @('@d',$today2)
 )
 
+function LastId() {
+    $cmd = $conn.CreateCommand()
+    $cmd.CommandText = "SELECT @@IDENTITY"
+    return [int]$cmd.ExecuteScalar()
+}
+
+# ===== Demo data =====
+# An employee + a couple clients
+$empHash = "Wh07bZCwhjvwj4IsSR2nOWYpk6fWPUt6PZFFTLC6S8jg3qMC"   # password = admin1234 (re-used for demo)
+ExecP "INSERT INTO [Users] ([username],[passwordHash],[email],[phone],[role],[isActive],[createdAt],[preferredCurrency]) VALUES (?,?,?,?,?,?,?,?)" @(
+  @('@u','dana'), @('@p',$empHash), @('@e','dana@b-managed.local'), @('@ph','0501111111'),
+  @('@r','Employee'), @('@a',$true), @('@c',(Get-Date)), @('@cur','ILS'))
+$danaId = LastId
+
+ExecP "INSERT INTO [Users] ([username],[passwordHash],[email],[phone],[role],[isActive],[createdAt],[preferredCurrency]) VALUES (?,?,?,?,?,?,?,?)" @(
+  @('@u','acme'), @('@p',$empHash), @('@e','contact@acme.co'), @('@ph','0502222222'),
+  @('@r','Client'), @('@a',$true), @('@c',(Get-Date)), @('@cur','ILS'))
+$acmeUserId = LastId
+
+# Customers (owned by admin, who has id=1 from earlier insert)
+$ownerId = 1
+ExecP "INSERT INTO [Customers] ([businessName],[contactName],[email],[phone],[taxId],[address],[ownerId],[preferredCurrency],[notes]) VALUES (?,?,?,?,?,?,?,?,?)" @(
+  @('@bn','Acme Studios'), @('@cn','Iris Cohen'), @('@e','contact@acme.co'),
+  @('@p','0502222222'), @('@tid','512345678'), @('@a','Tel Aviv'),
+  @('@o',$ownerId), @('@cur','ILS'), @('@n','Long-term partner since 2024'))
+$acmeCustId = LastId
+
+ExecP "INSERT INTO [Customers] ([businessName],[contactName],[email],[phone],[taxId],[address],[ownerId],[preferredCurrency],[notes]) VALUES (?,?,?,?,?,?,?,?,?)" @(
+  @('@bn','Globex Ltd'), @('@cn','Yoni Levi'), @('@e','y.levi@globex.io'),
+  @('@p','0503333333'), @('@tid','523456789'), @('@a','Haifa'),
+  @('@o',$ownerId), @('@cur','USD'), @('@n','New US lead'))
+$globexCustId = LastId
+
+# Project assigned to dana
+ExecP "INSERT INTO [Projects] ([customerId],[title],[description],[status],[startDate],[dueDate],[assignedEmployeeId],[totalBudget],[currency]) VALUES (?,?,?,?,?,?,?,?,?)" @(
+  @('@c',$acmeCustId), @('@t','Website redesign'), @('@d','New marketing site + CMS'),
+  @('@s','Active'), @('@sd',(Get-Date).AddDays(-14)), @('@dd',(Get-Date).AddDays(30)),
+  @('@ae',$danaId), @('@b',12000), @('@cur','ILS'))
+$proj1Id = LastId
+
+ExecP "INSERT INTO [Projects] ([customerId],[title],[description],[status],[startDate],[dueDate],[assignedEmployeeId],[totalBudget],[currency]) VALUES (?,?,?,?,?,?,?,?,?)" @(
+  @('@c',$globexCustId), @('@t','Brand book'), @('@d','Logo + style guide PDF'),
+  @('@s','AwaitingPayment'), @('@sd',(Get-Date).AddDays(-30)), @('@dd',(Get-Date).AddDays(-2)),
+  @('@ae',$null), @('@b',2500), @('@cur','USD'))
+$proj2Id = LastId
+
+# Invoice for project 2 (Globex)
+ExecP "INSERT INTO [Invoices] ([invoiceNumber],[projectId],[customerId],[issueDate],[dueDate],[subtotal],[vatRate],[vatAmount],[total],[currency],[status],[notes]) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)" @(
+  @('@n','INV-2026-00001'), @('@p',$proj2Id), @('@c',$globexCustId),
+  @('@id',(Get-Date).AddDays(-2)), @('@dd',(Get-Date).AddDays(28)),
+  @('@s',2500), @('@vr',0.0), @('@va',0), @('@t',2500),
+  @('@cur','USD'), @('@st','Sent'), @('@no','Brand book delivery'))
+$inv1Id = LastId
+
+ExecP "INSERT INTO [InvoiceLines] ([invoiceId],[description],[quantity],[unitPrice],[lineTotal],[currency]) VALUES (?,?,?,?,?,?)" @(
+  @('@i',$inv1Id), @('@d','Logo + 3 alt marks'), @('@q',1.0), @('@up',1500), @('@lt',1500), @('@cur','USD'))
+ExecP "INSERT INTO [InvoiceLines] ([invoiceId],[description],[quantity],[unitPrice],[lineTotal],[currency]) VALUES (?,?,?,?,?,?)" @(
+  @('@i',$inv1Id), @('@d','Style guide PDF (24 pages)'), @('@q',1.0), @('@up',1000), @('@lt',1000), @('@cur','USD'))
+
+# Two expenses
+ExecP "INSERT INTO [Expenses] ([ownerId],[categoryId],[date],[amount],[vatPaid],[vendor],[description],[currency]) VALUES (?,?,?,?,?,?,?,?)" @(
+  @('@o',$ownerId), @('@c',1), @('@d',(Get-Date).AddDays(-10)),
+  @('@a',420), @('@v',71.4), @('@vd','Office Depot'), @('@desc','Monitor stand + cables'), @('@cur','ILS'))
+
+ExecP "INSERT INTO [Expenses] ([ownerId],[categoryId],[date],[amount],[vatPaid],[vendor],[description],[currency]) VALUES (?,?,?,?,?,?,?,?)" @(
+  @('@o',$ownerId), @('@c',2), @('@d',(Get-Date).AddDays(-3)),
+  @('@a',180), @('@v',30.6), @('@vd','Paz fuel'), @('@desc','Client visit Haifa'), @('@cur','ILS'))
+
+# Welcome notification
+ExecP "INSERT INTO [Notifications] ([userId],[title],[message],[notificationType],[isRead],[createdAt]) VALUES (?,?,?,?,?,?)" @(
+  @('@u',$ownerId), @('@t','Welcome to B-Managed'),
+  @('@m','Demo data seeded. Acme + Globex are pre-loaded customers. Sign in as dana/admin1234 to see the employee view.'),
+  @('@nt','Info'), @('@r',$false), @('@c',(Get-Date)))
+
 $conn.Close()
 Write-Host "OK BManaged.accdb created at $dbPath"
+Write-Host "  Owner login : admin / admin1234"
+Write-Host "  Employee    : dana / admin1234"
+Write-Host "  Client      : acme / admin1234"

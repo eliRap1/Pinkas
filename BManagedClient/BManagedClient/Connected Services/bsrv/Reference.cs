@@ -225,6 +225,9 @@ namespace BManagedClient.bsrv
         [OperationContract] AllUsers GetAllUsers();
         [OperationContract] List<User> GetAllEmployees();
         [OperationContract] void UpdateUserProfile(int userId, string email, string phone, string preferredCurrency);
+        [OperationContract] List<User> GetPendingUsers();
+        [OperationContract] void SetUserActive(int userId, bool isActive);
+        [OperationContract] void DeleteUser(int userId);
 
         // Customers
         [OperationContract] int    AddCustomer(Customer c);
@@ -311,6 +314,9 @@ namespace BManagedClient.bsrv
         public AllUsers GetAllUsers() => Channel.GetAllUsers();
         public List<User> GetAllEmployees() => Channel.GetAllEmployees();
         public void UpdateUserProfile(int id, string e, string p, string c) => Channel.UpdateUserProfile(id, e, p, c);
+        public List<User> GetPendingUsers() => Channel.GetPendingUsers();
+        public void SetUserActive(int id, bool a) => Channel.SetUserActive(id, a);
+        public void DeleteUser(int id) => Channel.DeleteUser(id);
 
         // Customers
         public int      AddCustomer(Customer c)             => Channel.AddCustomer(c);

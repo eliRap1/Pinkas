@@ -48,19 +48,34 @@ namespace WcfServiceLibrary1
             if (string.IsNullOrEmpty(password) || password.Length < 4) return false;
             if (userDB.UserExists(username)) return false;
 
+            string r = role ?? "Client";
+            // Pending approval: Clients/Employees signing up default to inactive
+            // until an Owner approves them. Owner-tier signup (admin seed) is
+            // always active.
+            bool active = r == "Owner";
+
             var u = new User
             {
                 Username = username,
                 PasswordHash = SecurityHelper.HashPassword(password),
                 Email = email,
                 Phone = phone,
-                Role = role ?? "Client",
-                IsActive = true,
+                Role = r,
+                IsActive = active,
                 CreatedAt = DateTime.Now,
                 PreferredCurrency = preferredCurrency ?? "ILS"
             };
             return userDB.Insert(u) > 0;
         }
+
+        public List<User> GetPendingUsers()
+            => userDB.GetInactive();
+
+        public void SetUserActive(int userId, bool isActive)
+            => userDB.SetActive(userId, isActive);
+
+        public void DeleteUser(int userId)
+            => userDB.Delete(userId);
 
         public void ResetPassword(int userId, string newPassword)
         {

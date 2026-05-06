@@ -1,77 +1,93 @@
 using Model;
+using PdfSharp.Drawing;
+using PdfSharp.Pdf;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 
 namespace BusinessLogic
 {
     /// <summary>
-    /// Renders an invoice to a PDF byte array.
-    ///
-    /// QuestPDF Community is free for projects with revenue &lt; $1M
-    /// (school/personal). To wire it up:
-    ///   1. Add NuGet `QuestPDF`.
-    ///   2. Replace the simple-PDF stub below with the QuestPDF DSL.
-    ///
-    /// Until then, this class outputs a small ASCII-only PDF that opens
-    /// in any reader, so the WCF contract works end-to-end.
+    /// Renders an invoice to a PDF byte array using PdfSharp 1.50
+    /// (the .NET Framework 4.7.2-compatible build).
     /// </summary>
     public class InvoicePdfBuilder
     {
         public byte[] Render(Invoice inv, IEnumerable<InvoiceLine> lines, Customer cust)
         {
-            var sb = new StringBuilder();
-            sb.AppendLine($"INVOICE  {inv.InvoiceNumber}");
-            sb.AppendLine($"Customer: {cust?.BusinessName ?? "(unknown)"}");
-            sb.AppendLine($"Issue:    {inv.IssueDate:dd/MM/yyyy}");
-            sb.AppendLine($"Due:      {inv.DueDate:dd/MM/yyyy}");
-            sb.AppendLine();
-            sb.AppendLine("Lines:");
-            int n = 1;
-            foreach (var l in lines.OrderBy(x => x.Id))
+            using (var doc = new PdfDocument())
             {
-                sb.AppendLine($"  {n++}. {l.Description}  x {l.Quantity} @ {l.UnitPrice:0.00}  = {l.LineTotal:0.00} {l.Currency}");
+                doc.Info.Title  = "Invoice " + inv.InvoiceNumber;
+                doc.Info.Author = "B-Managed";
+
+                var page = doc.AddPage();
+                page.Size = PdfSharp.PageSize.A4;
+                using (var gfx = XGraphics.FromPdfPage(page))
+                {
+                    var titleFont  = new XFont("Helvetica", 26, XFontStyle.Bold);
+                    var headerFont = new XFont("Helvetica", 11, XFontStyle.Bold);
+                    var bodyFont   = new XFont("Helvetica", 10, XFontStyle.Regular);
+                    var smallFont  = new XFont("Helvetica", 9,  XFontStyle.Regular);
+
+                    double y = 50;
+
+                    gfx.DrawString("INVOICE", titleFont, XBrushes.Black, 40, y);
+                    gfx.DrawString(inv.InvoiceNumber, headerFont, XBrushes.Gray, 400, y);
+                    gfx.DrawLine(XPens.Black, 40, y + 18, 555, y + 18);
+                    y += 50;
+
+                    gfx.DrawString("Bill to", smallFont, XBrushes.Gray, 40, y);
+                    gfx.DrawString(cust?.BusinessName ?? "—", headerFont, XBrushes.Black, 40, y + 14);
+                    gfx.DrawString(cust?.ContactName ?? "", bodyFont, XBrushes.Black, 40, y + 30);
+                    gfx.DrawString(cust?.Email ?? "",        bodyFont, XBrushes.Black, 40, y + 44);
+                    gfx.DrawString(cust?.Address ?? "",      bodyFont, XBrushes.Black, 40, y + 58);
+
+                    gfx.DrawString("Issue date", smallFont, XBrushes.Gray, 380, y);
+                    gfx.DrawString(inv.IssueDate.ToString("dd MMM yyyy"), bodyFont, XBrushes.Black, 380, y + 14);
+                    gfx.DrawString("Due date",   smallFont, XBrushes.Gray, 380, y + 32);
+                    gfx.DrawString(inv.DueDate.ToString("dd MMM yyyy"),   bodyFont, XBrushes.Black, 380, y + 46);
+
+                    y += 90;
+
+                    gfx.DrawRectangle(XBrushes.Black, 40, y, 515, 24);
+                    gfx.DrawString("Description", headerFont, XBrushes.White, 50, y + 16);
+                    gfx.DrawString("Qty",         headerFont, XBrushes.White, 320, y + 16);
+                    gfx.DrawString("Unit",        headerFont, XBrushes.White, 380, y + 16);
+                    gfx.DrawString("Total",       headerFont, XBrushes.White, 480, y + 16);
+                    y += 32;
+
+                    foreach (var l in lines.OrderBy(x => x.Id))
+                    {
+                        gfx.DrawString(l.Description ?? "",       bodyFont, XBrushes.Black, 50,  y);
+                        gfx.DrawString(l.Quantity.ToString("0.##"), bodyFont, XBrushes.Black, 320, y);
+                        gfx.DrawString(l.UnitPrice.ToString("N2"),  bodyFont, XBrushes.Black, 380, y);
+                        gfx.DrawString(l.LineTotal.ToString("N2"),  bodyFont, XBrushes.Black, 480, y);
+                        y += 18;
+                    }
+
+                    y += 16;
+                    gfx.DrawLine(XPens.LightGray, 320, y, 555, y);
+                    y += 12;
+                    gfx.DrawString("Subtotal", bodyFont, XBrushes.Black, 380, y);
+                    gfx.DrawString(inv.Subtotal.ToString("N2") + " " + inv.Currency, bodyFont, XBrushes.Black, 480, y);
+                    y += 16;
+                    gfx.DrawString("VAT (" + inv.VatRate.ToString("P0") + ")", bodyFont, XBrushes.Black, 380, y);
+                    gfx.DrawString(inv.VatAmount.ToString("N2"), bodyFont, XBrushes.Black, 480, y);
+                    y += 22;
+                    gfx.DrawRectangle(XBrushes.Black, 360, y - 6, 195, 26);
+                    gfx.DrawString("TOTAL", headerFont, XBrushes.White, 380, y + 12);
+                    gfx.DrawString(inv.Total.ToString("N2") + " " + inv.Currency, headerFont, XBrushes.White, 470, y + 12);
+
+                    gfx.DrawString("B-Managed - powered by WCF + Razor + WPF",
+                        smallFont, XBrushes.Gray, 40, page.Height - 30);
+                }
+
+                using (var ms = new MemoryStream())
+                {
+                    doc.Save(ms, false);
+                    return ms.ToArray();
+                }
             }
-            sb.AppendLine();
-            sb.AppendLine($"Subtotal:  {inv.Subtotal:0.00} {inv.Currency}");
-            sb.AppendLine($"VAT ({inv.VatRate:P0}): {inv.VatAmount:0.00} {inv.Currency}");
-            sb.AppendLine($"TOTAL:     {inv.Total:0.00} {inv.Currency}");
-
-            // Minimal valid PDF wrapper (single page, monospace text).
-            string body = sb.ToString();
-            string pdf = BuildSimplePdf(body);
-            return Encoding.ASCII.GetBytes(pdf);
-        }
-
-        // Hand-rolled minimal PDF — opens in any viewer. Replace with
-        // QuestPDF for production-grade RTL layout + Hebrew fonts.
-        private static string BuildSimplePdf(string text)
-        {
-            var lines = text.Split('\n');
-            var content = new StringBuilder();
-            content.Append("BT /F1 11 Tf 50 780 Td 14 TL ");
-            foreach (var line in lines)
-            {
-                string esc = line.Replace("\\", "\\\\").Replace("(", "\\(").Replace(")", "\\)").TrimEnd('\r');
-                content.Append($"({esc}) Tj T* ");
-            }
-            content.Append("ET");
-            string stream = content.ToString();
-
-            var pdf = new StringBuilder();
-            pdf.Append("%PDF-1.4\n");
-            pdf.Append("1 0 obj <</Type /Catalog /Pages 2 0 R>> endobj\n");
-            pdf.Append("2 0 obj <</Type /Pages /Count 1 /Kids [3 0 R]>> endobj\n");
-            pdf.Append("3 0 obj <</Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 4 0 R /Resources <</Font <</F1 5 0 R>>>>>> endobj\n");
-            pdf.Append($"4 0 obj <</Length {stream.Length}>> stream\n{stream}\nendstream endobj\n");
-            pdf.Append("5 0 obj <</Type /Font /Subtype /Type1 /BaseFont /Courier>> endobj\n");
-            pdf.Append("xref\n0 6\n");
-            pdf.Append("0000000000 65535 f \n");
-            // we don't bother computing real offsets — readers tolerate.
-            for (int i = 1; i < 6; i++) pdf.Append("0000000010 00000 n \n");
-            pdf.Append("trailer <</Size 6 /Root 1 0 R>>\nstartxref\n0\n%%EOF");
-            return pdf.ToString();
         }
     }
 }

@@ -47,5 +47,29 @@ namespace BManagedWeb.Pages.Owner
             catch { }
             return Page();
         }
+
+        public IActionResult OnGetCsv(string displayCurrency)
+        {
+            var role = HttpContext.Session.GetString("Role");
+            if (role != "Owner") return RedirectToPage("/Login");
+            int id = HttpContext.Session.GetInt32("UserId") ?? 0;
+            var cur = string.IsNullOrEmpty(displayCurrency) ? "ILS" : displayCurrency;
+
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine("Customer,Invoiced,Paid,Currency");
+            foreach (var r in _srv.GetTopCustomersByRevenue(id, cur) ?? new CustomerRevenueRow[0])
+                sb.AppendLine($"{Esc(r.BusinessName)},{r.TotalInvoiced},{r.TotalPaid},{r.DisplayCurrency}");
+            sb.AppendLine();
+            sb.AppendLine("Category,Total,VAT-deductible,Currency");
+            var first = new DateTime(Year, Month, 1);
+            var last  = first.AddMonths(1).AddDays(-1);
+            foreach (var b in _srv.GetExpenseBreakdown(id, first, last, cur) ?? new ExpenseBreakdownRow[0])
+                sb.AppendLine($"{Esc(b.CategoryName)},{b.Total},{b.IsVatDeductible},{b.DisplayCurrency}");
+
+            return File(System.Text.Encoding.UTF8.GetBytes(sb.ToString()),
+                "text/csv", $"BManaged-{Year}-{Month:D2}-{cur}.csv");
+        }
+
+        private static string Esc(string v) => v == null ? "" : v.Replace(",", " ").Replace("\"", "'");
     }
 }

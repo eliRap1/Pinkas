@@ -38,6 +38,15 @@ namespace WcfServiceLibrary1
         /// <summary>Promote / demote a user (Owner only).</summary>
         [OperationContract] void UpdateUserRole(int userId, string newRole);
 
+        /// <summary>Owner inbox — users awaiting approval.</summary>
+        [OperationContract] List<User> GetPendingUsers();
+
+        /// <summary>Owner approves or blocks a user.</summary>
+        [OperationContract] void SetUserActive(int userId, bool isActive);
+
+        /// <summary>Hard delete a user.</summary>
+        [OperationContract] void DeleteUser(int userId);
+
         /// <summary>True iff the user has role = "Owner".</summary>
         [OperationContract] bool IsOwner(string username);
 

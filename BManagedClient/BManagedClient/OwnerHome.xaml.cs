@@ -59,7 +59,7 @@ namespace BManagedClient
         private void Invoices_Click(object s, RoutedEventArgs e)      => NavigationService?.Navigate(new Invoices());
         private void Expenses_Click(object s, RoutedEventArgs e)      => NavigationService?.Navigate(new Expenses());
         private void Reports_Click(object s, RoutedEventArgs e)       => NavigationService?.Navigate(new Reports());
-        private void Settings_Click(object s, RoutedEventArgs e)      => NavigationService?.Navigate(new Settings());
+        private void Settings_Click(object s, RoutedEventArgs e)      => NavigationService?.Navigate(new ManageUsers());
         private void Notifications_Click(object s, RoutedEventArgs e) => NavigationService?.Navigate(new Notifications());
 
         private void Logout_Click(object s, RoutedEventArgs e)

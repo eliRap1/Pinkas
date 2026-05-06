@@ -124,6 +124,34 @@ namespace ViewDB
             => Select("SELECT * FROM [Users] WHERE [role] = ? ORDER BY [username]",
                 new OleDbParameter("@r", role)).OfType<User>().ToList();
 
+        public List<User> GetInactive()
+            => Select("SELECT * FROM [Users] WHERE [isActive] = ? ORDER BY [createdAt] DESC",
+                new OleDbParameter("@a", false)).OfType<User>().ToList();
+
+        public void SetActive(int userId, bool isActive)
+        {
+            using (var conn = GetConnection())
+            using (var cmd = new OleDbCommand("UPDATE [Users] SET [isActive] = ? WHERE [id] = ?", conn))
+            {
+                cmd.Parameters.Add(new OleDbParameter("@a",  OleDbType.Boolean) { Value = isActive });
+                cmd.Parameters.Add(new OleDbParameter("@id", OleDbType.Integer) { Value = userId });
+                conn.Open();
+                if (cmd.ExecuteNonQuery() <= 0)
+                    throw new InvalidOperationException("SetActive: user not found id=" + userId);
+            }
+        }
+
+        public void Delete(int userId)
+        {
+            using (var conn = GetConnection())
+            using (var cmd = new OleDbCommand("DELETE FROM [Users] WHERE [id] = ?", conn))
+            {
+                cmd.Parameters.Add(new OleDbParameter("@id", OleDbType.Integer) { Value = userId });
+                conn.Open();
+                cmd.ExecuteNonQuery();
+            }
+        }
+
         public void UpdateProfile(int userId, string email, string phone, string preferredCurrency)
         {
             using (var conn = GetConnection())

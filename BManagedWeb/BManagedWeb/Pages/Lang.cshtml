@@ -1,0 +1,8 @@
+@page
+@{
+    var t = Request.Query["target"].ToString();
+    if (t == "he" || t == "en") HttpContext.Session.SetString("Lang", t);
+    var back = Request.Headers["Referer"].ToString();
+    if (string.IsNullOrEmpty(back)) back = "/";
+    Response.Redirect(back);
+}
