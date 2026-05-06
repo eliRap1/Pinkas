@@ -107,6 +107,10 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="Contracts.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="ManageUsers.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -117,6 +121,7 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Connected Services\BMsrv\ContractContract.cs" />
     <Compile Include="Connected Services\BMsrv\Reference.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
@@ -180,6 +185,10 @@
     </Compile>
     <Compile Include="EmployeeProjects.xaml.cs">
       <DependentUpon>EmployeeProjects.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Contracts.xaml.cs">
+      <DependentUpon>Contracts.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="ManageUsers.xaml.cs">

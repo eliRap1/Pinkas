@@ -68,6 +68,7 @@ namespace BManagedClient
         private void Customers_Click(object s, RoutedEventArgs e)     => NavigationService?.Navigate(new Customers());
         private void Projects_Click(object s, RoutedEventArgs e)      => NavigationService?.Navigate(new Projects());
         private void Invoices_Click(object s, RoutedEventArgs e)      => NavigationService?.Navigate(new Invoices());
+        private void Contracts_Click(object s, RoutedEventArgs e)     => NavigationService?.Navigate(new Contracts());
         private void Expenses_Click(object s, RoutedEventArgs e)      => NavigationService?.Navigate(new Expenses());
         private void Reports_Click(object s, RoutedEventArgs e)       => NavigationService?.Navigate(new Reports());
         private void Settings_Click(object s, RoutedEventArgs e)      => NavigationService?.Navigate(new ManageUsers());

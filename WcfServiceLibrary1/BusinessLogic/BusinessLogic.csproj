@@ -33,6 +33,7 @@
   <ItemGroup>
     <Compile Include="InvoiceNumberer.cs" />
     <Compile Include="InvoicePdfBuilder.cs" />
+    <Compile Include="ContractPdfBuilder.cs" />
     <Compile Include="VatCalculator.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

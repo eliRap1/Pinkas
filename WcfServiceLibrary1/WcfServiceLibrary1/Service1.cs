@@ -26,6 +26,7 @@ namespace WcfServiceLibrary1
         private readonly ExchangeRateDB fxDB       = new ExchangeRateDB();
         private readonly ReportsDB      reportsDB  = new ReportsDB();
         private readonly ProjectAssignmentDB assignDB = new ProjectAssignmentDB();
+        private readonly ContractDB contractDB = new ContractDB();
 
         // ===================================================================
         // AUTH & USERS
@@ -155,6 +156,40 @@ namespace WcfServiceLibrary1
                 if (u != null) users.Add(u);
             }
             return users;
+        }
+
+        // ===================================================================
+        // CONTRACTS
+        // ===================================================================
+
+        public int CreateContract(Contract c)
+        {
+            if (c == null) throw new FaultException("Contract is required.");
+            if (c.CustomerId <= 0) throw new FaultException("CustomerId required.");
+            return contractDB.Insert(c);
+        }
+
+        public void UpdateContract(Contract c)         => contractDB.SetStatus(c.Id, c.Status, c.SignedDate);
+        public void DeleteContract(int id)             => contractDB.Delete(id);
+        public void MarkContractSigned(int id, DateTime signedDate)
+            => contractDB.SetStatus(id, "Signed", signedDate);
+        public Contract GetContractById(int id)        => contractDB.GetById(id);
+        public List<Contract> GetContractsForOwner(int ownerId)
+            => contractDB.GetForOwner(ownerId);
+        public List<Contract> GetContractsByProject(int projectId)
+            => contractDB.GetByProject(projectId);
+        public List<Contract> GetContractsByCustomer(int customerId)
+            => contractDB.GetByCustomer(customerId);
+
+        public byte[] GenerateContractPdf(int contractId)
+        {
+            var c = contractDB.GetById(contractId);
+            if (c == null) throw new FaultException("Contract not found.");
+            var cust = custDB.GetById(c.CustomerId);
+            var proj = c.ProjectId > 0 ? projDB.GetById(c.ProjectId) : null;
+            var owner = cust != null ? userDB.GetById(cust.OwnerId) : null;
+            var pdf = new BusinessLogic.ContractPdfBuilder();
+            return pdf.Render(c, cust, proj, owner?.Username);
         }
 
         // ===================================================================

@@ -118,16 +118,26 @@
                                 <Button Grid.Row="0" Grid.Column="1" Content="📁  Projects"
                                         Click="Projects_Click" Style="{StaticResource SecondaryButton}"
                                         Height="56" Margin="4"/>
-                                <Button Grid.Row="0" Grid.Column="2" Content="🧾  Invoices"
+                                <Button Grid.Row="0" Grid.Column="2" Content="📜  Contracts"
+                                        Click="Contracts_Click" Style="{StaticResource AmberButton}"
+                                        Height="56" Margin="4"/>
+                                <Button Grid.Row="1" Grid.Column="0" Content="🧾  Invoices"
                                         Click="Invoices_Click" Style="{StaticResource AmberButton}"
                                         Height="56" Margin="4"/>
-                                <Button Grid.Row="1" Grid.Column="0" Content="💸  Expenses"
+                                <Button Grid.Row="1" Grid.Column="1" Content="💸  Expenses"
                                         Click="Expenses_Click" Style="{StaticResource RoseButton}"
                                         Height="56" Margin="4"/>
-                                <Button Grid.Row="1" Grid.Column="1" Content="📊  Reports"
+                                <Button Grid.Row="1" Grid.Column="2" Content="📊  Reports"
                                         Click="Reports_Click" Style="{StaticResource MintButton}"
                                         Height="56" Margin="4"/>
-                                <Button Grid.Row="1" Grid.Column="2" Content="👥  Users"
+                            </Grid>
+                            <Grid Margin="0,4,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Button Grid.Column="0" Content="👥  Users"
                                         Click="Settings_Click" Style="{StaticResource SecondaryButton}"
                                         Height="56" Margin="4"
                                         ToolTip="Manage users, approve sign-ups, reset passwords"/>

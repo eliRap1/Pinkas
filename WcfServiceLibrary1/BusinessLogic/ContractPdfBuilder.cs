@@ -1,0 +1,109 @@
+using Model;
+using PdfSharp.Drawing;
+using PdfSharp.Pdf;
+using System;
+using System.IO;
+
+namespace BusinessLogic
+{
+    /// <summary>
+    /// Renders a service-engagement contract to a PDF byte array.
+    /// Layout: title, parties section, scope/body block, financial summary,
+    /// signature lines for both parties + date stamps.
+    /// </summary>
+    public class ContractPdfBuilder
+    {
+        public byte[] Render(Contract c, Customer cust, Project proj, string ownerName)
+        {
+            using (var doc = new PdfDocument())
+            {
+                doc.Info.Title  = "Contract " + c.ContractNumber;
+                doc.Info.Author = "B-Managed";
+
+                var page = doc.AddPage();
+                page.Size = PdfSharp.PageSize.A4;
+                using (var gfx = XGraphics.FromPdfPage(page))
+                {
+                    var titleFont  = new XFont("Helvetica", 26, XFontStyle.Bold);
+                    var h2Font     = new XFont("Helvetica", 13, XFontStyle.Bold);
+                    var headerFont = new XFont("Helvetica", 11, XFontStyle.Bold);
+                    var bodyFont   = new XFont("Helvetica", 10, XFontStyle.Regular);
+                    var smallFont  = new XFont("Helvetica", 9,  XFontStyle.Regular);
+
+                    double y = 50;
+
+                    // Title bar
+                    gfx.DrawString("SERVICE AGREEMENT", titleFont, XBrushes.Black, 40, y);
+                    gfx.DrawString(c.ContractNumber ?? "", headerFont, XBrushes.Gray, 400, y);
+                    gfx.DrawLine(XPens.Black, 40, y + 18, 555, y + 18);
+                    y += 50;
+
+                    // Date row
+                    gfx.DrawString("Date created: " + c.CreatedAt.ToString("dd MMM yyyy"),
+                                   bodyFont, XBrushes.Black, 40, y);
+                    gfx.DrawString("Status: " + (c.Status ?? "Draft"),
+                                   bodyFont, XBrushes.Black, 400, y);
+                    y += 30;
+
+                    // Parties block
+                    gfx.DrawString("PARTIES", h2Font, XBrushes.Black, 40, y); y += 18;
+                    gfx.DrawString("Service Provider:", smallFont, XBrushes.Gray, 40, y);
+                    gfx.DrawString(string.IsNullOrEmpty(ownerName) ? "B-Managed Owner" : ownerName,
+                                   headerFont, XBrushes.Black, 40, y + 14);
+                    gfx.DrawString("Client:", smallFont, XBrushes.Gray, 300, y);
+                    gfx.DrawString(cust?.BusinessName ?? "—", headerFont, XBrushes.Black, 300, y + 14);
+                    if (!string.IsNullOrEmpty(cust?.TaxId))
+                        gfx.DrawString("Tax ID: " + cust.TaxId, smallFont, XBrushes.Gray, 300, y + 30);
+                    y += 60;
+
+                    // Project / scope title
+                    gfx.DrawString("ENGAGEMENT TITLE", h2Font, XBrushes.Black, 40, y); y += 18;
+                    gfx.DrawString(c.Title ?? "—", headerFont, XBrushes.Black, 40, y); y += 24;
+                    if (proj != null)
+                    {
+                        gfx.DrawString("Linked project: " + proj.Title, smallFont, XBrushes.Gray, 40, y);
+                        y += 18;
+                    }
+
+                    // Body
+                    gfx.DrawString("SCOPE OF WORK", h2Font, XBrushes.Black, 40, y); y += 18;
+                    var bodyText = string.IsNullOrEmpty(c.Body)
+                        ? "(no scope provided)"
+                        : c.Body;
+                    var rect = new XRect(40, y, 515, 280);
+                    var fmt  = new XStringFormat { Alignment = XStringAlignment.Near, LineAlignment = XLineAlignment.Near };
+                    gfx.DrawRectangle(XPens.LightGray, rect);
+                    gfx.DrawString(bodyText, bodyFont, XBrushes.Black,
+                                   new XRect(48, y + 8, 500, 268), fmt);
+                    y += 300;
+
+                    // Financial summary
+                    gfx.DrawString("AGREED CONSIDERATION", h2Font, XBrushes.Black, 40, y); y += 18;
+                    gfx.DrawString("Total amount: " + c.TotalAmount.ToString("N2") + " " +
+                                   (c.Currency ?? "ILS"),
+                                   headerFont, XBrushes.Black, 40, y);
+                    y += 24;
+                    gfx.DrawString("Payment terms follow the invoice issued under this contract.",
+                                   smallFont, XBrushes.Gray, 40, y);
+                    y += 36;
+
+                    // Signature lines
+                    gfx.DrawString("SIGNATURES", h2Font, XBrushes.Black, 40, y); y += 28;
+                    gfx.DrawLine(XPens.Black, 40,  y + 30, 280, y + 30);
+                    gfx.DrawLine(XPens.Black, 320, y + 30, 555, y + 30);
+                    gfx.DrawString("Service Provider", smallFont, XBrushes.Gray, 40,  y + 44);
+                    gfx.DrawString("Client",           smallFont, XBrushes.Gray, 320, y + 44);
+
+                    gfx.DrawString("Generated by B-Managed — " + DateTime.Now.ToString("dd MMM yyyy HH:mm"),
+                                   smallFont, XBrushes.LightGray, 40, 800);
+                }
+
+                using (var ms = new MemoryStream())
+                {
+                    doc.Save(ms, false);
+                    return ms.ToArray();
+                }
+            }
+        }
+    }
+}

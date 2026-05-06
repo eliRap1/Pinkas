@@ -75,6 +75,23 @@ namespace BManagedWeb.bsrv
         [DataMember] public string Status { get; set; }
         [DataMember] public DateTime? PaidDate { get; set; }
         [DataMember] public string Notes { get; set; }
+        [DataMember] public int? ContractId { get; set; }
+    }
+
+    [DataContract(Namespace = "http://schemas.datacontract.org/2004/07/Model")]
+    public class Contract : Base
+    {
+        [DataMember] public string ContractNumber { get; set; }
+        [DataMember] public int ProjectId { get; set; }
+        [DataMember] public int CustomerId { get; set; }
+        [DataMember] public string Title { get; set; }
+        [DataMember] public string Body { get; set; }
+        [DataMember] public decimal TotalAmount { get; set; }
+        [DataMember] public string Currency { get; set; }
+        [DataMember] public string Status { get; set; }
+        [DataMember] public DateTime CreatedAt { get; set; }
+        [DataMember] public DateTime? SignedDate { get; set; }
+        [DataMember] public string PdfPath { get; set; }
     }
 
     [DataContract(Namespace = "http://schemas.datacontract.org/2004/07/Model")]
@@ -253,6 +270,17 @@ namespace BManagedWeb.bsrv
         [OperationContract] Invoice[] GetOverdueInvoices(int ownerId);
         [OperationContract] byte[] GenerateInvoicePdf(int invoiceId);
 
+        // Contracts
+        [OperationContract] int       CreateContract(Contract c);
+        [OperationContract] void      UpdateContract(Contract c);
+        [OperationContract] void      DeleteContract(int id);
+        [OperationContract] void      MarkContractSigned(int id, DateTime signedDate);
+        [OperationContract] Contract  GetContractById(int id);
+        [OperationContract] Contract[] GetContractsForOwner(int ownerId);
+        [OperationContract] Contract[] GetContractsByProject(int projectId);
+        [OperationContract] Contract[] GetContractsByCustomer(int customerId);
+        [OperationContract] byte[]    GenerateContractPdf(int contractId);
+
         [OperationContract] int  AddExpense(Expense e);
         [OperationContract] void UpdateExpense(Expense e);
         [OperationContract] void DeleteExpense(int id);
@@ -355,6 +383,16 @@ namespace BManagedWeb.bsrv
         public Invoice[] GetUnpaidInvoices(int oId)        => Channel.GetUnpaidInvoices(oId);
         public Invoice[] GetOverdueInvoices(int oId)       => Channel.GetOverdueInvoices(oId);
         public byte[]    GenerateInvoicePdf(int id)        => Channel.GenerateInvoicePdf(id);
+
+        public int       CreateContract(Contract c)        => Channel.CreateContract(c);
+        public void      UpdateContract(Contract c)        => Channel.UpdateContract(c);
+        public void      DeleteContract(int id)            => Channel.DeleteContract(id);
+        public void      MarkContractSigned(int id, DateTime d) => Channel.MarkContractSigned(id, d);
+        public Contract  GetContractById(int id)           => Channel.GetContractById(id);
+        public Contract[] GetContractsForOwner(int o)      => Channel.GetContractsForOwner(o);
+        public Contract[] GetContractsByProject(int p)     => Channel.GetContractsByProject(p);
+        public Contract[] GetContractsByCustomer(int c)    => Channel.GetContractsByCustomer(c);
+        public byte[]    GenerateContractPdf(int id)       => Channel.GenerateContractPdf(id);
 
         public int  AddExpense(Expense e)                  => Channel.AddExpense(e);
         public void UpdateExpense(Expense e)               => Channel.UpdateExpense(e);

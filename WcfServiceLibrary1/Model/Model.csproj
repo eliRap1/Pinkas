@@ -28,6 +28,7 @@
   <ItemGroup>
     <Compile Include="AllUsers.cs" />
     <Compile Include="Base.cs" />
+    <Compile Include="Contract.cs" />
     <Compile Include="Customer.cs" />
     <Compile Include="ExchangeRate.cs" />
     <Compile Include="Expense.cs" />

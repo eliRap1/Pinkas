@@ -1985,7 +1985,43 @@ namespace BManagedClient.BMsrv {
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IService1/GenerateInvoicePdf", ReplyAction="http://tempuri.org/IService1/GenerateInvoicePdfResponse")]
         System.Threading.Tasks.Task<byte[]> GenerateInvoicePdfAsync(int invoiceId);
-        
+
+        // Contracts
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IService1/CreateContract", ReplyAction="http://tempuri.org/IService1/CreateContractResponse")]
+        int CreateContract(BManagedClient.BMsrv.Contract c);
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IService1/CreateContract", ReplyAction="http://tempuri.org/IService1/CreateContractResponse")]
+        System.Threading.Tasks.Task<int> CreateContractAsync(BManagedClient.BMsrv.Contract c);
+
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IService1/DeleteContract", ReplyAction="http://tempuri.org/IService1/DeleteContractResponse")]
+        void DeleteContract(int id);
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IService1/DeleteContract", ReplyAction="http://tempuri.org/IService1/DeleteContractResponse")]
+        System.Threading.Tasks.Task DeleteContractAsync(int id);
+
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IService1/MarkContractSigned", ReplyAction="http://tempuri.org/IService1/MarkContractSignedResponse")]
+        void MarkContractSigned(int id, System.DateTime signedDate);
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IService1/MarkContractSigned", ReplyAction="http://tempuri.org/IService1/MarkContractSignedResponse")]
+        System.Threading.Tasks.Task MarkContractSignedAsync(int id, System.DateTime signedDate);
+
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IService1/GetContractById", ReplyAction="http://tempuri.org/IService1/GetContractByIdResponse")]
+        BManagedClient.BMsrv.Contract GetContractById(int id);
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IService1/GetContractById", ReplyAction="http://tempuri.org/IService1/GetContractByIdResponse")]
+        System.Threading.Tasks.Task<BManagedClient.BMsrv.Contract> GetContractByIdAsync(int id);
+
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IService1/GetContractsForOwner", ReplyAction="http://tempuri.org/IService1/GetContractsForOwnerResponse")]
+        BManagedClient.BMsrv.Contract[] GetContractsForOwner(int ownerId);
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IService1/GetContractsForOwner", ReplyAction="http://tempuri.org/IService1/GetContractsForOwnerResponse")]
+        System.Threading.Tasks.Task<BManagedClient.BMsrv.Contract[]> GetContractsForOwnerAsync(int ownerId);
+
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IService1/GetContractsByProject", ReplyAction="http://tempuri.org/IService1/GetContractsByProjectResponse")]
+        BManagedClient.BMsrv.Contract[] GetContractsByProject(int projectId);
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IService1/GetContractsByProject", ReplyAction="http://tempuri.org/IService1/GetContractsByProjectResponse")]
+        System.Threading.Tasks.Task<BManagedClient.BMsrv.Contract[]> GetContractsByProjectAsync(int projectId);
+
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IService1/GenerateContractPdf", ReplyAction="http://tempuri.org/IService1/GenerateContractPdfResponse")]
+        byte[] GenerateContractPdf(int contractId);
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IService1/GenerateContractPdf", ReplyAction="http://tempuri.org/IService1/GenerateContractPdfResponse")]
+        System.Threading.Tasks.Task<byte[]> GenerateContractPdfAsync(int contractId);
+
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IService1/AddExpense", ReplyAction="http://tempuri.org/IService1/AddExpenseResponse")]
         int AddExpense(BManagedClient.BMsrv.Expense e);
         
@@ -2487,6 +2523,21 @@ namespace BManagedClient.BMsrv {
         public System.Threading.Tasks.Task<byte[]> GenerateInvoicePdfAsync(int invoiceId) {
             return base.Channel.GenerateInvoicePdfAsync(invoiceId);
         }
+
+        public int CreateContract(BManagedClient.BMsrv.Contract c)
+            => base.Channel.CreateContract(c);
+        public void DeleteContract(int id)
+            => base.Channel.DeleteContract(id);
+        public void MarkContractSigned(int id, System.DateTime d)
+            => base.Channel.MarkContractSigned(id, d);
+        public BManagedClient.BMsrv.Contract GetContractById(int id)
+            => base.Channel.GetContractById(id);
+        public BManagedClient.BMsrv.Contract[] GetContractsForOwner(int ownerId)
+            => base.Channel.GetContractsForOwner(ownerId);
+        public BManagedClient.BMsrv.Contract[] GetContractsByProject(int projectId)
+            => base.Channel.GetContractsByProject(projectId);
+        public byte[] GenerateContractPdf(int contractId)
+            => base.Channel.GenerateContractPdf(contractId);
         
         public int AddExpense(BManagedClient.BMsrv.Expense e) {
             return base.Channel.AddExpense(e);

@@ -85,6 +85,17 @@ namespace WcfServiceLibrary1
         [OperationContract] void RemoveProjectAssignment(int projectId, int employeeId);
         [OperationContract] List<User> GetProjectAssignees(int projectId);
 
+        // ==================== CONTRACTS ====================
+        [OperationContract] int       CreateContract(Contract c);
+        [OperationContract] void      UpdateContract(Contract c);
+        [OperationContract] void      DeleteContract(int id);
+        [OperationContract] void      MarkContractSigned(int id, DateTime signedDate);
+        [OperationContract] Contract  GetContractById(int id);
+        [OperationContract] List<Contract> GetContractsForOwner(int ownerId);
+        [OperationContract] List<Contract> GetContractsByProject(int projectId);
+        [OperationContract] List<Contract> GetContractsByCustomer(int customerId);
+        [OperationContract] byte[]    GenerateContractPdf(int contractId);
+
         // ==================== INVOICES ====================
 
         /// <summary>Creates a Draft invoice with auto-generated invoiceNumber.

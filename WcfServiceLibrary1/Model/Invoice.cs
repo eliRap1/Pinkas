@@ -24,5 +24,6 @@ namespace Model
         [DataMember] public string Status { get; set; } = "Draft";
         [DataMember] public DateTime? PaidDate { get; set; }
         [DataMember] public string Notes { get; set; }
+        [DataMember] public int? ContractId { get; set; }   // nullable link to a signed contract
     }
 }
