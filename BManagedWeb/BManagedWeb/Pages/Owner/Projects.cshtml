@@ -8,14 +8,16 @@
         <h1 class="display text-5xl md:text-7xl font-bold mt-4 leading-[0.95]">Projects.</h1>
     </div>
     <form method="get" class="flex items-center gap-3 text-sm">
+        <input asp-for="Q" placeholder="@L.T(HttpContext,"Search title…","חיפוש לפי כותרת…")"
+               class="bg-paper-100 border border-black/5 rounded-full px-4 py-2 outline-none focus:border-accent" />
         <select asp-for="StatusFilter" class="bg-paper-100 border border-black/5 rounded-full px-4 py-2">
-            <option value="">All</option>
-            <option value="Active">Active</option>
-            <option value="AwaitingPayment">Awaiting Payment</option>
-            <option value="Done">Done</option>
-            <option value="Cancelled">Cancelled</option>
+            <option value="">@L.T(HttpContext,"All","הכל")</option>
+            <option value="Active">@L.T(HttpContext,"Active","פעיל")</option>
+            <option value="AwaitingPayment">@L.T(HttpContext,"Awaiting Payment","ממתין לתשלום")</option>
+            <option value="Done">@L.T(HttpContext,"Done","הסתיים")</option>
+            <option value="Cancelled">@L.T(HttpContext,"Cancelled","בוטל")</option>
         </select>
-        <button class="bg-ink text-paper-50 rounded-full px-4 py-2">Filter</button>
+        <button class="bg-ink text-paper-50 rounded-full px-4 py-2">@L.T(HttpContext,"Filter","סנן")</button>
     </form>
 </div>
 

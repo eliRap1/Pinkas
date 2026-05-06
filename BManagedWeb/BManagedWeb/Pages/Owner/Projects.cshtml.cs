@@ -11,6 +11,7 @@ namespace BManagedWeb.Pages.Owner
         private readonly Service1Client _srv = new Service1Client();
 
         [BindProperty(SupportsGet = true)] public string StatusFilter { get; set; }
+        [BindProperty(SupportsGet = true)] public string Q { get; set; }
         [BindProperty] public int NewCustomerId { get; set; }
         [BindProperty] public string NewTitle { get; set; }
         [BindProperty] public decimal NewBudget { get; set; }
@@ -30,7 +31,15 @@ namespace BManagedWeb.Pages.Owner
             Project[] arr = string.IsNullOrEmpty(StatusFilter)
                 ? Customers.SelectMany(c => _srv.GetProjectsByCustomer(c.Id) ?? new Project[0]).ToArray()
                 : _srv.GetProjectsByStatus(StatusFilter, id);
-            Projects = arr?.ToList() ?? new List<Project>();
+            var list = arr?.ToList() ?? new List<Project>();
+            if (!string.IsNullOrWhiteSpace(Q))
+            {
+                var q = Q.Trim().ToLowerInvariant();
+                list = list.Where(p =>
+                    (p.Title ?? "").ToLowerInvariant().Contains(q) ||
+                    (p.Description ?? "").ToLowerInvariant().Contains(q)).ToList();
+            }
+            Projects = list;
             return Page();
         }
 

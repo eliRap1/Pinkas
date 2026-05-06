@@ -6,15 +6,15 @@
 
 <div class="reveal mb-12 max-w-3xl">
     <span class="pill rounded-full px-3 py-1 bg-black/5 border border-black/5">CRM</span>
-    <h1 class="display text-5xl md:text-7xl font-bold mt-4 leading-[0.95]">Customers</h1>
-    <p class="text-ink/50 mt-3">Everyone you bill. Right here.</p>
+    <h1 class="display text-5xl md:text-7xl font-bold mt-4 leading-[0.95]">@L.T(HttpContext,"Customers","לקוחות")</h1>
+    <p class="text-ink/50 mt-3">@L.T(HttpContext,"Everyone you bill. Right here.","כל מי שאתה מחייב, כאן.")</p>
 </div>
 
 <form method="get" class="reveal flex gap-3 mb-8 max-w-xl">
-    <input asp-for="Q" placeholder="Search by name, email, contact…"
+    <input asp-for="Q" placeholder="@L.T(HttpContext,"Search by name, email, contact…","חיפוש לפי שם / אימייל / איש קשר…")"
            class="flex-1 bg-paper-100/60 border border-black/5 rounded-full px-5 py-3 outline-none focus:border-accent transition" />
     <button class="group inline-flex items-center gap-2 bg-ink text-paper-50 rounded-full px-5 py-3 transition-all duration-500 ease-spring active:scale-[0.98]">
-        Search
+        @L.T(HttpContext,"Search","חיפוש")
         <span class="w-6 h-6 rounded-full bg-white/15 flex items-center justify-center group-hover:translate-x-0.5 transition-all duration-500 ease-spring">
             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
         </span>
@@ -23,14 +23,18 @@
 
 <form method="post" asp-page-handler="Add" class="reveal mb-12 bg-black/[0.04] ring-1 ring-black/5 rounded-shell p-1.5 max-w-3xl">
     <div class="bg-paper-50 rounded-core p-6 shadow-inset grid md:grid-cols-3 gap-3">
-        <input asp-for="NewBusinessName" placeholder="Business name"
+        <input asp-for="NewBusinessName" placeholder="@L.T(HttpContext,"Business name","שם עסק")"
                class="bg-paper-100/60 border border-black/5 rounded-2xl px-4 py-2.5 outline-none focus:border-accent transition" />
-        <input asp-for="NewEmail"        placeholder="Email"
+        <input asp-for="NewContactName"  placeholder="@L.T(HttpContext,"Contact name","איש קשר")"
                class="bg-paper-100/60 border border-black/5 rounded-2xl px-4 py-2.5 outline-none focus:border-accent transition" />
-        <input asp-for="NewPhone"        placeholder="Phone"
+        <input asp-for="NewTaxId"        placeholder="@L.T(HttpContext,"Tax ID","ח.פ / ע.מ")"
+               class="bg-paper-100/60 border border-black/5 rounded-2xl px-4 py-2.5 outline-none focus:border-accent transition" />
+        <input asp-for="NewEmail"        placeholder="@L.T(HttpContext,"Email","אימייל")"
+               class="bg-paper-100/60 border border-black/5 rounded-2xl px-4 py-2.5 outline-none focus:border-accent transition" />
+        <input asp-for="NewPhone"        placeholder="@L.T(HttpContext,"Phone","טלפון")"
                class="bg-paper-100/60 border border-black/5 rounded-2xl px-4 py-2.5 outline-none focus:border-accent transition" />
         <button class="md:col-span-3 group inline-flex items-center justify-center gap-2 bg-mint text-white rounded-full px-6 py-3 mt-1 active:scale-[0.98] transition">
-            Add customer
+            @L.T(HttpContext,"Add customer","הוסף לקוח")
             <span class="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center group-hover:translate-x-0.5 transition">→</span>
         </button>
     </div>
@@ -44,7 +48,8 @@
 <section class="reveal grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
     @foreach (var c in Model.Customers)
     {
-        <a href="#" class="group block bg-black/[0.03] ring-1 ring-black/5 rounded-shell p-1.5 hover:shadow-float transition-all duration-500 ease-spring">
+        <button type="button" data-cust-id="@c.Id"
+                class="cust-card text-left group block bg-black/[0.03] ring-1 ring-black/5 rounded-shell p-1.5 hover:shadow-float transition-all duration-500 ease-spring">
             <div class="bg-paper-50 rounded-core p-6 shadow-inset h-full">
                 <div class="pill text-ink/40">@c.PreferredCurrency</div>
                 <div class="display text-2xl font-semibold mt-2">@c.BusinessName</div>
@@ -52,10 +57,114 @@
                 <div class="text-xs text-ink/40 mt-4 truncate">@c.Email</div>
                 <div class="text-xs text-ink/40">@c.Phone</div>
             </div>
-        </a>
+        </button>
     }
     @if (Model.Customers.Count == 0)
     {
-        <div class="md:col-span-3 text-center py-20 text-ink/40">No customers yet — add your first above.</div>
+        <div class="md:col-span-3 text-center py-20 text-ink/40">@L.T(HttpContext,"No customers yet — add your first above.","אין לקוחות עדיין — הוסף ראשון למעלה.")</div>
     }
 </section>
+
+<!-- Customer quick-view modal -->
+<div id="cust-modal" class="hidden fixed inset-0 z-[60] grid place-items-center bg-black/40 backdrop-blur-md p-4">
+    <div class="bg-black/[0.04] ring-1 ring-black/10 rounded-shell p-1.5 shadow-float w-full max-w-2xl max-h-[85vh] overflow-hidden">
+        <div class="bg-paper-50 rounded-core p-8 shadow-inset overflow-y-auto max-h-[83vh]">
+            <div class="flex items-start justify-between gap-4 mb-6">
+                <div>
+                    <span class="pill text-ink/40" id="cm-currency">ILS</span>
+                    <h2 class="display text-3xl font-bold mt-1" id="cm-name">—</h2>
+                    <p class="text-sm text-ink/50 mt-1" id="cm-contact">—</p>
+                </div>
+                <button type="button" id="cm-close"
+                        class="w-9 h-9 rounded-full bg-black/5 hover:bg-black/10 transition flex items-center justify-center">✕</button>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 mb-6">
+                <div class="bg-paper-100 rounded-2xl px-5 py-4">
+                    <div class="pill text-ink/40">@L.T(HttpContext,"Outstanding","יתרת חוב")</div>
+                    <div class="display text-2xl font-semibold mt-1" id="cm-out">0</div>
+                </div>
+                <div class="bg-paper-100 rounded-2xl px-5 py-4">
+                    <div class="pill text-ink/40">@L.T(HttpContext,"Lifetime paid","סך שולם")</div>
+                    <div class="display text-2xl font-semibold mt-1 text-mint" id="cm-life">0</div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 text-sm mb-6">
+                <div><span class="pill text-ink/40 block">@L.T(HttpContext,"Email","אימייל")</span><span id="cm-email">—</span></div>
+                <div><span class="pill text-ink/40 block">@L.T(HttpContext,"Phone","טלפון")</span><span id="cm-phone">—</span></div>
+                <div><span class="pill text-ink/40 block">@L.T(HttpContext,"Tax ID","ח.פ")</span><span id="cm-tax">—</span></div>
+            </div>
+
+            <h3 class="display font-semibold mt-2 mb-2">@L.T(HttpContext,"Projects","פרויקטים")</h3>
+            <div id="cm-projects" class="space-y-1.5 text-sm mb-4 text-ink/60">—</div>
+
+            <h3 class="display font-semibold mt-2 mb-2">@L.T(HttpContext,"Recent invoices","חשבוניות אחרונות")</h3>
+            <div id="cm-invoices" class="space-y-1.5 text-sm text-ink/60">—</div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+  const modal = document.getElementById('cust-modal');
+  document.getElementById('cm-close').addEventListener('click', () => modal.classList.add('hidden'));
+  modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.add('hidden'); });
+
+  // Build a row safely with textContent (no innerHTML to avoid XSS).
+  function row(left, right, rightClass) {
+    const w = document.createElement('div');
+    w.className = 'flex justify-between bg-paper-100 rounded-xl px-4 py-2';
+    const l = document.createElement('span'); l.textContent = left;
+    const r = document.createElement('span'); r.textContent = right;
+    if (rightClass) r.className = rightClass; else r.className = 'text-ink/50';
+    w.appendChild(l); w.appendChild(r);
+    return w;
+  }
+  function emptyRow() {
+    const d = document.createElement('div');
+    d.className = 'text-ink/40';
+    d.textContent = '—';
+    return d;
+  }
+
+  document.querySelectorAll('.cust-card').forEach(card => {
+    card.addEventListener('click', async () => {
+      const id = card.getAttribute('data-cust-id');
+      try {
+        const r = await fetch('/Owner/Customers?handler=Detail&customerId=' + encodeURIComponent(id));
+        if (!r.ok) return;
+        const d = await r.json();
+        if (d.error) { alert(d.error); return; }
+
+        document.getElementById('cm-name').textContent     = d.businessName || '—';
+        document.getElementById('cm-contact').textContent  = d.contactName  || '—';
+        document.getElementById('cm-currency').textContent = d.currency     || 'ILS';
+        document.getElementById('cm-email').textContent    = d.email        || '—';
+        document.getElementById('cm-phone').textContent    = d.phone        || '—';
+        document.getElementById('cm-tax').textContent      = d.taxId        || '—';
+        document.getElementById('cm-out').textContent      = (Number(d.outstanding) || 0).toLocaleString() + ' ' + (d.currency || '');
+        document.getElementById('cm-life').textContent     = (Number(d.lifetime)    || 0).toLocaleString() + ' ' + (d.currency || '');
+
+        const projWrap = document.getElementById('cm-projects');
+        while (projWrap.firstChild) projWrap.removeChild(projWrap.firstChild);
+        if (d.projects && d.projects.length) {
+          d.projects.forEach(p => projWrap.appendChild(row(p.title, p.status)));
+        } else { projWrap.appendChild(emptyRow()); }
+
+        const invWrap = document.getElementById('cm-invoices');
+        while (invWrap.firstChild) invWrap.removeChild(invWrap.firstChild);
+        if (d.invoices && d.invoices.length) {
+          d.invoices.forEach(i => {
+            const left  = i.invoiceNumber + ' · ' + i.issueDate;
+            const right = Number(i.total).toLocaleString() + ' ' + i.currency + ' · ' + i.status;
+            invWrap.appendChild(row(left, right, 'font-medium'));
+          });
+        } else { invWrap.appendChild(emptyRow()); }
+
+        modal.classList.remove('hidden');
+      } catch (e) {}
+    });
+  });
+</script>
+}

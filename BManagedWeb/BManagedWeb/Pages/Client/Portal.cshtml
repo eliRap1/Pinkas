@@ -5,9 +5,9 @@
 }
 
 <div class="reveal mb-12">
-    <span class="pill rounded-full px-3 py-1 bg-black/5 border border-black/5">Portal</span>
+    <span class="pill rounded-full px-3 py-1 bg-black/5 border border-black/5">@L.T(HttpContext,"Portal","פורטל")</span>
     <h1 class="display text-5xl md:text-7xl font-bold mt-4 leading-[0.95]">
-        Welcome, @Model.Username.<br/><span class="text-ink/40">Your invoices.</span>
+        @L.T(HttpContext,"Welcome,","ברוך הבא,") @Model.Username.<br/><span class="text-ink/40">@L.T(HttpContext,"Your invoices.","החשבוניות שלך.")</span>
     </h1>
 </div>
 
@@ -21,7 +21,7 @@
                     <div>
                         <span class="pill text-ink/40">@inv.InvoiceNumber</span>
                         <div class="display text-2xl font-semibold mt-1">@inv.Total.ToString("N2") <span class="text-ink/40 text-sm">@inv.Currency</span></div>
-                        <div class="text-xs text-ink/40 mt-1">Due @inv.DueDate.ToString("dd MMM yyyy")</div>
+                        <div class="text-xs text-ink/40 mt-1">@L.T(HttpContext,"Due","יעד") @inv.DueDate.ToString("dd MMM yyyy")</div>
                     </div>
                     <div class="pill rounded-full px-2 py-0.5 bg-@(color)/10 text-@(color) border border-@(color)/20">@inv.Status</div>
                 </div>
@@ -30,6 +30,6 @@
     }
     @if (Model.Invoices.Count == 0)
     {
-        <div class="md:col-span-2 text-center py-20 text-ink/40">No invoices yet.</div>
+        <div class="md:col-span-2 text-center py-20 text-ink/40">@L.T(HttpContext,"No invoices yet.","אין חשבוניות עדיין.")</div>
     }
 </section>

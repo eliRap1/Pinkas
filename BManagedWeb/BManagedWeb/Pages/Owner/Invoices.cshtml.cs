@@ -24,6 +24,9 @@ namespace BManagedWeb.Pages.Owner
         [BindProperty] public double  LineQuantity    { get; set; } = 1.0;
         [BindProperty] public decimal LineUnitPrice   { get; set; }
 
+        [BindProperty(SupportsGet = true)] public string Q { get; set; }
+        [BindProperty(SupportsGet = true)] public string StatusFilter { get; set; }
+
         public IActionResult OnGet(int? id)
         {
             var role = HttpContext.Session.GetString("Role");
@@ -45,6 +48,16 @@ namespace BManagedWeb.Pages.Owner
                     var arr = _srv.GetInvoicesByCustomer(c.Id) ?? new Invoice[0];
                     foreach (var inv in arr) AllInvoices.Add((inv, c.BusinessName));
                 }
+                if (!string.IsNullOrWhiteSpace(Q))
+                {
+                    var q = Q.Trim().ToLowerInvariant();
+                    AllInvoices = AllInvoices
+                        .Where(x => (x.Item1.InvoiceNumber ?? "").ToLowerInvariant().Contains(q) ||
+                                    (x.Item2 ?? "").ToLowerInvariant().Contains(q))
+                        .ToList();
+                }
+                if (!string.IsNullOrEmpty(StatusFilter))
+                    AllInvoices = AllInvoices.Where(x => x.Item1.Status == StatusFilter).ToList();
                 AllInvoices = AllInvoices.OrderByDescending(x => x.Item1.IssueDate).Take(40).ToList();
             }
             return Page();

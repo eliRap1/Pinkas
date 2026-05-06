@@ -6,11 +6,11 @@
 
 <!-- Eyebrow + headline -->
 <div class="reveal mb-12">
-    <span class="pill rounded-full px-3 py-1 bg-black/5 border border-black/5">Owner</span>
+    <span class="pill rounded-full px-3 py-1 bg-black/5 border border-black/5">@L.T(HttpContext,"Owner","בעלים")</span>
     <h1 class="display text-5xl md:text-7xl font-bold mt-4 leading-[0.95]">
-        Hi, @Model.Username.<br/>
-        <span class="text-ink/40">Here's your money,</span>
-        <span class="text-accent">in motion.</span>
+        @L.T(HttpContext,"Hi,","שלום,") @Model.Username.<br/>
+        <span class="text-ink/40">@L.T(HttpContext,"Here's your money,","הנה הכסף שלך,")</span>
+        <span class="text-accent">@L.T(HttpContext,"in motion.","בתנועה.")</span>
     </h1>
 </div>
 
@@ -21,7 +21,7 @@
     <div class="reveal md:col-span-8 md:row-span-2 bg-black/[0.04] ring-1 ring-black/5 rounded-shell p-1.5 shadow-soft">
         <div class="bg-paper-50 rounded-core p-8 md:p-10 shadow-inset h-full">
             <div class="flex items-center justify-between mb-8">
-                <span class="pill text-ink/40">Outstanding</span>
+                <span class="pill text-ink/40">@L.T(HttpContext,"Outstanding","יתרה לגביה")</span>
                 <span class="text-xs text-ink/40">@Model.TodayLabel</span>
             </div>
             <div class="display text-7xl md:text-[8rem] font-bold leading-[0.85] tracking-tighter">
@@ -29,10 +29,10 @@
                 <span class="text-ink/30 text-3xl align-top">@Model.Currency</span>
             </div>
             <div class="mt-10 flex flex-wrap gap-x-10 gap-y-4 text-sm">
-                <div><span class="block text-ink/40 pill">Unpaid</span><span class="display text-2xl font-semibold">@Model.UnpaidCount</span></div>
-                <div><span class="block text-ink/40 pill">Overdue</span><span class="display text-2xl font-semibold text-rose">@Model.OverdueCount</span></div>
-                <div><span class="block text-ink/40 pill">Active projects</span><span class="display text-2xl font-semibold">@Model.ActiveProjects</span></div>
-                <div><span class="block text-ink/40 pill">Customers</span><span class="display text-2xl font-semibold">@Model.CustomersCount</span></div>
+                <div><span class="block text-ink/40 pill">@L.T(HttpContext,"Unpaid","לא שולם")</span><span class="display text-2xl font-semibold">@Model.UnpaidCount</span></div>
+                <div><span class="block text-ink/40 pill">@L.T(HttpContext,"Overdue","באיחור")</span><span class="display text-2xl font-semibold text-rose">@Model.OverdueCount</span></div>
+                <div><span class="block text-ink/40 pill">@L.T(HttpContext,"Active projects","פרויקטים פעילים")</span><span class="display text-2xl font-semibold">@Model.ActiveProjects</span></div>
+                <div><span class="block text-ink/40 pill">@L.T(HttpContext,"Customers","לקוחות")</span><span class="display text-2xl font-semibold">@Model.CustomersCount</span></div>
             </div>
         </div>
     </div>
@@ -40,38 +40,34 @@
     <!-- VAT due -->
     <div class="reveal md:col-span-4 bg-ink ring-1 ring-black/5 rounded-shell p-1.5">
         <div class="bg-ink-soft rounded-core p-8 text-paper-50 shadow-inset h-full">
-            <span class="pill text-paper-50/50">VAT due (this month)</span>
+            <span class="pill text-paper-50/50">@L.T(HttpContext,"VAT due (this month)","מע״מ לתשלום (החודש)")</span>
             <div class="display text-5xl font-bold mt-3">@Model.VatDueDisplay <span class="text-base text-paper-50/50">@Model.Currency</span></div>
-            <div class="text-paper-50/50 text-xs mt-2">Set aside: @Model.TaxSetAsideDisplay @Model.Currency</div>
+            <div class="text-paper-50/50 text-xs mt-2">@L.T(HttpContext,"Set aside","להפריש"): @Model.TaxSetAsideDisplay @Model.Currency</div>
         </div>
     </div>
 
-    <!-- Quick action: New invoice -->
-    <div class="reveal md:col-span-4">
-        <a asp-page="/Owner/Invoices" class="group block bg-paper-100 ring-1 ring-black/5 rounded-shell p-1.5 hover:shadow-float transition-all duration-500 ease-spring">
-            <div class="bg-white rounded-core p-6 flex items-center justify-between">
-                <div>
-                    <span class="pill text-ink/40">Quick action</span>
-                    <div class="display text-2xl font-semibold mt-1">New invoice</div>
-                </div>
-                <span class="w-12 h-12 rounded-full bg-ink text-paper-50 flex items-center justify-center transition-all duration-500 ease-spring group-hover:translate-x-1 group-hover:-translate-y-px">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
-                </span>
+    <!-- 6-month profit sparkline -->
+    <div class="reveal md:col-span-4 bg-black/[0.04] ring-1 ring-black/5 rounded-shell p-1.5 shadow-soft">
+        <div class="bg-paper-50 rounded-core p-6 shadow-inset h-full">
+            <div class="flex items-center justify-between">
+                <span class="pill text-ink/40">@L.T(HttpContext,"6-month profit","רווח 6 חודשים")</span>
+                <span class="text-xs text-ink/40" id="spark-last">—</span>
             </div>
-        </a>
+            <canvas id="spark" height="90" class="mt-3"></canvas>
+        </div>
     </div>
 
     <!-- Recent invoices -->
     <div class="reveal md:col-span-12 bg-black/[0.04] ring-1 ring-black/5 rounded-shell p-1.5 shadow-soft">
         <div class="bg-paper-50 rounded-core p-8 shadow-inset">
             <div class="flex items-center justify-between mb-6">
-                <h2 class="display text-2xl font-semibold">Recent invoices</h2>
-                <a asp-page="/Owner/Invoices" class="text-sm text-accent hover:underline">View all →</a>
+                <h2 class="display text-2xl font-semibold">@L.T(HttpContext,"Recent invoices","חשבוניות אחרונות")</h2>
+                <a asp-page="/Owner/Invoices" class="text-sm text-accent hover:underline">@L.T(HttpContext,"View all","הצג הכל") →</a>
             </div>
 
             @if (Model.RecentInvoices == null || Model.RecentInvoices.Count == 0)
             {
-                <p class="text-ink/40 text-sm">No invoices yet — issue your first one to start tracking revenue.</p>
+                <p class="text-ink/40 text-sm">@L.T(HttpContext,"No invoices yet — issue your first one to start tracking revenue.","אין חשבוניות עדיין — הוצא את הראשונה כדי להתחיל לעקוב אחר ההכנסות.")</p>
             }
             else
             {
@@ -97,6 +93,7 @@
 </section>
 
 @section Scripts {
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script>
   // Polling: refresh /Owner/Home?handler=Stats every 15 seconds for live counters.
   setInterval(async () => {
@@ -110,5 +107,39 @@
       });
     } catch (e) {}
   }, 15000);
+
+  // Sparkline render
+  (async () => {
+    try {
+      const r = await fetch('/Owner/Home?handler=Sparkline');
+      if (!r.ok) return;
+      const d = await r.json();
+      const ctx = document.getElementById('spark');
+      if (!ctx || !d.labels) return;
+      const last = d.data && d.data.length ? d.data[d.data.length - 1] : 0;
+      document.getElementById('spark-last').textContent =
+        Math.round(Number(last)).toLocaleString() + ' ' + (d.currency || '');
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: d.labels,
+          datasets: [{
+            data: d.data,
+            borderColor: '#3B5BFF',
+            backgroundColor: 'rgba(59, 91, 255, 0.08)',
+            fill: true,
+            tension: 0.4,
+            pointRadius: 0,
+            borderWidth: 2,
+          }],
+        },
+        options: {
+          plugins: { legend: { display: false } },
+          scales: { x: { display: false }, y: { display: false } },
+          maintainAspectRatio: false,
+        },
+      });
+    } catch (e) {}
+  })();
 </script>
 }

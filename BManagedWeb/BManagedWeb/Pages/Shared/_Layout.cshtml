@@ -99,6 +99,10 @@
          class="px-3 py-1.5 rounded-full hover:bg-black/5 transition text-xs">@(lang == "he" ? "EN" : "עב")</a>
       @if (!string.IsNullOrEmpty(username))
       {
+        <a asp-page="/Notifications" class="relative px-3 py-1.5 rounded-full hover:bg-black/5 transition" title="Notifications">
+          <span>🔔</span>
+          <span id="notif-badge" class="hidden absolute -top-1 -right-1 bg-rose text-white text-[10px] font-bold rounded-full px-1.5 py-0.5">0</span>
+        </a>
         <span class="px-3 py-1.5 text-ink/60">@username</span>
         <a asp-page="/Logout" class="group inline-flex items-center gap-2 bg-ink text-paper-50 rounded-full px-3 py-1.5 ml-1 hover:opacity-90 transition active:scale-[0.98]">
           @T("Logout","יציאה")
@@ -128,6 +132,24 @@
       for (const e of entries) if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
     }, { threshold: 0.1 });
     document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+    // Live notification badge — polls /Notifications?handler=Count every 30s.
+    const badge = document.getElementById('notif-badge');
+    async function refreshBadge() {
+      if (!badge) return;
+      try {
+        const r = await fetch('/Notifications?handler=Count', { headers: { 'Accept': 'application/json' } });
+        if (!r.ok) return;
+        const n = await r.json();
+        if (n > 0) {
+          badge.textContent = n > 99 ? '99+' : String(n);
+          badge.classList.remove('hidden');
+        } else {
+          badge.classList.add('hidden');
+        }
+      } catch (e) {}
+    }
+    if (badge) { refreshBadge(); setInterval(refreshBadge, 30000); }
   </script>
   @await RenderSectionAsync("Scripts", required: false)
 </body>

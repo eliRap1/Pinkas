@@ -89,6 +89,33 @@ namespace BManagedWeb.Pages.Owner
             return Page();
         }
 
+        // Sparkline endpoint — last 6 months of profit (revenue - expenses) per month.
+        public IActionResult OnGetSparkline()
+        {
+            var role = HttpContext.Session.GetString("Role");
+            if (role != "Owner") return new JsonResult(new { });
+            int id = HttpContext.Session.GetInt32("UserId") ?? 0;
+            var currency = HttpContext.Session.GetString("Currency") ?? "ILS";
+
+            var labels = new List<string>();
+            var data = new List<decimal>();
+            try
+            {
+                var anchor = DateTime.Today;
+                for (int i = 5; i >= 0; i--)
+                {
+                    var d = anchor.AddMonths(-i);
+                    var first = new DateTime(d.Year, d.Month, 1);
+                    var last  = first.AddMonths(1).AddDays(-1);
+                    var pl = _srv.GetProfitLoss(id, first, last, currency);
+                    labels.Add(first.ToString("MMM"));
+                    data.Add(pl != null ? pl.Profit : 0m);
+                }
+            }
+            catch { }
+            return new JsonResult(new { labels, data, currency });
+        }
+
         // Polling endpoint — returns lightweight JSON for live counter refresh.
         public IActionResult OnGetStats()
         {

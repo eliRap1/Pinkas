@@ -1,0 +1,32 @@
+@page
+@model BManagedWeb.Pages.NotificationsModel
+@{ ViewData["Title"] = "Notifications"; }
+
+<div class="reveal mb-8">
+    <span class="pill rounded-full px-3 py-1 bg-black/5 border border-black/5">Inbox</span>
+    <h1 class="display text-5xl md:text-7xl font-bold mt-4 leading-[0.95]">@L.T(HttpContext, "Notifications", "התראות")</h1>
+</div>
+
+<form method="post" asp-page-handler="MarkAll" class="reveal mb-6">
+    <button class="bg-ink text-paper-50 rounded-full px-4 py-2 text-sm">@L.T(HttpContext, "Mark all read", "סמן הכל כנקרא")</button>
+</form>
+
+<section class="reveal grid grid-cols-1 md:grid-cols-2 gap-3">
+    @foreach (var n in Model.Notifications)
+    {
+        var bg = n.IsRead ? "bg-paper-100" : "bg-amber/10 border border-amber/20";
+        <div class="@bg rounded-2xl px-5 py-4 border border-black/5">
+            <div class="flex items-start justify-between gap-4">
+                <div>
+                    <div class="font-semibold">@n.Title</div>
+                    <div class="text-sm text-ink/60 mt-1">@n.Message</div>
+                </div>
+                <div class="text-xs text-ink/40 whitespace-nowrap">@n.CreatedAt.ToString("dd MMM HH:mm")</div>
+            </div>
+        </div>
+    }
+    @if (Model.Notifications.Count == 0)
+    {
+        <div class="md:col-span-2 text-center py-16 text-ink/40">@L.T(HttpContext, "No notifications.", "אין התראות.")</div>
+    }
+</section>

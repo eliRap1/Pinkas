@@ -20,6 +20,7 @@ namespace BManagedWeb.Pages.Owner
         [BindProperty] public decimal NewVat { get; set; }
         [BindProperty] public string NewDescription { get; set; }
         [BindProperty] public string NewCurrency { get; set; } = "ILS";
+        [BindProperty(SupportsGet = true)] public string Q { get; set; }
 
         public IActionResult OnGet()
         {
@@ -29,6 +30,13 @@ namespace BManagedWeb.Pages.Owner
 
             Categories = (_srv.GetExpenseCategories() ?? new ExpenseCategory[0]).ToList();
             Expenses   = (_srv.GetExpensesByOwner(id) ?? new Expense[0]).ToList();
+            if (!string.IsNullOrWhiteSpace(Q))
+            {
+                var q = Q.Trim().ToLowerInvariant();
+                Expenses = Expenses.Where(e =>
+                    (e.Vendor ?? "").ToLowerInvariant().Contains(q) ||
+                    (e.Description ?? "").ToLowerInvariant().Contains(q)).ToList();
+            }
             return Page();
         }
 
