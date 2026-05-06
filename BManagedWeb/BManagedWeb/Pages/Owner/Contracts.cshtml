@@ -56,14 +56,19 @@
                         <span class="pill text-ink/40">@c.ContractNumber · @c.Currency</span>
                         <div class="display text-2xl font-semibold mt-2">@c.Title</div>
                         <div class="text-xs text-ink/40 mt-1">
-                            @L.T(HttpContext,"Created","נוצר") @c.CreatedAt.ToString("dd MMM yyyy")
+                            @L.T(HttpContext,"Created","נוצר"): @c.CreatedAt.ToString("dd/MM/yyyy")
                             @if (c.SignedDate.HasValue)
                             {
-                                <text> · @L.T(HttpContext,"signed","נחתם") @c.SignedDate.Value.ToString("dd MMM yyyy")</text>
+                                <text> · @L.T(HttpContext,"signed","נחתם"): @c.SignedDate.Value.ToString("dd/MM/yyyy")</text>
                             }
                         </div>
                     </div>
-                    <div class="pill rounded-full px-2 py-0.5 bg-@(color)/10 text-@(color) border border-@(color)/20">@c.Status</div>
+                    <div class="pill rounded-full px-2 py-0.5 bg-@(color)/10 text-@(color) border border-@(color)/20">@(c.Status switch {
+                        "Draft"     => L.T(HttpContext,"Draft","טיוטה"),
+                        "Sent"      => L.T(HttpContext,"Sent","נשלח"),
+                        "Signed"    => L.T(HttpContext,"Signed","חתום"),
+                        "Cancelled" => L.T(HttpContext,"Cancelled","בוטל"),
+                        _           => c.Status })</div>
                 </div>
 
                 <div class="display text-xl font-semibold mt-4">@c.TotalAmount.ToString("N2") <span class="text-ink/40 text-xs">@c.Currency</span></div>

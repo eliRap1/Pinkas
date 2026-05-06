@@ -43,9 +43,14 @@
             <div class="bg-paper-50 rounded-core p-6 shadow-inset h-full">
                 <span class="pill text-ink/40">#@p.Id · @p.Currency</span>
                 <div class="display text-2xl font-semibold mt-2">@p.Title</div>
-                <div class="text-xs text-ink/40 mt-1">@L.T(HttpContext,"Due","יעד") @(p.DueDate?.ToString("dd MMM yyyy") ?? "—")</div>
+                <div class="text-xs text-ink/40 mt-1">@L.T(HttpContext,"Due","יעד") @(p.DueDate?.ToString("dd/MM/yyyy") ?? "—")</div>
                 <div class="display text-xl font-semibold mt-3">@p.TotalBudget.ToString("N0") <span class="text-ink/40 text-xs">@p.Currency</span></div>
-                <div class="pill rounded-full px-2 py-0.5 mt-4 inline-block bg-@(color)/10 text-@(color) border border-@(color)/20">@p.Status</div>
+                <div class="pill rounded-full px-2 py-0.5 mt-4 inline-block bg-@(color)/10 text-@(color) border border-@(color)/20">@(p.Status switch {
+                    "Active"          => L.T(HttpContext,"Active","פעיל"),
+                    "AwaitingPayment" => L.T(HttpContext,"Awaiting Payment","ממתין לתשלום"),
+                    "Done"            => L.T(HttpContext,"Done","הסתיים"),
+                    "Cancelled"       => L.T(HttpContext,"Cancelled","בוטל"),
+                    _                 => p.Status })</div>
                 <div class="text-xs text-ink/40 mt-3">@L.T(HttpContext,"Click to manage employees + status","לחץ לניהול עובדים וסטטוס")</div>
             </div>
         </button>

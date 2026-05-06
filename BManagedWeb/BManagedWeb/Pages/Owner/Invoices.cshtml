@@ -48,11 +48,16 @@
                     <div>
                         <div class="pill text-ink/40">@inv.InvoiceNumber</div>
                         <div class="font-medium">@custName</div>
-                        <div class="text-xs text-ink/40">@L.T(HttpContext,"Due","יעד") @inv.DueDate.ToString("dd MMM yyyy")</div>
+                        <div class="text-xs text-ink/40">@L.T(HttpContext,"Due","יעד") @inv.DueDate.ToString("dd/MM/yyyy")</div>
                     </div>
                     <div class="text-right">
                         <div class="display font-semibold">@inv.Total.ToString("N0") <span class="text-ink/40 text-xs">@inv.Currency</span></div>
-                        <div class="pill rounded-full px-2 py-0.5 mt-1 inline-block bg-@(color)/10 text-@(color) border border-@(color)/20">@inv.Status</div>
+                        <div class="pill rounded-full px-2 py-0.5 mt-1 inline-block bg-@(color)/10 text-@(color) border border-@(color)/20">@(inv.Status switch {
+                            "Draft"   => L.T(HttpContext,"Draft","טיוטה"),
+                            "Sent"    => L.T(HttpContext,"Sent","נשלח"),
+                            "Paid"    => L.T(HttpContext,"Paid","שולם"),
+                            "Overdue" => L.T(HttpContext,"Overdue","באיחור"),
+                            _         => inv.Status })</div>
                     </div>
                 </div>
             </a>
@@ -126,9 +131,14 @@ else
 
             <div class="bg-paper-100 ring-1 ring-black/5 rounded-shell p-1.5">
                 <div class="bg-paper-50 rounded-core p-6 shadow-inset space-y-2 text-sm">
-                    <div class="flex justify-between"><span class="text-ink/40">@L.T(HttpContext,"Status","סטטוס")</span><span class="font-semibold">@Model.Selected.Status</span></div>
-                    <div class="flex justify-between"><span class="text-ink/40">@L.T(HttpContext,"Issued","הופק")</span><span>@Model.Selected.IssueDate.ToString("dd MMM yyyy")</span></div>
-                    <div class="flex justify-between"><span class="text-ink/40">@L.T(HttpContext,"Due","יעד")</span><span>@Model.Selected.DueDate.ToString("dd MMM yyyy")</span></div>
+                    <div class="flex justify-between"><span class="text-ink/40">@L.T(HttpContext,"Status","סטטוס")</span><span class="font-semibold">@(Model.Selected.Status switch {
+                        "Draft"   => L.T(HttpContext,"Draft","טיוטה"),
+                        "Sent"    => L.T(HttpContext,"Sent","נשלח"),
+                        "Paid"    => L.T(HttpContext,"Paid","שולם"),
+                        "Overdue" => L.T(HttpContext,"Overdue","באיחור"),
+                        _         => Model.Selected.Status })</span></div>
+                    <div class="flex justify-between"><span class="text-ink/40">@L.T(HttpContext,"Issued","הופק")</span><span>@Model.Selected.IssueDate.ToString("dd/MM/yyyy")</span></div>
+                    <div class="flex justify-between"><span class="text-ink/40">@L.T(HttpContext,"Due","יעד")</span><span>@Model.Selected.DueDate.ToString("dd/MM/yyyy")</span></div>
                 </div>
             </div>
 
