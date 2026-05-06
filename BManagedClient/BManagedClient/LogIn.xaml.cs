@@ -55,5 +55,8 @@ namespace BManagedClient
             error.Text = msg;
             error.Visibility = Visibility.Visible;
         }
+
+        private void signUp_Click(object sender, RoutedEventArgs e)
+            => NavigationService?.Navigate(new SignUp());
     }
 }

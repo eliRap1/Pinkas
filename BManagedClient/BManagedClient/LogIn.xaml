@@ -31,6 +31,9 @@
 
                 <Button Content="Sign In" Style="{StaticResource PrimaryButton}"
                         Click="signIn_Click" Height="38"/>
+                <Button Content="Create new account" Click="signUp_Click"
+                        Background="Transparent" Foreground="{StaticResource Cyan}"
+                        BorderThickness="0" Margin="0,8,0,0" Cursor="Hand"/>
                 <TextBlock x:Name="error" Foreground="{StaticResource Red}"
                            HorizontalAlignment="Center" Margin="0,12,0,0" Visibility="Collapsed"/>
             </StackPanel>
