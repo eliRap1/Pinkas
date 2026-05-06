@@ -23,7 +23,22 @@
         </form>
     </div>
 
+    @if (Model.LinkedContract != null)
+    {
+        <div class="reveal mb-4 max-w-3xl bg-mint/10 text-mint border border-mint/20 rounded-2xl px-5 py-3 text-sm">
+            🧾 @L.T(HttpContext,"Creating invoice from contract","יוצר חשבונית מחוזה")
+            <span class="font-semibold">@Model.LinkedContract.ContractNumber</span>
+            (@L.T(HttpContext,"Title","כותרת"): @Model.LinkedContract.Title ·
+            @L.T(HttpContext,"Total","סה״כ"): @Model.LinkedContract.TotalAmount.ToString("N2") @Model.LinkedContract.Currency).
+            @L.T(HttpContext,"Customer + currency are pre-filled. After creation, an initial line will seed from the contract title and amount.",
+                              "הלקוח והמטבע ימולאו אוטומטית. שורה ראשונה תיווצר מתוך כותרת וסכום החוזה.")
+        </div>
+    }
+
     <form method="post" asp-page-handler="Create" class="reveal mb-12 bg-black/[0.04] ring-1 ring-black/5 rounded-shell p-1.5 max-w-3xl">
+        @if (Model.ContractId.HasValue) {
+            <input type="hidden" name="ContractId" value="@Model.ContractId.Value"/>
+        }
         <div class="bg-paper-50 rounded-core p-6 shadow-inset grid md:grid-cols-3 gap-3">
             <select asp-for="NewCustomerId" class="bg-paper-100 border border-black/5 rounded-2xl px-4 py-2.5">
                 <option value="0">@L.T(HttpContext,"Customer…","לקוח…")</option>

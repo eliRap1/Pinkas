@@ -26,6 +26,8 @@ namespace BManagedWeb.Pages.Owner
 
         [BindProperty(SupportsGet = true)] public string Q { get; set; }
         [BindProperty(SupportsGet = true)] public string StatusFilter { get; set; }
+        [BindProperty(SupportsGet = true)] public int? ContractId { get; set; }
+        public Contract LinkedContract { get; set; }
 
         public IActionResult OnGet(int? id)
         {
@@ -35,6 +37,17 @@ namespace BManagedWeb.Pages.Owner
 
             var custArr = _srv.GetCustomersForOwner(ownerId);
             Customers = custArr?.ToList() ?? new List<Customer>();
+
+            // Prefill from contract if ?contractId=N
+            if (ContractId.HasValue && ContractId.Value > 0)
+            {
+                LinkedContract = _srv.GetContractById(ContractId.Value);
+                if (LinkedContract != null)
+                {
+                    NewCustomerId = LinkedContract.CustomerId;
+                    NewCurrency   = LinkedContract.Currency;
+                }
+            }
 
             if (id.HasValue && id.Value > 0)
             {
@@ -71,12 +84,34 @@ namespace BManagedWeb.Pages.Owner
             int newId = _srv.CreateInvoice(new Invoice
             {
                 CustomerId = NewCustomerId,
-                IssueDate = DateTime.Today,
-                DueDate = NewDueDate,
-                Currency = NewCurrency ?? "ILS",
-                Status = "Draft",
-                VatRate = 0.17,
+                IssueDate  = DateTime.Today,
+                DueDate    = NewDueDate,
+                Currency   = NewCurrency ?? "ILS",
+                Status     = "Draft",
+                VatRate    = 0.17,
+                ContractId = ContractId,
             });
+            // If a contract was linked and it has a Total, seed an initial line.
+            if (ContractId.HasValue && ContractId.Value > 0)
+            {
+                try
+                {
+                    var ctr = _srv.GetContractById(ContractId.Value);
+                    if (ctr != null && ctr.TotalAmount > 0)
+                    {
+                        _srv.AddInvoiceLine(new InvoiceLine
+                        {
+                            InvoiceId   = newId,
+                            Description = ctr.Title,
+                            Quantity    = 1,
+                            UnitPrice   = ctr.TotalAmount,
+                            LineTotal   = ctr.TotalAmount,
+                            Currency    = ctr.Currency ?? "ILS",
+                        });
+                    }
+                }
+                catch { }
+            }
             return RedirectToPage("/Owner/Invoices", new { id = newId });
         }
 
