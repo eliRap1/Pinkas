@@ -44,6 +44,10 @@
 25. הלוואות עסקיות וקרנות (קרן) — מעקב חוב ויחס חוב להכנסה
 26. דשבורד אנליטיקה מתקדם — Receivables Aging, Payment Lag, Concentration, Runway
 27. שיפורי חוויית משתמש (UX) — Login Spinner, ולידציות הרשמה, הרשמת עובד/בעלים ב-WPF, חוזה→חשבונית→הושלם
+28. רב-דיירות (Multi-tenant) — OwnerId, קודי הצטרפות, שאילתות מוגבלות-טננט
+29. ולידציה צבעונית — מסגרות אדומות בכל שדה ואיתור שגיאות בזמן אמת
+30. עמוד הגדרות עסק (Owner Settings) — שם עסק, מע״מ, זעיר, סיבוב קוד הצטרפות
+31. ביצועים — ערוץ WCF משותף ומיעוט פתיחות חיבור
 
 ---
 
@@ -2310,4 +2314,264 @@ ServiceGateway.Use(c => c.AddInvoiceLine(new InvoiceLine {
 
 ---
 
-**סוף הספר.** סך הכל **70 פעולות WCF**, **15 טבלאות**, **35+ דפי UI** (15 WPF + 20+ Web), **5 דו״חות** (כולל KPIs ו-Loan Summary), 2 לקוחות, 2 שפות, 2 מטבעות. עדכון 2026 הוסיף תמיכה ב-VAT 18%, מודל עוסק תקין (Patur/Murshe + IsZair), הלוואות עסקיות (כולל קרן בערבות מדינה), אנליטיקה מתקדמת (Aging/Payment Lag/Concentration/Runway), ושיפורי UX משמעותיים.
+---
+
+# 29. רב-דיירות (Multi-Tenant) — OwnerId, קודי הצטרפות, שאילתות מוגבלות-טננט
+
+עד עדכון מאי 2026 המערכת התנהגה כמו אפליקציית-יחיד: כל בעלים יכול היה לראות את כל המשתמשים, ההלוואות, הלקוחות והפרויקטים בשרת. זה היה לקבוע פרצת אבטחה ברורה ברגע שיותר מבעלים אחד נרשם. הפרק הזה מתעד את מודל הרב-דיירות שהתווסף.
+
+## 29.1 מודל המידע — שדות חדשים על User
+
+`WcfServiceLibrary1/Model/User.cs:30-50`:
+
+```csharp
+[DataMember] public int? OwnerId { get; set; }     // לעובד/לקוח: ה-Id של הבעלים שאליו הוא משתייך
+[DataMember] public string BusinessName { get; set; } // שם העסק לתצוגה (במקום username)
+[DataMember] public string InviteCode { get; set; }   // קוד סודי קצר — Employee מציג בהרשמה
+```
+
+הסכמה מתעדכנת אוטומטית בעלייה הראשונה של השרת:
+
+```csharp
+private void EnsureSchema()
+{
+    AddColumnIfMissing("[ownerId] LONG");
+    AddColumnIfMissing("[businessName] TEXT(120)");
+    AddColumnIfMissing("[inviteCode] TEXT(16)");
+}
+```
+
+## 29.2 קודי הצטרפות — Invite codes
+
+הבעיה: אם בהרשמת עובד מציגים רשימה ציבורית של כל הבעלים הפעילים, ההרשמה עצמה מהווה דליפת מידע (כל אחד יכול לראות אילו עסקים רשומים במערכת).
+
+הפתרון: קוד סודי קצר בפורמט `PREFIX-XXXX` (4 תווים מתוך שם העסק + 4 תווים אקראיים מאלפבית חסר-בלבול בלי 0/O ובלי 1/I/L). הקוד נוצר אוטומטית בהרשמת בעלים, נשמר על שורת המשתמש, וניתן להחליפו דרך עמוד ההגדרות.
+
+```csharp
+private static string NewInviteCode(string seed)
+{
+    string prefix = new string((seed ?? "").ToUpperInvariant()
+        .Where(char.IsLetterOrDigit).Take(4).ToArray());
+    if (prefix.Length < 2) prefix = "BMNG";
+    const string alpha = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"; // אין 0/O/1/I/L
+    var rnd = new Random();
+    var tail = new string(Enumerable.Range(0, 4)
+        .Select(_ => alpha[rnd.Next(alpha.Length)]).ToArray());
+    return prefix + "-" + tail;
+}
+```
+
+עובד שמזין קוד מקבל את הבעלים המתאים דרך:
+
+```csharp
+// UserDB.cs
+public User GetOwnerByInviteCode(string code)
+{
+    if (string.IsNullOrWhiteSpace(code) || code.Length > 16) return null;
+    return Select("SELECT * FROM [Users] WHERE [role]='Owner' AND [inviteCode]=? AND [isActive]=?",
+        new OleDbParameter("@c", code.Trim()),
+        new OleDbParameter("@a", true)).OfType<User>().FirstOrDefault();
+}
+```
+
+`SignUpModel.OnPost` (Web) ו-`SignUp.xaml.cs.Create_Click` (WPF) מבצעים את הקריאה לפני יצירת המשתמש כך שעובד עם קוד שגוי לא משאיר שורה יתומה במסד.
+
+## 29.3 שאילתות מוגבלות-טננט (Tenant-scoped queries)
+
+ביצענו אודיט של כל שאילתה שמחזירה משתמשים. שלוש פעולות חדשות הוספו ל-`IService1`:
+
+```csharp
+[OperationContract] List<User> GetUsersForOwner(int ownerId);
+[OperationContract] List<User> GetPendingForOwner(int ownerId);
+[OperationContract] List<User> GetEmployeesForOwner(int ownerId);
+```
+
+מימוש ב-`UserDB.cs` משתמש ב-WHERE `[ownerId] = ?` במקום בלי מסנן:
+
+```csharp
+public List<User> GetEmployeesForOwner(int ownerId)
+    => Select(@"SELECT * FROM [Users]
+                WHERE [role] = ? AND [ownerId] = ?
+                ORDER BY [username]",
+        new OleDbParameter("@r", "Employee"),
+        new OleDbParameter("@o", ownerId)).OfType<User>().ToList();
+```
+
+## 29.4 אתרי קריאה שתוקנו
+
+| קובץ | קריאה ישנה | קריאה חדשה |
+|--------|--------------|----------------|
+| `BManagedClient/BManagedClient/ManageUsers.xaml.cs:22` | `GetAllUsers()` | `GetUsersForOwner(LogIn.sign.Id)` |
+| `BManagedClient/BManagedClient/Projects.xaml.cs:57` | `GetAllUsers()` + סינון לקוח | `GetEmployeesForOwner(LogIn.sign.Id)` |
+| `BManagedClient/BManagedClient/ForgotPassword.xaml.cs:30` | לולאה על כל הבעלים | התראה רק לבעלים של המשתמש |
+| `BManagedWeb/BManagedWeb/Pages/Owner/Users.cshtml.cs:35-37` | `GetAllUsers + GetPendingUsers` | `GetUsersForOwner + GetPendingForOwner` |
+| `BManagedWeb/BManagedWeb/Pages/Owner/Projects.cshtml.cs:75` | `GetAllUsers()` | `GetEmployeesForOwner` |
+| `BManagedWeb/BManagedWeb/Pages/ForgotPassword.cshtml.cs:30` | לולאה על כל הבעלים | התראה רק לבעלים של המשתמש |
+
+הפעולות הישנות `GetAllUsers / GetAllEmployees / GetPendingUsers` נשארו ב-WCF Contract לצרכי תאימות לאחור (seed admin, מיגרציה) אבל מסומנות בתיעוד `DEPRECATED — use *ForOwner variant` ולא נקראות יותר מה-UI.
+
+---
+
+# 30. ולידציה צבעונית — מסגרות אדומות ואיתור שגיאות בזמן אמת
+
+טפסי הרשמה והוספת לקוח קיבלו ולידציה צבעונית: כל שדה שגוי מקבל **מסגרת אדומה** + **תווית הסבר אדומה מתחתיו**, גם בזמן הקלדה (input) וגם ב-blur וגם בלחיצת submit.
+
+## 30.1 ב-Web — DOM data attributes + JS
+
+תרגומים מוצגים מתוך `data-*` attributes על אלמנט `<div id="i18n">` מוסתר. JS קורא אותם ב-`getAttribute`. זה עוקף בעיות פרסור של Razor source-generator עם `@` בתוך JS regexes (כל `@` ברגקס בתוך `<script>` נחשב לביטוי Razor — לכן השתמשנו ב-`@@` לסינון `@`).
+
+```javascript
+var rules = {
+  username: { rx: /^[A-Za-z0-9_.]{4,20}$/, msg: I18N.getAttribute('data-err-username') },
+  password: { test: function (v) { return /^(?=.*[A-Za-z])(?=.*\d).{8,}$/.test(v); }, msg: I18N.getAttribute('data-err-password') },
+  email:    { rx: /^[\w.\-]+@@[\w\-]+\.[\w\-.]+$/, msg: I18N.getAttribute('data-err-email') },
+  phone:    { rx: /^\+?\d{7,15}$/, msg: I18N.getAttribute('data-err-phone') }
+};
+```
+
+הולידציה רצה גם בצד שרת (ב-`SignUpModel.OnPost`) כדי לחסום קריאות עם JS מושבת.
+
+## 30.2 ב-WPF — BorderBrush
+
+```csharp
+var rose = (Brush)Application.Current.Resources["Rose"];
+void BadTb(TextBox b, string msg) {
+    b.BorderBrush = rose; b.BorderThickness = new Thickness(1.5);
+    bad = true; if (firstErr == null) firstErr = msg;
+}
+
+if (!UsernameRx.IsMatch(u))   BadTb(usernameBox, "Username must be 4–20 letters / digits / _ / .");
+if (!PasswordRx.IsMatch(p))   BadPb(passwordBox, "Password: 8+ chars, must include a letter and a digit.");
+if (!EmailRx.IsMatch(em))     BadTb(emailBox, "Email looks invalid (e.g. name@example.com).");
+if (!PhoneRx.IsMatch(ph))     BadTb(phoneBox, "Phone must be 7–15 digits, optionally + country code.");
+```
+
+## 30.3 רשימת ביקורת חיה לסיסמה
+
+```html
+<div id="pwHint" class="mt-1 text-xs space-y-0.5">
+  <div data-rule="len"   class="text-ink/40">• At least 8 characters</div>
+  <div data-rule="alpha" class="text-ink/40">• Contains a letter</div>
+  <div data-rule="num"   class="text-ink/40">• Contains a digit</div>
+</div>
+```
+
+JS מסמן כל בולט ירוק (`text-mint`) ברגע שהתנאי מתקיים. נותן משוב מיידי בלי הצגת פוסט-בק.
+
+---
+
+# 31. עמוד הגדרות עסק (Owner Settings) — שם עסק, מע״מ, זעיר, סיבוב קוד הצטרפות
+
+עמוד `/Owner/Settings` (Web) ו-`Settings.xaml` (WPF) קיבלו 4 כרטיסי-משנה:
+
+1. **Profile** — אימייל, טלפון, מטבע מועדף.
+2. **Security** — שינוי סיסמה (אותו רגקס כמו ב-SignUp: 8+ תווים, אות וספרה).
+3. **Company** (בעלים בלבד) — שם עסק, סוג עוסק (Patur/Murshe), סטטוס Zair.
+4. **Invite code** (בעלים בלבד) — תצוגה מובלטת + כפתורי Copy/Rotate.
+
+## 31.1 לוגיקת סיבוב קוד
+
+```csharp
+public IActionResult OnPostRotateInvite()
+{
+    int id = HttpContext.Session.GetInt32("UserId") ?? 0;
+    var u = _srv.GetUserById(id);
+    string seed = string.IsNullOrWhiteSpace(u?.BusinessName) ? (u?.Username ?? "BMNG") : u.BusinessName;
+    string code = NewInviteCode(seed);
+    var result = _srv.SetInviteCode(id, code);
+    TempData["SetMsg"] = "New invite code: " + result;
+    return RedirectToPage();
+}
+```
+
+הקוד הישן נפסל מיידית — עובדים שעדיין באמצע ההרשמה יקבלו "Invite code not recognised" ויצטרכו את הקוד החדש.
+
+## 31.2 גמישות לבעלים
+
+הבעלים יכול בכל זמן:
+- לשנות שם עסק ולראות אותו במיידי בכל מקום במערכת (במקום username).
+- לעבור מעוסק פטור למורשה כשעוברים את 120k ₪.
+- להפעיל / לכבות סטטוס זעיר אם נכנס/יוצא ממסלול חישוב נורמטיבי.
+- לסובב את קוד ההצטרפות אם אחד החקלאיים-לשעבר משתף אותו פרסומת.
+
+---
+
+# 32. ביצועים — ערוץ WCF משותף
+
+לפני העדכון: כל קריאת `ServiceGateway.Use` יצרה Service1Client חדש, פתחה ערוץ WCF (TCP handshake + Binding setup), ביצעה את הקריאה, וסגרה את הערוץ. עמוד Reports שביצע 6 קריאות עוקבות שילם 6 פתיחות-ערוץ קרות.
+
+`BManagedClient/BManagedClient/ClientSession.cs:7-65`:
+
+```csharp
+public static class ServiceGateway
+{
+    private static Service1Client _shared;
+    private static readonly object _lock = new object();
+
+    private static Service1Client GetClient()
+    {
+        lock (_lock)
+        {
+            if (_shared == null
+                || _shared.State == CommunicationState.Faulted
+                || _shared.State == CommunicationState.Closed
+                || _shared.State == CommunicationState.Closing)
+            {
+                if (_shared != null) { try { _shared.Abort(); } catch { } _shared = null; }
+                _shared = new Service1Client();
+            }
+            return _shared;
+        }
+    }
+
+    public static T Use<T>(Func<Service1Client, T> action)
+    {
+        try { return action(GetClient()); }
+        catch
+        {
+            // אם הערוץ נכנס למצב Faulted, נבנה אותו מחדש בקריאה הבאה.
+            lock (_lock)
+            {
+                if (_shared != null) { try { _shared.Abort(); } catch { } }
+                _shared = null;
+            }
+            throw;
+        }
+    }
+}
+```
+
+## 32.1 איגום קריאות SOAP במקום נפרדות
+
+עודכנו דפים שמבצעים מספר קריאות עוקבות לאיגוד שלהן בקריאה אחת `Use(c => { ... })`. הזיכוי הגדול: `Reports.xaml.cs.Reload`:
+
+```csharp
+ServiceGateway.Use(c =>
+{
+    var v = c.GetVatSummary(id, year, month, cur);
+    topCustomers.ItemsSource = c.GetTopCustomersByRevenue(id, cur);
+    breakdown.ItemsSource    = c.GetExpenseBreakdown(id, first, last, cur);
+    var pl = c.GetProfitLoss(id, yearStart, yearEnd, cur);
+    var k  = c.GetAdvancedKpis(id, cur);
+    var ls = c.GetLoanSummary(id, cur);
+    /* ... */
+});
+```
+
+6 קריאות, ערוץ אחד — במקום 6 פתיחות חיבור.
+
+## 32.2 LogIn
+
+לפני: `CheckUserPassword` ואז `GetUserById(GetUserId(u))` — 3 פתיחות חיבור.
+אחרי:
+
+```csharp
+var user = ServiceGateway.Use(c =>
+    c.CheckUserPassword(u, p) ? c.GetUserById(c.GetUserId(u)) : null);
+```
+
+קריאה אחת מאוחדת. גם קריאה אחת ל-`fail-fast` ב-Web `OnPost` חוסכת PBKDF2 על שם משתמש לא קיים (פרק 27.1).
+
+---
+
+**סוף הספר.** סך הכל **78 פעולות WCF**, **15 טבלאות**, **37 דפי UI** (16 WPF + 21 Web), **5 דו״חות**, 2 לקוחות, 2 שפות, 2 מטבעות. עדכון מאי 2026 הוסיף: VAT 18%, מודל עוסק תקין (Patur/Murshe + IsZair), הלוואות עסקיות (כולל קרן בערבות מדינה), אנליטיקה מתקדמת (Aging/Payment Lag/Concentration/Runway), הרשמת בעלים-ועובד דו-שלבית עם קודי הצטרפות, רב-דיירות בטוחה (OwnerId scoping), ולידציה צבעונית בכל הטפסים, עמוד הגדרות לבעלים עם סיבוב קוד, ושיפורי ביצועים משמעותיים (ערוץ WCF משותף).

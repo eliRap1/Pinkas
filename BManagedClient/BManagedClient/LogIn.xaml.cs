@@ -1,7 +1,9 @@
 using BManagedClient.BMsrv;
 using System;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 
 namespace BManagedClient
 {
@@ -15,7 +17,7 @@ namespace BManagedClient
             DataContext = sign;
         }
 
-        private void signIn_Click(object sender, RoutedEventArgs e)
+        private async void signIn_Click(object sender, RoutedEventArgs e)
         {
             error.Visibility = Visibility.Collapsed;
             string u = username.Text?.Trim() ?? "";
@@ -25,13 +27,31 @@ namespace BManagedClient
                 ShowError("Fill both fields.");
                 return;
             }
+
+            // Disable inputs + show busy cursor so the user knows we're working
+            // and so the UI thread isn't blocked by the synchronous WCF call
+            // (the cause of the previous "Not Responding" freeze on slow
+            // first-channel-open).
+            var btn = sender as Button;
+            if (btn != null) btn.IsEnabled = false;
+            username.IsEnabled = false;
+            pass.IsEnabled = false;
+            Mouse.OverrideCursor = Cursors.Wait;
             try
             {
-                // Verify password + load user in one ServiceGateway call so the
-                // shared channel doesn't reopen between two SOAP ops.
-                var user = ServiceGateway.Use(c =>
-                    c.CheckUserPassword(u, p) ? c.GetUserById(c.GetUserId(u)) : null);
+                User user = null;
+                try
+                {
+                    user = await Task.Run(() => ServiceGateway.Use(c =>
+                        c.CheckUserPassword(u, p) ? c.GetUserById(c.GetUserId(u)) : null));
+                }
+                catch (Exception ex)
+                {
+                    ShowError("Connection error: " + ex.Message);
+                    return;
+                }
                 if (user == null) { ShowError("Wrong username or password."); return; }
+
                 sign.Username          = user.Username;
                 sign.Password          = p;
                 sign.Email             = user.Email;
@@ -43,8 +63,6 @@ namespace BManagedClient
                 sign.BusinessType      = string.IsNullOrEmpty(user.BusinessType) ? "Individual" : user.BusinessType;
                 sign.IsZair            = user.IsZair;
 
-                // If they signed in with the manager-issued temp password,
-                // jump straight to Settings so they can pick their own.
                 bool tempPassword = string.Equals(p, "reset1234", StringComparison.Ordinal);
                 if (tempPassword)
                 {
@@ -61,9 +79,12 @@ namespace BManagedClient
                 else if (sign.IsEmployee) page.Navigate(new EmployeeHome());
                 else                      page.Navigate(new ClientHome());
             }
-            catch (Exception ex)
+            finally
             {
-                ShowError("Connection error: " + ex.Message);
+                Mouse.OverrideCursor = null;
+                if (btn != null) btn.IsEnabled = true;
+                username.IsEnabled = true;
+                pass.IsEnabled = true;
             }
         }
 
