@@ -54,10 +54,13 @@ namespace BManagedClient
         {
             try
             {
-                var users = ServiceGateway.Use(c => c.GetAllUsers());
-                _employees = users == null
+                // Tenant-scoped: only employees that belong to this Owner.
+                // Replaces GetAllUsers() + client-side filter, which leaked
+                // employees from other companies.
+                var emps = ServiceGateway.Use(c => c.GetEmployeesForOwner(LogIn.sign.Id));
+                _employees = emps == null
                     ? new List<User>()
-                    : users.Where(u => u.Role == "Employee" && u.IsActive).ToList();
+                    : emps.Where(u => u.IsActive).ToList();
                 employeeCombo.ItemsSource = _employees;
             }
             catch { }

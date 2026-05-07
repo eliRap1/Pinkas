@@ -71,12 +71,14 @@ namespace BManagedWeb.Pages.Owner
                 return new JsonResult(new { error = "unauthorized" });
             try
             {
+                int ownerId = HttpContext.Session.GetInt32("UserId") ?? 0;
                 var assigned = _srv.GetProjectAssignees(projectId) ?? new User[0];
-                var allUsers = _srv.GetAllUsers();
-                IEnumerable<User> all = allUsers != null ? (IEnumerable<User>)allUsers : new User[0];
+                // Tenant-scoped pool of available employees — only this Owner's
+                // active employees, never employees of another company.
+                var emps = _srv.GetEmployeesForOwner(ownerId) ?? new User[0];
                 var assignedIds = assigned.Select(u => u.Id).ToHashSet();
-                var available = all
-                    .Where(u => u.Role == "Employee" && u.IsActive && !assignedIds.Contains(u.Id))
+                var available = emps
+                    .Where(u => u.IsActive && !assignedIds.Contains(u.Id))
                     .Select(u => new { id = u.Id, username = u.Username })
                     .ToArray();
                 var assignedDto = assigned

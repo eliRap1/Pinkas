@@ -25,29 +25,27 @@ namespace BManagedWeb.Pages
 
                 int uid = _srv.GetUserId(Username);
                 var user = _srv.GetUserById(uid);
+                if (user == null)
+                { Message = "User not found."; IsSuccess = false; return Page(); }
 
-                // Notify every active Owner so they can act.
-                var all = _srv.GetAllUsers();
-                if (all != null)
+                // Notify only the Owner of the company this user belongs to —
+                // not every Owner on the server (which leaked the request
+                // across tenants).
+                int? ownerId = user.Role == "Owner" ? (int?)user.Id : user.OwnerId;
+                if (!ownerId.HasValue || ownerId.Value <= 0)
+                { Message = "No company Owner is linked to this account. Ask an admin."; IsSuccess = false; return Page(); }
+
+                _srv.SendNotification(new Notification
                 {
-                    foreach (var owner in all)
-                    {
-                        if (owner.Role == "Owner" && owner.IsActive)
-                        {
-                            _srv.SendNotification(new Notification
-                            {
-                                UserId = owner.Id,
-                                Title = "Password reset request",
-                                Message = $"User '{user.Username}' ({user.Role}) asked for a password reset. " +
-                                          "Open ManageUsers > Reset PW to issue 'reset1234'.",
-                                NotificationType = "ResetRequest",
-                                IsRead = false,
-                                CreatedAt = System.DateTime.Now,
-                            });
-                        }
-                    }
-                }
-                Message = "Owner notified. They will reset your password to 'reset1234'.";
+                    UserId = ownerId.Value,
+                    Title = "Password reset request",
+                    Message = $"User '{user.Username}' ({user.Role}) asked for a password reset. " +
+                              "Open ManageUsers > Reset PW to issue 'reset1234'.",
+                    NotificationType = "ResetRequest",
+                    IsRead = false,
+                    CreatedAt = System.DateTime.Now,
+                });
+                Message = "Your company's Owner has been notified. They will reset your password to 'reset1234'.";
                 IsSuccess = true;
             }
             catch (System.Exception ex) { Message = ex.Message; IsSuccess = false; }

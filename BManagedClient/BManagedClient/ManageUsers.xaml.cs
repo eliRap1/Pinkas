@@ -19,7 +19,10 @@ namespace BManagedClient
         {
             try
             {
-                var all = ServiceGateway.Use(c => c.GetAllUsers());
+                // Tenant-scoped: only this Owner's users (Owner row + their
+                // employees / clients). Replaces GetAllUsers() which returned
+                // every account on the server.
+                var all = ServiceGateway.Use(c => c.GetUsersForOwner(LogIn.sign.Id));
                 userList.ItemsSource = all;
                 int pending = all?.Count(u => !u.IsActive) ?? 0;
                 pendingBadge.Text = pending > 0 ? $"⏳ {pending} pending" : "";

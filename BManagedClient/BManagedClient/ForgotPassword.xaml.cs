@@ -18,30 +18,32 @@ namespace BManagedClient
 
             try
             {
-                bool exists = ServiceGateway.Use(c => c.CheckUserExist(u));
-                if (!exists) { Show("User not found.", false); return; }
-
-                int uid = ServiceGateway.Use(c => c.GetUserId(u));
-                var user = ServiceGateway.Use(c => c.GetUserById(uid));
-                var users = ServiceGateway.Use(c => c.GetAllUsers());
-
-                if (users != null)
+                // Resolve user, find their company's Owner, and notify only
+                // that one Owner. Avoids leaking the request to every Owner on
+                // the server (which is what GetAllUsers() previously did).
+                ServiceGateway.Use(c =>
                 {
-                    foreach (var owner in users.Where(x => x.Role == "Owner" && x.IsActive))
+                    if (!c.CheckUserExist(u)) { Show("User not found.", false); return; }
+                    int uid = c.GetUserId(u);
+                    var user = c.GetUserById(uid);
+                    if (user == null) { Show("User not found.", false); return; }
+
+                    int? ownerId = user.Role == "Owner" ? (int?)user.Id : user.OwnerId;
+                    if (!ownerId.HasValue || ownerId.Value <= 0)
+                    { Show("No company Owner is linked to this account. Ask an admin.", false); return; }
+
+                    c.SendNotification(new Notification
                     {
-                        ServiceGateway.Use(c => c.SendNotification(new Notification
-                        {
-                            UserId           = owner.Id,
-                            Title            = "Password reset request",
-                            Message          = "User '" + user.Username + "' (" + user.Role +
-                                               ") asked for a password reset. Open Manage Users → Reset PW.",
-                            NotificationType = "ResetRequest",
-                            IsRead           = false,
-                            CreatedAt        = DateTime.Now,
-                        }));
-                    }
-                }
-                Show("Owner notified. Wait for them to reset your password.", true);
+                        UserId           = ownerId.Value,
+                        Title            = "Password reset request",
+                        Message          = "User '" + user.Username + "' (" + user.Role +
+                                           ") asked for a password reset. Open Manage Users → Reset PW.",
+                        NotificationType = "ResetRequest",
+                        IsRead           = false,
+                        CreatedAt        = DateTime.Now,
+                    });
+                    Show("Your company's Owner has been notified.", true);
+                });
             }
             catch (Exception ex) { Show("Error: " + ex.Message, false); }
         }

@@ -2905,6 +2905,15 @@ namespace BManagedClient.BMsrv {
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IService1/GetActiveOwners", ReplyAction="http://tempuri.org/IService1/GetActiveOwnersResponse")]
         BManagedClient.BMsrv.User[] GetActiveOwners();
 
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IService1/GetUsersForOwner", ReplyAction="http://tempuri.org/IService1/GetUsersForOwnerResponse")]
+        BManagedClient.BMsrv.User[] GetUsersForOwner(int ownerId);
+
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IService1/GetPendingForOwner", ReplyAction="http://tempuri.org/IService1/GetPendingForOwnerResponse")]
+        BManagedClient.BMsrv.User[] GetPendingForOwner(int ownerId);
+
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IService1/GetEmployeesForOwner", ReplyAction="http://tempuri.org/IService1/GetEmployeesForOwnerResponse")]
+        BManagedClient.BMsrv.User[] GetEmployeesForOwner(int ownerId);
+
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IService1/SetBusinessName", ReplyAction="http://tempuri.org/IService1/SetBusinessNameResponse")]
         void SetBusinessName(int userId, string businessName);
 
@@ -3498,6 +3507,9 @@ namespace BManagedClient.BMsrv {
 
         public void SetOwnerId(int userId, int ownerId) { base.Channel.SetOwnerId(userId, ownerId); }
         public BManagedClient.BMsrv.User[] GetActiveOwners() { return base.Channel.GetActiveOwners(); }
+        public BManagedClient.BMsrv.User[] GetUsersForOwner(int o)     { return base.Channel.GetUsersForOwner(o); }
+        public BManagedClient.BMsrv.User[] GetPendingForOwner(int o)   { return base.Channel.GetPendingForOwner(o); }
+        public BManagedClient.BMsrv.User[] GetEmployeesForOwner(int o) { return base.Channel.GetEmployeesForOwner(o); }
         public void SetBusinessName(int userId, string businessName) { base.Channel.SetBusinessName(userId, businessName); }
         public string SetInviteCode(int userId, string inviteCode) { return base.Channel.SetInviteCode(userId, inviteCode); }
         public BManagedClient.BMsrv.User GetOwnerByInviteCode(string code) { return base.Channel.GetOwnerByInviteCode(code); }

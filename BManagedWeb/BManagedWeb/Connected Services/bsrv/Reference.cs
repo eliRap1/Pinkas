@@ -309,6 +309,9 @@ namespace BManagedWeb.bsrv
         [OperationContract] void SetIsZair(int userId, bool isZair);
         [OperationContract] void SetOwnerId(int userId, int ownerId);
         [OperationContract] User[] GetActiveOwners();
+        [OperationContract] User[] GetUsersForOwner(int ownerId);
+        [OperationContract] User[] GetPendingForOwner(int ownerId);
+        [OperationContract] User[] GetEmployeesForOwner(int ownerId);
         [OperationContract] void SetBusinessName(int userId, string businessName);
         [OperationContract] string SetInviteCode(int userId, string inviteCode);
         [OperationContract] User GetOwnerByInviteCode(string code);
@@ -443,6 +446,9 @@ namespace BManagedWeb.bsrv
         public void SetIsZair(int id, bool z) => Channel.SetIsZair(id, z);
         public void SetOwnerId(int id, int oid) => Channel.SetOwnerId(id, oid);
         public User[] GetActiveOwners() => Channel.GetActiveOwners();
+        public User[] GetUsersForOwner(int o)     => Channel.GetUsersForOwner(o);
+        public User[] GetPendingForOwner(int o)   => Channel.GetPendingForOwner(o);
+        public User[] GetEmployeesForOwner(int o) => Channel.GetEmployeesForOwner(o);
         public void SetBusinessName(int id, string name) => Channel.SetBusinessName(id, name);
         public string SetInviteCode(int id, string code) => Channel.SetInviteCode(id, code);
         public User GetOwnerByInviteCode(string code) => Channel.GetOwnerByInviteCode(code);

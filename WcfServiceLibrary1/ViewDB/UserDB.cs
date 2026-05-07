@@ -308,6 +308,33 @@ namespace ViewDB
             => Select("SELECT * FROM [Users] WHERE [isActive] = ? ORDER BY [createdAt] DESC",
                 new OleDbParameter("@a", false)).OfType<User>().ToList();
 
+        // ---- Tenant-scoped variants (May 2026) ------------------------
+        // These restrict results to the caller's company (ownerId chain) so an
+        // Owner of company A can never see / approve / assign users from
+        // company B. The legacy un-scoped versions are kept for the seed
+        // admin / migration paths but should not be called from per-tenant UI.
+
+        public List<User> GetUsersForOwner(int ownerId)
+            => Select(@"SELECT * FROM [Users]
+                        WHERE [id] = ? OR [ownerId] = ?
+                        ORDER BY [role], [username]",
+                new OleDbParameter("@id", ownerId),
+                new OleDbParameter("@o",  ownerId)).OfType<User>().ToList();
+
+        public List<User> GetPendingForOwner(int ownerId)
+            => Select(@"SELECT * FROM [Users]
+                        WHERE [isActive] = ? AND [ownerId] = ?
+                        ORDER BY [createdAt] DESC",
+                new OleDbParameter("@a", false),
+                new OleDbParameter("@o", ownerId)).OfType<User>().ToList();
+
+        public List<User> GetEmployeesForOwner(int ownerId)
+            => Select(@"SELECT * FROM [Users]
+                        WHERE [role] = ? AND [ownerId] = ?
+                        ORDER BY [username]",
+                new OleDbParameter("@r", "Employee"),
+                new OleDbParameter("@o", ownerId)).OfType<User>().ToList();
+
         public void SetActive(int userId, bool isActive)
         {
             using (var conn = GetConnection())

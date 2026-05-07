@@ -99,6 +99,10 @@ namespace WcfServiceLibrary1
 
         public List<User> GetAllEmployees() => userDB.GetByRole("Employee");
 
+        public List<User> GetUsersForOwner(int ownerId)     => userDB.GetUsersForOwner(ownerId);
+        public List<User> GetPendingForOwner(int ownerId)   => userDB.GetPendingForOwner(ownerId);
+        public List<User> GetEmployeesForOwner(int ownerId) => userDB.GetEmployeesForOwner(ownerId);
+
         public void UpdateUserProfile(int userId, string email, string phone, string preferredCurrency)
             => userDB.UpdateProfile(userId, email, phone, preferredCurrency);
 

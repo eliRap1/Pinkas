@@ -32,9 +32,11 @@ namespace BManagedWeb.Pages.Owner
         {
             try
             {
-                var all = _srv.GetAllUsers();
+                // Tenant-scoped: only users belonging to this Owner's company.
+                int ownerId = HttpContext.Session.GetInt32("UserId") ?? 0;
+                var all = _srv.GetUsersForOwner(ownerId);
                 AllUsers = (all != null) ? new List<User>(all) : new List<User>();
-                var pending = _srv.GetPendingUsers();
+                var pending = _srv.GetPendingForOwner(ownerId);
                 Pending = (pending != null) ? new List<User>(pending) : new List<User>();
             }
             catch (System.Exception ex)

@@ -53,8 +53,14 @@ namespace WcfServiceLibrary1
         /// <summary>List every user (Owner-only UIs).</summary>
         [OperationContract] AllUsers GetAllUsers();
 
-        /// <summary>List employees only (assignment dropdowns).</summary>
+        /// <summary>List employees only (assignment dropdowns). DEPRECATED — use GetEmployeesForOwner for tenant-safe results.</summary>
         [OperationContract] List<User> GetAllEmployees();
+        /// <summary>Tenant-scoped: every user in the Owner's company (Owner + their employees / clients).</summary>
+        [OperationContract] List<User> GetUsersForOwner(int ownerId);
+        /// <summary>Tenant-scoped: pending (inactive) users awaiting THIS Owner's approval.</summary>
+        [OperationContract] List<User> GetPendingForOwner(int ownerId);
+        /// <summary>Tenant-scoped: this Owner's active employees only — for project-assignment dropdowns.</summary>
+        [OperationContract] List<User> GetEmployeesForOwner(int ownerId);
 
         /// <summary>Update non-credential profile fields.</summary>
         [OperationContract] void UpdateUserProfile(int userId, string email, string phone,
