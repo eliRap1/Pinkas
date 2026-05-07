@@ -129,6 +129,7 @@ namespace BManagedClient
         private void Reports_Click(object s, RoutedEventArgs e)       => NavigationService?.Navigate(new Reports());
         private void Loans_Click(object s, RoutedEventArgs e)         => NavigationService?.Navigate(new Loans());
         private void Settings_Click(object s, RoutedEventArgs e)      => NavigationService?.Navigate(new ManageUsers());
+        private void OwnerSettings_Click(object s, RoutedEventArgs e) => NavigationService?.Navigate(new Settings());
         private void Notifications_Click(object s, RoutedEventArgs e) => NavigationService?.Navigate(new Notifications());
 
         private void Logout_Click(object s, RoutedEventArgs e)

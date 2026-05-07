@@ -25,6 +25,40 @@
 
                     <Button Content="Save profile" Click="Save_Click" Style="{StaticResource PrimaryButton}" Height="40"/>
 
+                    <!-- Owner-only: company settings (business name, VAT, Zair, invite code) -->
+                    <StackPanel x:Name="ownerSection" Visibility="Collapsed">
+                        <Border Background="#1A000000" Height="1" Margin="0,22,0,16"/>
+                        <TextBlock Text="COMPANY (OWNER)" Style="{StaticResource Eyebrow}" Margin="0,0,0,8"/>
+
+                        <TextBlock Text="BUSINESS / STUDIO NAME" Style="{StaticResource InputLabel}"/>
+                        <TextBox x:Name="bizNameBox" Style="{StaticResource ModernTextBox}" Margin="0,0,0,10"/>
+
+                        <TextBlock Text="VAT REGISTRATION" Style="{StaticResource InputLabel}"/>
+                        <ComboBox x:Name="bizTypeBox" Style="{StaticResource ModernCombo}" Margin="0,0,0,10">
+                            <ComboBoxItem Content="Osek Patur (≤120k ₪/yr, no VAT)" Tag="Patur"/>
+                            <ComboBoxItem Content="Osek Murshe (regular 18% VAT)" Tag="Murshe"/>
+                        </ComboBox>
+
+                        <CheckBox x:Name="zairCheck" Margin="0,0,0,10" FontWeight="SemiBold"
+                                  Content="Osek Zair income-tax status (≤122,833 ₪/yr, 30% deemed-expenses)"/>
+
+                        <Button Content="Save company settings" Click="SaveOwner_Click" Style="{StaticResource MintButton}" Height="36" Margin="0,2,0,16"/>
+
+                        <Border Background="#11000000" Padding="14" CornerRadius="14">
+                            <StackPanel>
+                                <TextBlock Text="COMPANY INVITE CODE" Style="{StaticResource Eyebrow}"/>
+                                <TextBlock x:Name="inviteCodeText" Text="—" FontFamily="Consolas" FontSize="20"
+                                           FontWeight="Bold" Margin="0,6,0,4" TextAlignment="Center"/>
+                                <TextBlock TextWrapping="Wrap" Style="{StaticResource Caption}" Margin="0,0,0,8"
+                                           Text="Share this with employees who join your company. Rotate any time — old codes stop working immediately."/>
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                    <Button Content="📋 Copy" Click="CopyInvite_Click" Style="{StaticResource SecondaryButton}" Margin="0,0,6,0"/>
+                                    <Button Content="↻ Rotate code" Click="RotateInvite_Click" Style="{StaticResource AmberButton}"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+
                     <Border Background="#1A000000" Height="1" Margin="0,22,0,16"/>
 
                     <TextBlock Text="CHANGE PASSWORD" Style="{StaticResource Eyebrow}" Margin="0,0,0,8"/>

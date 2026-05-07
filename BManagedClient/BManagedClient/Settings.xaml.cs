@@ -1,3 +1,4 @@
+using BManagedClient.BMsrv;
 using System;
 using System.Linq;
 using System.Windows;
@@ -15,6 +16,30 @@ namespace BManagedClient
             phoneBox.Text  = LogIn.sign.Phone;
             curCombo.SelectedItem = curCombo.Items.OfType<ComboBoxItem>()
                 .FirstOrDefault(x => x.Content?.ToString() == LogIn.sign.PreferredCurrency);
+
+            if (ClientSession.IsOwner)
+            {
+                ownerSection.Visibility = Visibility.Visible;
+                LoadOwnerSettings();
+            }
+        }
+
+        private void LoadOwnerSettings()
+        {
+            try
+            {
+                var u = ServiceGateway.Use(c => c.GetUserById(LogIn.sign.Id));
+                if (u == null) return;
+                bizNameBox.Text = u.BusinessName ?? "";
+                bizTypeBox.SelectedItem = bizTypeBox.Items.OfType<ComboBoxItem>()
+                    .FirstOrDefault(x => x.Tag?.ToString() == (u.BusinessType ?? "Patur"))
+                    ?? bizTypeBox.Items.OfType<ComboBoxItem>().FirstOrDefault();
+                zairCheck.IsChecked = u.IsZair;
+                inviteCodeText.Text = string.IsNullOrEmpty(u.InviteCode) ? "(none yet)" : u.InviteCode;
+                LogIn.sign.BusinessType = u.BusinessType ?? "Individual";
+                LogIn.sign.IsZair       = u.IsZair;
+            }
+            catch (Exception ex) { status.Text = "Load: " + ex.Message; }
         }
 
         private void Save_Click(object s, RoutedEventArgs e)
@@ -31,10 +56,57 @@ namespace BManagedClient
             catch (Exception ex) { status.Text = "Save failed: " + ex.Message; }
         }
 
+        private void SaveOwner_Click(object s, RoutedEventArgs e)
+        {
+            try
+            {
+                string biz  = (bizNameBox.Text ?? "").Trim();
+                string type = (bizTypeBox.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "Patur";
+                bool zair   = zairCheck.IsChecked == true;
+
+                ServiceGateway.Use(c =>
+                {
+                    c.SetBusinessName(LogIn.sign.Id, biz);
+                    c.SetBusinessType(LogIn.sign.Id, type);
+                    c.SetIsZair(LogIn.sign.Id, zair);
+                });
+                LogIn.sign.BusinessType = type;
+                LogIn.sign.IsZair       = zair;
+                status.Text = "Company settings saved.";
+            }
+            catch (Exception ex) { status.Text = "Save failed: " + ex.Message; }
+        }
+
+        private void RotateInvite_Click(object s, RoutedEventArgs e)
+        {
+            if (MessageBox.Show(
+                    "Rotate the invite code?\nThe current code will stop working immediately. Employees still in signup must use the new code.",
+                    "Confirm rotate", MessageBoxButton.YesNo, MessageBoxImage.Warning)
+                != MessageBoxResult.Yes) return;
+            try
+            {
+                string seed = string.IsNullOrWhiteSpace(bizNameBox.Text) ? LogIn.sign.Username : bizNameBox.Text;
+                string code = NewInviteCode(seed);
+                string newCode = ServiceGateway.Use(c => c.SetInviteCode(LogIn.sign.Id, code));
+                inviteCodeText.Text = newCode ?? code;
+                status.Text = "New invite code generated.";
+            }
+            catch (Exception ex) { status.Text = "Rotate failed: " + ex.Message; }
+        }
+
+        private void CopyInvite_Click(object s, RoutedEventArgs e)
+        {
+            try { Clipboard.SetText(inviteCodeText.Text ?? ""); status.Text = "Copied."; }
+            catch (Exception ex) { status.Text = "Copy failed: " + ex.Message; }
+        }
+
         private void UpdatePass_Click(object s, RoutedEventArgs e)
         {
-            if (string.IsNullOrEmpty(newPass.Password) || newPass.Password.Length < 4)
-            { status.Text = "Password must be 4+ chars."; return; }
+            // Match the SignUp regex so existing accounts can't downgrade to a
+            // weak password from Settings.
+            var rx = new System.Text.RegularExpressions.Regex(@"^(?=.*[A-Za-z])(?=.*\d).{8,}$");
+            if (!rx.IsMatch(newPass.Password ?? ""))
+            { status.Text = "Password must be 8+ chars and include a letter and a digit."; return; }
             try
             {
                 ServiceGateway.Use(c => c.ResetPassword(LogIn.sign.Id, newPass.Password));
@@ -48,5 +120,18 @@ namespace BManagedClient
             => NavigationService?.Navigate(ClientSession.IsOwner ? (Page)new OwnerHome()
                                        : ClientSession.IsEmployee ? new EmployeeHome()
                                        : new ClientHome());
+
+        // PREFIX-XXXX (4 alpha-numeric from seed + 4 random, ambiguity-free alphabet).
+        private static string NewInviteCode(string seed)
+        {
+            string prefix = new string((seed ?? "")
+                .ToUpperInvariant().Where(char.IsLetterOrDigit).Take(4).ToArray());
+            if (prefix.Length < 2) prefix = "BMNG";
+            const string alpha = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+            var rnd = new Random();
+            var tail = new string(Enumerable.Range(0, 4)
+                .Select(_ => alpha[rnd.Next(alpha.Length)]).ToArray());
+            return prefix + "-" + tail;
+        }
     }
 }

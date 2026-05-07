@@ -157,6 +157,10 @@
                                         Click="Loans_Click" Style="{StaticResource AmberButton}"
                                         Height="56" Margin="4"
                                         ToolTip="Track business loans, principal, debt-to-income"/>
+                                <Button Grid.Column="2" Content="⚙  Company settings"
+                                        Click="OwnerSettings_Click" Style="{StaticResource PrimaryButton}"
+                                        Height="56" Margin="4"
+                                        ToolTip="Business name, VAT registration, Osek Zair, invite code"/>
                             </Grid>
                         </StackPanel>
                     </Border>
