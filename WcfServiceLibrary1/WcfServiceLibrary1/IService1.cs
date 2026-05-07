@@ -129,6 +129,8 @@ namespace WcfServiceLibrary1
         [OperationContract] List<Invoice> GetInvoicesByCustomer(int customerId);
         [OperationContract] List<Invoice> GetUnpaidInvoices(int ownerId);
         [OperationContract] List<Invoice> GetOverdueInvoices(int ownerId);
+        /// <summary>All invoices for an Owner — single JOIN, replaces per-customer loop in UI.</summary>
+        [OperationContract] List<Invoice> GetInvoicesForOwner(int ownerId);
 
         /// <summary>Render invoice as a PDF byte array using QuestPDF.</summary>
         [OperationContract] byte[] GenerateInvoicePdf(int invoiceId);

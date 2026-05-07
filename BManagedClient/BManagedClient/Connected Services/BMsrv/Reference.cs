@@ -3135,9 +3135,12 @@ namespace BManagedClient.BMsrv {
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IService1/GetOverdueInvoices", ReplyAction="http://tempuri.org/IService1/GetOverdueInvoicesResponse")]
         BManagedClient.BMsrv.Invoice[] GetOverdueInvoices(int ownerId);
-        
+
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IService1/GetOverdueInvoices", ReplyAction="http://tempuri.org/IService1/GetOverdueInvoicesResponse")]
         System.Threading.Tasks.Task<BManagedClient.BMsrv.Invoice[]> GetOverdueInvoicesAsync(int ownerId);
+
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IService1/GetInvoicesForOwner", ReplyAction="http://tempuri.org/IService1/GetInvoicesForOwnerResponse")]
+        BManagedClient.BMsrv.Invoice[] GetInvoicesForOwner(int ownerId);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IService1/GenerateInvoicePdf", ReplyAction="http://tempuri.org/IService1/GenerateInvoicePdfResponse")]
         byte[] GenerateInvoicePdf(int invoiceId);
@@ -3798,6 +3801,10 @@ namespace BManagedClient.BMsrv {
             return base.Channel.GetOverdueInvoices(ownerId);
         }
         
+        public BManagedClient.BMsrv.Invoice[] GetInvoicesForOwner(int ownerId) {
+            return base.Channel.GetInvoicesForOwner(ownerId);
+        }
+
         public System.Threading.Tasks.Task<BManagedClient.BMsrv.Invoice[]> GetOverdueInvoicesAsync(int ownerId) {
             return base.Channel.GetOverdueInvoicesAsync(ownerId);
         }

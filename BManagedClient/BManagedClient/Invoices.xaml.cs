@@ -31,13 +31,12 @@ namespace BManagedClient
 
         private void RefreshInvoices()
         {
-            var list = new List<Invoice>();
-            foreach (var c in _customers)
-            {
-                var x = ServiceGateway.Use(s => s.GetInvoicesByCustomer(c.Id));
-                if (x != null) list.AddRange(x);
-            }
-            invoiceList.ItemsSource = list.OrderByDescending(i => i.IssueDate).ToList();
+            // Single JOIN query — replaces the old O(N) per-customer loop
+            // (RefreshInvoices used to do one SOAP call per customer plus one
+            // channel-open each, killing performance for big lists).
+            var list = ServiceGateway.Use(s => s.GetInvoicesForOwner(LogIn.sign.Id));
+            invoiceList.ItemsSource = (list ?? new Invoice[0])
+                .OrderByDescending(i => i.IssueDate).ToList();
         }
 
         private void Inv_Selected(object s, SelectionChangedEventArgs e)

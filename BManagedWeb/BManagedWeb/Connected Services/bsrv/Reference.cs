@@ -349,6 +349,7 @@ namespace BManagedWeb.bsrv
         [OperationContract] Invoice[] GetInvoicesByCustomer(int customerId);
         [OperationContract] Invoice[] GetUnpaidInvoices(int ownerId);
         [OperationContract] Invoice[] GetOverdueInvoices(int ownerId);
+        [OperationContract] Invoice[] GetInvoicesForOwner(int ownerId);
         [OperationContract] byte[] GenerateInvoicePdf(int invoiceId);
 
         // Contracts
@@ -486,6 +487,7 @@ namespace BManagedWeb.bsrv
         public Invoice[] GetInvoicesByCustomer(int cId)    => Channel.GetInvoicesByCustomer(cId);
         public Invoice[] GetUnpaidInvoices(int oId)        => Channel.GetUnpaidInvoices(oId);
         public Invoice[] GetOverdueInvoices(int oId)       => Channel.GetOverdueInvoices(oId);
+        public Invoice[] GetInvoicesForOwner(int oId)      => Channel.GetInvoicesForOwner(oId);
         public byte[]    GenerateInvoicePdf(int id)        => Channel.GenerateInvoicePdf(id);
 
         public int       CreateContract(Contract c)        => Channel.CreateContract(c);

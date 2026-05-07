@@ -46,6 +46,21 @@ namespace ViewDB
             => Select("SELECT * FROM [Invoices] WHERE [customerId] = ? ORDER BY [issueDate] DESC",
                 new OleDbParameter("@c", customerId)).OfType<Invoice>().ToList();
 
+        /// <summary>
+        /// All invoices for an Owner across every customer — a single JOINed
+        /// query, replacing the old WPF pattern of looping customers and
+        /// calling GetByCustomer N times. O(1) round-trips instead of O(N).
+        /// </summary>
+        public List<Invoice> GetForOwner(int ownerId)
+        {
+            string sql = @"SELECT I.*
+                           FROM [Invoices] AS I
+                           INNER JOIN [Customers] AS C ON I.[customerId] = C.[id]
+                           WHERE C.[ownerId] = ?
+                           ORDER BY I.[issueDate] DESC";
+            return Select(sql, new OleDbParameter("@o", ownerId)).OfType<Invoice>().ToList();
+        }
+
         /// <summary>Unpaid invoices for an owner — INNER JOIN [Customers] on [ownerId].</summary>
         public List<Invoice> GetUnpaidForOwner(int ownerId)
         {

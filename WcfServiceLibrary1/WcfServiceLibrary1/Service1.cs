@@ -113,7 +113,35 @@ namespace WcfServiceLibrary1
             => userDB.SetIsZair(userId, isZair);
 
         public void SetOwnerId(int userId, int ownerId)
-            => userDB.SetOwnerId(userId, ownerId > 0 ? ownerId : (int?)null);
+        {
+            userDB.SetOwnerId(userId, ownerId > 0 ? ownerId : (int?)null);
+            // When linking a brand-new (still inactive) Employee/Client to an
+            // Owner, drop a notification on that Owner's inbox so they know
+            // someone joined and can approve them.
+            try
+            {
+                if (ownerId > 0)
+                {
+                    var u = userDB.GetById(userId);
+                    if (u != null && !u.IsActive)
+                    {
+                        notifDB.Insert(new Notification
+                        {
+                            UserId           = ownerId,
+                            Title            = "New " + (u.Role ?? "user") + " request",
+                            Message          = "'" + (u.Username ?? "?") +
+                                               "' joined your company with the invite code. " +
+                                               "Open Manage Users to approve.",
+                            NotificationType = "JoinRequest",
+                            IsRead           = false,
+                            CreatedAt        = DateTime.Now,
+                        });
+                    }
+                }
+            }
+            catch (Exception ex)
+            { System.Diagnostics.Debug.WriteLine("SetOwnerId notify: " + ex.Message); }
+        }
 
         public List<User> GetActiveOwners()
             => userDB.GetActiveOwners();
@@ -273,6 +301,7 @@ namespace WcfServiceLibrary1
         public List<Invoice> GetInvoicesByCustomer(int cid) => invDB.GetByCustomer(cid);
         public List<Invoice> GetUnpaidInvoices(int ownerId) => invDB.GetUnpaidForOwner(ownerId);
         public List<Invoice> GetOverdueInvoices(int ownerId)=> invDB.GetOverdueForOwner(ownerId);
+        public List<Invoice> GetInvoicesForOwner(int ownerId) => invDB.GetForOwner(ownerId);
 
         public byte[] GenerateInvoicePdf(int invoiceId)
         {
