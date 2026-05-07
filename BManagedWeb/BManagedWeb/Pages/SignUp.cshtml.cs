@@ -8,8 +8,35 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace BManagedWeb.Pages
 {
+    // =========================================================================
+    // SignUpModel — Razor PageModel for /SignUp.
+    // -------------------------------------------------------------------------
+    // Two-step flow (driven by SelectedRole):
+    //   STEP 1: empty SelectedRole → SignUp.cshtml shows the role-chooser cards.
+    //           Owner / Employee buttons set a hidden input via JS (pickRole).
+    //   STEP 2: form is filled out and posted with SelectedRole = 'Owner' or
+    //           'Employee'. Validation runs both client-side (live JS, see
+    //           SignUp.cshtml) and here in OnPost as a defence-in-depth.
+    // Owner path:
+    //   * BusinessType ∈ {Patur, Murshe} — Israeli VAT registration.
+    //   * IsZair flag — Israeli Osek-Zair income-tax status (independent).
+    //   * Auto-generated invite code (PREFIX-XXXX) so the new Owner can share
+    //     it with employees right away. Shown on the Login page after redirect.
+    // Employee path:
+    //   * Invite code resolved via GetOwnerByInviteCode BEFORE creating the
+    //     user — no orphan rows if the code is wrong.
+    //   * SetOwnerId on the new user row links them to the company. The
+    //     server-side SetOwnerId also drops a JoinRequest notification to
+    //     that Owner so they can approve.
+    // SOAP ops touched:
+    //   CheckUserExist, AddUser, GetUserId, SetBusinessType, SetIsZair,
+    //   SetBusinessName, SetInviteCode, SetOwnerId, GetOwnerByInviteCode.
+    // =========================================================================
     public class SignUpModel : PageModel
     {
+        // _srv talks to the WCF service over BasicHttpBinding (port 8733).
+        // Service1Client is the hand-rolled web proxy in Connected Services
+        // \bsrv\Reference.cs — equivalent to svcutil-generated WPF proxy.
         private readonly Service1Client _srv = new Service1Client();
 
         private static readonly Regex UsernameRx = new Regex(@"^[A-Za-z0-9_.]{4,20}$");

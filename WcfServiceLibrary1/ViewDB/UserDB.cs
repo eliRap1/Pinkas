@@ -7,8 +7,29 @@ using System.Linq;
 
 namespace ViewDB
 {
+    // =========================================================================
+    // UserDB — Users table data-access.
+    // -------------------------------------------------------------------------
+    // Architecture:
+    //   Service1 → UserDB → OleDb → [Users] table in BManaged.accdb
+    // Schema (auto-migrated on first run via EnsureSchema):
+    //   id (COUNTER PK), username, passwordHash, email, phone, role,
+    //   isActive, createdAt, preferredCurrency,
+    //   businessType ('Patur'|'Murshe'|'Individual'),
+    //   isZair (BIT — Israeli small-business income-tax flag),
+    //   ownerId (LONG — multi-tenant link to the parent Owner row),
+    //   businessName (TEXT 120 — Owner display name),
+    //   inviteCode (TEXT 16 — short invite secret for Employee signup).
+    // Security:
+    //   * Passwords stored as PBKDF2 hashes (SecurityHelper.HashPassword).
+    //     VerifyPassword uses SlowEquals to avoid timing attacks.
+    //   * Every parameter goes through OleDbParameter — no SQL concat.
+    //   * SecurityHelper.IsSafeString gates inputs that touch LIKE / username.
+    //   * Tenant-scoped reads (*ForOwner) JOIN/filter on [ownerId] so an
+    //     Owner of company A can't see users from company B.
+    // =========================================================================
     /// <summary>
-    /// Users table data-access. PBKDF2-hashed passwords; parameterized
+    /// Users table data-access. PBKDF2-hashed passwords; parameterised
     /// queries everywhere; mutating ops throw on OleDb errors.
     /// </summary>
     public class UserDB : BaseDB

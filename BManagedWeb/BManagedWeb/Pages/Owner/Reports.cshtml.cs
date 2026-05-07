@@ -8,6 +8,33 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace BManagedWeb.Pages.Owner
 {
+    // =========================================================================
+    // ReportsModel — /Owner/Reports page (Owner role only).
+    // -------------------------------------------------------------------------
+    // Data assembled in OnGet, all converted to DisplayCurrency via the
+    // server-side CurrencyConverter (ExchangeRates table):
+    //   1. VAT summary (Vat)              — VatCollected, VatPaid, VatDue.
+    //   2. Top customers (TopCustomers)   — INNER JOIN + GROUP BY + SUM.
+    //   3. Expense breakdown              — INNER JOIN ExpenseCategories.
+    //   4. P&L for the month (MonthPl)    — Income / Expenses / Profit.
+    //   5. P&L for the year  (YearPl)     — used as base for income tax.
+    //   6. Israeli income tax             — progressive bracket calc.
+    //                                      Patur/Murshe: tax on YearPl.Profit.
+    //                                      IsZair (≤122,833 ₪): tax on 70% of
+    //                                      revenue (חישוב נורמטיבי).
+    //   7. Patur threshold warning        — when YTD income > 120,000 ₪.
+    //   8. Advanced KPIs (Kpis)           — receivables aging, payment lag,
+    //                                       customer concentration, runway.
+    //   9. Loan summary (LoanSummary)     — debt + DSR vs trailing income.
+    // POST handlers:
+    //   OnPostPayVat       — records VAT settlement as a tagged Expense.
+    //   OnPostToggleZair   — flips Users.isZair via SetIsZair.
+    //   OnGetCsv           — exports top customers + expense breakdown.
+    // Security:
+    //   Every action calls Guard() (role == 'Owner') before doing anything,
+    //   then uses HttpContext.Session UserId so the page can never operate
+    //   on another Owner's data.
+    // =========================================================================
     public class ReportsModel : PageModel
     {
         private readonly Service1Client _srv = new Service1Client();

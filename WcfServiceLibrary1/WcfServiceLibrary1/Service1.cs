@@ -8,14 +8,34 @@ using ViewDB;
 
 namespace WcfServiceLibrary1
 {
-    /// <summary>
-    /// Concrete implementation of <see cref="IService1"/>. Each method
-    /// delegates to a per-table ViewDB class. Errors are caught and
-    /// rewrapped as <see cref="FaultException"/> so the real cause
-    /// surfaces to clients (lesson learned from Driver-moodle).
-    /// </summary>
+    // =========================================================================
+    // Service1 — concrete WCF service implementation.
+    // -------------------------------------------------------------------------
+    // Topology:
+    //   WPF / Web (BManagedClient, BManagedWeb)
+    //       │
+    //       ▼   BasicHttpBinding, port 8733
+    //   Service1  ←  this class. One instance per WCF call (PerCall).
+    //       │
+    //       ▼   delegated calls (no business logic here, just orchestration)
+    //   ViewDB classes (UserDB, CustomerDB, InvoiceDB, ReportsDB, LoanDB ...)
+    //       │
+    //       ▼   parameterised OleDb queries
+    //   MS Access .accdb file (BManaged.accdb)
+    //
+    // Conventions:
+    //   * Mutating ops are wrapped in try/catch and rewrap to FaultException
+    //     so the WCF client gets the real error message, not a generic 500.
+    //   * Reads are direct delegations — let exceptions bubble.
+    //   * No tenant scoping happens here; it lives in ViewDB methods that
+    //     take an ownerId parameter (e.g. GetUsersForOwner).
+    // =========================================================================
     public class Service1 : IService1
     {
+        // Per-call instances of the ViewDB classes. Each ViewDB owns its own
+        // OleDbConnection lifecycle (open/close per query) so two calls into
+        // Service1 never fight over the same connection. EnsureSchema runs
+        // exactly once per process via static lock in each ViewDB ctor.
         private readonly UserDB         userDB     = new UserDB();
         private readonly CustomerDB     custDB     = new CustomerDB();
         private readonly ProjectDB      projDB     = new ProjectDB();
