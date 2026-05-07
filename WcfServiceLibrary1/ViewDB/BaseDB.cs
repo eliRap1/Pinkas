@@ -106,7 +106,8 @@ namespace ViewDB
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine("Select Error: " + ex.Message);
-                throw new InvalidOperationException("Select failed: " + sqlCommandTxt, ex);
+                throw new InvalidOperationException(
+                    "Select failed: " + sqlCommandTxt + "  ::  " + ex.Message, ex);
             }
             finally
             {
