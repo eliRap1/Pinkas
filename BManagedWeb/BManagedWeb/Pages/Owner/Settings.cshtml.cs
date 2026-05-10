@@ -147,15 +147,17 @@ namespace BManagedWeb.Pages.Owner
             return RedirectToPage();
         }
 
+        // Uses RandomNumberGenerator (CSPRNG) — not System.Random — so the
+        // suffix cannot be predicted from the seed time.
         private static string NewInviteCode(string seed)
         {
             string prefix = new string((seed ?? "")
                 .ToUpperInvariant().Where(char.IsLetterOrDigit).Take(4).ToArray());
             if (prefix.Length < 2) prefix = "BMNG";
             const string alpha = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
-            var rnd = new Random();
-            var tail = new string(Enumerable.Range(0, 4)
-                .Select(_ => alpha[rnd.Next(alpha.Length)]).ToArray());
+            var buf = new byte[4];
+            System.Security.Cryptography.RandomNumberGenerator.Fill(buf);
+            var tail = new string(buf.Select(b => alpha[b % alpha.Length]).ToArray());
             return prefix + "-" + tail;
         }
     }

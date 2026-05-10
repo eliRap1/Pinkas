@@ -87,6 +87,8 @@ namespace BManagedWeb.Pages.Owner
             Categories = (_srv.GetExpenseCategories() ?? new ExpenseCategory[0]).ToList();
             if (CsvFile == null || CsvFile.Length == 0)
             { Message = "No file."; return Page(); }
+            if (CsvFile.Length > 2 * 1024 * 1024)
+            { Message = "CSV file must be 2 MB or smaller."; return Page(); }
 
             try
             {

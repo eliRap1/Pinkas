@@ -20,13 +20,17 @@ namespace BManagedWeb.Pages
             { Message = "Enter a username."; return Page(); }
             try
             {
+                // Use a neutral message regardless of whether the username exists to
+                // avoid leaking valid account names to unauthenticated callers.
+                const string neutralMsg = "If that account exists, the company Owner has been notified. They will reset your password to 'reset1234'.";
+
                 if (!_srv.CheckUserExist(Username))
-                { Message = "User not found."; IsSuccess = false; return Page(); }
+                { Message = neutralMsg; IsSuccess = true; return Page(); }
 
                 int uid = _srv.GetUserId(Username);
                 var user = _srv.GetUserById(uid);
                 if (user == null)
-                { Message = "User not found."; IsSuccess = false; return Page(); }
+                { Message = neutralMsg; IsSuccess = true; return Page(); }
 
                 // Notify only the Owner of the company this user belongs to —
                 // not every Owner on the server (which leaked the request
@@ -45,7 +49,7 @@ namespace BManagedWeb.Pages
                     IsRead = false,
                     CreatedAt = System.DateTime.Now,
                 });
-                Message = "Your company's Owner has been notified. They will reset your password to 'reset1234'.";
+                Message = neutralMsg;
                 IsSuccess = true;
             }
             catch (System.Exception ex) { Message = ex.Message; IsSuccess = false; }

@@ -150,6 +150,8 @@ namespace BManagedWeb.Pages
         // Format: PREFIX-XXXX where PREFIX is 4 alpha-numeric chars from the
         // business name and XXXX is 4 random alpha-numerics. 9 chars total
         // including the dash. Easy to read / type.
+        // Uses RandomNumberGenerator (CSPRNG) — not System.Random — so the
+        // suffix cannot be predicted from the seed time.
         private static string NewInviteCode(string seed)
         {
             string prefix = new string((seed ?? "")
@@ -159,8 +161,9 @@ namespace BManagedWeb.Pages
                 .ToArray());
             if (prefix.Length < 2) prefix = "BMNG";
             const string alpha = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"; // skip ambiguous I/O/0/1
-            var rnd = new Random();
-            var tail = new string(Enumerable.Range(0, 4).Select(_ => alpha[rnd.Next(alpha.Length)]).ToArray());
+            var buf = new byte[4];
+            System.Security.Cryptography.RandomNumberGenerator.Fill(buf);
+            var tail = new string(buf.Select(b => alpha[b % alpha.Length]).ToArray());
             return prefix + "-" + tail;
         }
     }
