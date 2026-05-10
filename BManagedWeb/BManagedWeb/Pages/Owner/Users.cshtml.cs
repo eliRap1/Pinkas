@@ -43,9 +43,25 @@ namespace BManagedWeb.Pages.Owner
             { Message = "Load failed: " + ex.Message; IsSuccess = false; }
         }
 
+        // Verify the target user belongs to this owner's company before any mutation.
+        private bool BelongsToThisOwner(int targetUserId, int ownerId)
+        {
+            try
+            {
+                var u = _srv.GetUserById(targetUserId);
+                if (u == null) return false;
+                // The owner themselves, or a user linked to them via OwnerId.
+                return u.Id == ownerId || u.OwnerId == ownerId;
+            }
+            catch { return false; }
+        }
+
         public IActionResult OnPostApprove(int id)
         {
             var g = GuardOwner(); if (g != null) return g;
+            int ownerId = HttpContext.Session.GetInt32("UserId") ?? 0;
+            if (!BelongsToThisOwner(id, ownerId))
+            { Message = "Access denied."; IsSuccess = false; Reload(); return Page(); }
             try { _srv.SetUserActive(id, true); Message = "Approved."; IsSuccess = true; }
             catch (System.Exception ex) { Message = ex.Message; IsSuccess = false; }
             Reload(); return Page();
@@ -54,6 +70,9 @@ namespace BManagedWeb.Pages.Owner
         public IActionResult OnPostToggle(int id)
         {
             var g = GuardOwner(); if (g != null) return g;
+            int ownerId = HttpContext.Session.GetInt32("UserId") ?? 0;
+            if (!BelongsToThisOwner(id, ownerId))
+            { Message = "Access denied."; IsSuccess = false; Reload(); return Page(); }
             try
             {
                 var u = _srv.GetUserById(id);
@@ -70,6 +89,9 @@ namespace BManagedWeb.Pages.Owner
             var g = GuardOwner(); if (g != null) return g;
             if (newRole != "Owner" && newRole != "Employee" && newRole != "Client")
             { Message = "Invalid role."; IsSuccess = false; Reload(); return Page(); }
+            int ownerId = HttpContext.Session.GetInt32("UserId") ?? 0;
+            if (!BelongsToThisOwner(id, ownerId))
+            { Message = "Access denied."; IsSuccess = false; Reload(); return Page(); }
             try { _srv.UpdateUserRole(id, newRole); Message = "Role updated."; IsSuccess = true; }
             catch (System.Exception ex) { Message = ex.Message; IsSuccess = false; }
             Reload(); return Page();
@@ -78,6 +100,9 @@ namespace BManagedWeb.Pages.Owner
         public IActionResult OnPostReset(int id)
         {
             var g = GuardOwner(); if (g != null) return g;
+            int ownerId = HttpContext.Session.GetInt32("UserId") ?? 0;
+            if (!BelongsToThisOwner(id, ownerId))
+            { Message = "Access denied."; IsSuccess = false; Reload(); return Page(); }
             try { _srv.ResetPassword(id, "reset1234"); Message = "Password reset to 'reset1234'."; IsSuccess = true; }
             catch (System.Exception ex) { Message = ex.Message; IsSuccess = false; }
             Reload(); return Page();
@@ -86,6 +111,9 @@ namespace BManagedWeb.Pages.Owner
         public IActionResult OnPostDelete(int id)
         {
             var g = GuardOwner(); if (g != null) return g;
+            int ownerId = HttpContext.Session.GetInt32("UserId") ?? 0;
+            if (!BelongsToThisOwner(id, ownerId))
+            { Message = "Access denied."; IsSuccess = false; Reload(); return Page(); }
             try { _srv.DeleteUser(id); Message = "Deleted."; IsSuccess = true; }
             catch (System.Exception ex) { Message = ex.Message; IsSuccess = false; }
             Reload(); return Page();
