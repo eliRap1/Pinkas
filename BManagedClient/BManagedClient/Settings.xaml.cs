@@ -142,15 +142,17 @@ namespace BManagedClient
                                        : new ClientHome());
 
         // PREFIX-XXXX (4 alpha-numeric from seed + 4 random, ambiguity-free alphabet).
+        // Uses RNGCryptoServiceProvider (CSPRNG) so the suffix cannot be predicted.
         private static string NewInviteCode(string seed)
         {
             string prefix = new string((seed ?? "")
                 .ToUpperInvariant().Where(char.IsLetterOrDigit).Take(4).ToArray());
             if (prefix.Length < 2) prefix = "BMNG";
             const string alpha = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
-            var rnd = new Random();
-            var tail = new string(Enumerable.Range(0, 4)
-                .Select(_ => alpha[rnd.Next(alpha.Length)]).ToArray());
+            var buf = new byte[4];
+            using (var rng = new System.Security.Cryptography.RNGCryptoServiceProvider())
+                rng.GetBytes(buf);
+            var tail = new string(buf.Select(b => alpha[b % alpha.Length]).ToArray());
             return prefix + "-" + tail;
         }
     }
